@@ -80,6 +80,9 @@ public:
   RC delete_record(const RID &rid);
   RC get_record(const RID &rid, Record &record);
 
+  // 删除表格函数
+  RC drop();
+
   RC recover_insert_record(Record &record);
 
   // TODO refactor

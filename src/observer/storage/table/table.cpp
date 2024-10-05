@@ -272,7 +272,7 @@ RC Table::make_record(int value_num, const Value *values, Record &record)
 
   for (int i = 0; i < value_num && OB_SUCC(rc); i++) {
     const FieldMeta *field = table_meta_.field(i + normal_field_start_index);
-    const Value &    value = values[i];
+    const Value     &value = values[i];
     if (field->type() != value.attr_type()) {
       Value real_value;
       rc = Value::cast_to(value, field->type(), real_value);
@@ -539,4 +539,30 @@ RC Table::sync()
   rc = data_buffer_pool_->flush_all_pages();
   LOG_INFO("Sync table over. table=%s", name());
   return rc;
+}
+
+///////////////////////////////////////////////////////////////////////
+// 删除一个表
+RC Table::drop()
+{
+  // 需要删除 data + index + meta
+  // 函数 table_data_file  table_index_file  table_meta_file 可以根据表格名和根目录 (索引名)，找到对应文件名称
+
+  // 删除数据文件 data_file
+  string data_file = table_data_file(base_dir_.c_str(), table_meta_.name());
+  unlink(data_file.c_str());
+
+  // 删除索引文件 index_file
+  int indexNum = table_meta_.index_num();
+  for (int i = 0; i < indexNum; i++) {
+    auto  *index_meta = table_meta_.index(i);
+    string index_file = table_index_file(base_dir_.c_str(), table_meta_.name(), index_meta->name());
+    unlink(index_file.c_str());
+  }
+
+  // 删除元文件 meta_file
+  string meta_file = table_meta_file(base_dir_.c_str(), table_meta_.name());
+  unlink(meta_file.c_str());
+
+  return RC::SUCCESS;
 }

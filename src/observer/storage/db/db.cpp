@@ -180,6 +180,66 @@ Table *Db::find_table(int32_t table_id) const
   return nullptr;
 }
 
+/////////////////////////////////////////////////////
+// 根据表格名称删除表格
+RC Db::drop_table(const char *table_name)
+{
+  // 找不到表格
+  if (opened_tables_.count(table_name) == 0) {
+    LOG_ERROR("Table doesn't exists, which name is %s", table_name);
+    return RC::SCHEMA_DB_NOT_EXIST;
+  }
+
+  // 获取到表格对应的 Table 对象，调用其自毁函数 (drop)
+  Table *table = opened_tables_[table_name];
+  RC     rc    = table->drop();
+  if (rc != RC::SUCCESS)
+    return rc;
+
+  int32_t table_id = table->table_id();
+
+  // 删除字典中的元素，并且销毁表格
+  opened_tables_.erase(table_name);
+  delete table;
+
+  LOG_INFO("Table drop successfully, which table_name is %d, table_id = %d", table_name, table_id);
+
+  return RC::SUCCESS;
+}
+
+/////////////////////////////////////////////////////
+// 根据表格 ID 删除表格
+RC Db::drop_table(int32_t table_id)
+{
+  // 遍历字典中全部元素，寻找表格
+  Table *table = nullptr;
+  for (auto pair : opened_tables_) {
+    if (pair.second->table_id() == table_id) {
+      table = pair.second;
+    }
+  }
+
+  // 表格不存在检查
+  if (table == nullptr) {
+    LOG_ERROR("Table doesn't exists, which ID is %s", table_id);
+    return RC::SCHEMA_DB_NOT_EXIST;
+  }
+
+  // 获取到表格对应的 Table 对象，调用其自毁函数 (drop)
+  RC rc = table->drop();
+  if (rc != RC::SUCCESS)
+    return rc;
+
+  string table_name = table->name();
+
+  // 删除字典中的元素，并且销毁表格
+  opened_tables_.erase(table_name);
+  delete table;
+
+  LOG_INFO("Table drop successfully, which table_name is %d, table_id = %d", table_name, table_id);
+
+  return RC::SUCCESS;
+}
 RC Db::open_all_tables()
 {
   vector<string> table_meta_files;

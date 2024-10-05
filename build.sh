@@ -58,7 +58,7 @@ function try_make
   if [[ $MAKE != false ]]
   then
     # use single thread `make` if concurrent building failed
-    $MAKE "${MAKE_ARGS[@]}" || $MAKE
+    $MAKE -j80 "${MAKE_ARGS[@]}" || $MAKE -j80
   fi
 }
 
@@ -74,7 +74,7 @@ function do_init
   git submodule update --init || return
   current_dir=$PWD
 
-  MAKE_COMMAND="make --silent"
+  MAKE_COMMAND="make --silent -j80"
 
   # build libevent
   cd ${TOPDIR}/deps/3rd/libevent && \

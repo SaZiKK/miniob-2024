@@ -32,9 +32,14 @@ RC ResolveStage::handle_request(SQLStageEvent *sql_event)
 {
   RC            rc            = RC::SUCCESS;
   SessionEvent *session_event = sql_event->session_event();
-  SqlResult    *sql_result    = session_event->sql_result();
 
+  // SQL 语句执行结果，包括错误信息
+  SqlResult *sql_result = session_event->sql_result();
+
+  // 获取到目标表格对应的 Db 对象
   Db *db = session_event->session()->get_current_db();
+
+  // 空 Db 检查
   if (nullptr == db) {
     LOG_ERROR("cannot find current db");
     rc = RC::SCHEMA_DB_NOT_EXIST;
@@ -43,16 +48,23 @@ RC ResolveStage::handle_request(SQLStageEvent *sql_event)
     return rc;
   }
 
+  // 获取到 Parse 模块解析的结果
   ParsedSqlNode *sql_node = sql_event->sql_node().get();
-  Stmt          *stmt     = nullptr;
 
+  // 准备创建 Stmt 对象
+  Stmt *stmt = nullptr;
+
+  // 根据 Parse 模块解析的结果，创建对应的 Stmt 对象
   rc = Stmt::create_stmt(db, *sql_node, stmt);
+
+  // 创建 Stmt 失败检查
   if (rc != RC::SUCCESS && rc != RC::UNIMPLEMENTED) {
     LOG_WARN("failed to create stmt. rc=%d:%s", rc, strrc(rc));
     sql_result->set_return_code(rc);
     return rc;
   }
 
+  // 将创建好的 Stmt 对象写入 sql_event，进入下一模块
   sql_event->set_stmt(stmt);
 
   return rc;
