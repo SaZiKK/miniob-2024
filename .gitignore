@@ -3,6 +3,9 @@
 ./deps/googletest
 ./deps/jsoncpp
 ./deps/benchmark
+.vscode
+!.vscode/tasks.json
+!.vscode/launch.json
 .VSCodeCounter/*
 ./docs/doxy/
 build/*
@@ -24,3 +27,5 @@ GPATH
 GTAGS
 docs/book
 #*#
+src/observer/observer.log.20241005
+src/observer/miniob/db/sys/dblwr.db
