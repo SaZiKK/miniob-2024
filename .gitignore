@@ -3,9 +3,6 @@
 ./deps/googletest
 ./deps/jsoncpp
 ./deps/benchmark
-.vscode
-!.vscode/tasks.json
-!.vscode/launch.json
 .VSCodeCounter/*
 ./docs/doxy/
 build/*
