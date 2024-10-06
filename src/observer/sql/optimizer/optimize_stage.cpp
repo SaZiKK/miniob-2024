@@ -31,25 +31,31 @@ using namespace common;
 
 RC OptimizeStage::handle_request(SQLStageEvent *sql_event)
 {
+  // 创建逻辑算子
   unique_ptr<LogicalOperator> logical_operator;
 
   RC rc = create_logical_plan(sql_event, logical_operator);
+
+  // 查错
   if (rc != RC::SUCCESS) {
     if (rc != RC::UNIMPLEMENTED) {
       LOG_WARN("failed to create logical plan. rc=%s", strrc(rc));
     }
     return rc;
   }
-
   ASSERT(logical_operator, "logical operator is null");
 
   rc = rewrite(logical_operator);
+
+  // 查错
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to rewrite plan. rc=%s", strrc(rc));
     return rc;
   }
 
   rc = optimize(logical_operator);
+
+  // 查错
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to optimize plan. rc=%s", strrc(rc));
     return rc;
@@ -57,11 +63,14 @@ RC OptimizeStage::handle_request(SQLStageEvent *sql_event)
 
   unique_ptr<PhysicalOperator> physical_operator;
   rc = generate_physical_plan(logical_operator, physical_operator, sql_event->session_event()->session());
+
+  // 查错
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to generate physical plan. rc=%s", strrc(rc));
     return rc;
   }
 
+  // 设置物理算子
   sql_event->set_operator(std::move(physical_operator));
 
   return rc;
@@ -77,10 +86,11 @@ RC OptimizeStage::generate_physical_plan(
     unique_ptr<LogicalOperator> &logical_operator, unique_ptr<PhysicalOperator> &physical_operator, Session *session)
 {
   RC rc = RC::SUCCESS;
-  if (session->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR && LogicalOperator::can_generate_vectorized_operator(logical_operator->type())) {
+  if (session->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR &&
+      LogicalOperator::can_generate_vectorized_operator(logical_operator->type())) {
     LOG_INFO("use chunk iterator");
     session->set_used_chunk_mode(true);
-    rc    = physical_plan_generator_.create_vec(*logical_operator, physical_operator);
+    rc = physical_plan_generator_.create_vec(*logical_operator, physical_operator);
   } else {
     LOG_INFO("use tuple iterator");
     session->set_used_chunk_mode(false);

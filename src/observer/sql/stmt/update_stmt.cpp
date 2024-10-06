@@ -13,14 +13,65 @@ See the Mulan PSL v2 for more details. */
 //
 
 #include "sql/stmt/update_stmt.h"
+#include "common/lang/string.h"
+#include "common/log/log.h"
+#include "sql/stmt/filter_stmt.h"
+#include "storage/db/db.h"
+#include "storage/table/table.h"
 
-UpdateStmt::UpdateStmt(Table *table, Value *values, int value_amount)
-    : table_(table), values_(values), value_amount_(value_amount)
-{}
+using namespace std;
+using namespace common;
+
+UpdateStmt::~UpdateStmt()
+{
+  if (nullptr != filter_stmt_) {
+    delete filter_stmt_;
+    filter_stmt_ = nullptr;
+  }
+}
 
 RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
 {
-  // TODO
-  stmt = nullptr;
-  return RC::INTERNAL;
+  // 拿到目标表格以及名称以及修改域
+  const char *table_name = update.relation_name.c_str();
+  Table      *table      = db->find_table(table_name);
+  FieldMeta  *field_meta = (FieldMeta *)table->table_meta().field(update.attribute_name.c_str());
+
+  // 参数非法检查
+  if (nullptr == db || nullptr == table_name) {
+    LOG_WARN("invalid argument. db=%p, table_name=%p", db, table_name);
+    return RC::INVALID_ARGUMENT;
+  }
+
+  // 目标表格不存在检查
+  if (table == nullptr) {
+    LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
+    return RC::SCHEMA_TABLE_NOT_EXIST;
+  }
+
+  // 修改域检查
+  if (nullptr == field_meta) {
+    LOG_WARN("no such field in table. db=%s, table=%s, field name=%s", 
+             db->name(), table_name, update.attribute_name.c_str());
+    return RC::SCHEMA_FIELD_NOT_EXIST;
+  }
+
+  // 创建筛选 STMT 对象
+  std::unordered_map<std::string, Table *> table_map;
+  table_map.insert(std::pair<std::string, Table *>(std::string(table_name), table));
+
+  FilterStmt *filter_stmt = nullptr;
+  RC          rc          = FilterStmt::create(
+      db, table, &table_map, update.conditions.data(), static_cast<int>(update.conditions.size()), filter_stmt);
+
+  // 谓词语句合法检查
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to create filter statement. rc=%d:%s", rc, strrc(rc));
+    return rc;
+  }
+
+  // 创建 update 的 STMT 对象
+  stmt =
+      new UpdateStmt(db->find_table(update.relation_name.c_str()), (Value *)&update.value, 1, filter_stmt, field_meta);
+  return RC::SUCCESS;
 }

@@ -34,15 +34,22 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
   stmt  = nullptr;
 
   FilterStmt *tmp_stmt = new FilterStmt();
+
+  // 遍历全部谓词
   for (int i = 0; i < condition_num; i++) {
     FilterUnit *filter_unit = nullptr;
 
+    // 创建单个筛选条件
     rc = create_filter_unit(db, default_table, tables, conditions[i], filter_unit);
+
+    // 查错
     if (rc != RC::SUCCESS) {
       delete tmp_stmt;
       LOG_WARN("failed to create filter unit. condition index=%d", i);
       return rc;
     }
+
+    // 插入到筛选单元
     tmp_stmt->filter_units_.push_back(filter_unit);
   }
 
