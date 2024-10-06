@@ -24,7 +24,10 @@ RC UpdatePhysicalOperator::open(Trx *trx)
     Tuple    *tuple     = child->current_tuple();
     RowTuple *row_tuple = static_cast<RowTuple *>(tuple);
     Record   &record    = row_tuple->record();
-    table_->update_record(record, field_meta_->name(), value_);
+    rc                  = table_->update_record(record, field_meta_->name(), value_);
+    if (OB_FAIL(rc)) {
+      return rc;
+    }
     if (nullptr == tuple) {
       LOG_WARN("failed to get current record: %s", strrc(rc));
       return rc;
