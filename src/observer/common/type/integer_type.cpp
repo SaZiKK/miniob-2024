@@ -18,11 +18,13 @@ int IntegerType::compare(const Value &left, const Value &right) const
 {
   ASSERT(left.attr_type() == AttrType::INTS, "left type is not integer");
 
-  Value real_value = right;
-  Value::cast_to(right, AttrType::FLOATS, real_value);
+  Value real_left_value  = left;
+  Value real_right_value = right;
+  Value::cast_to(left, AttrType::FLOATS, real_left_value);
+  Value::cast_to(right, AttrType::FLOATS, real_right_value);
 
-  float left_val  = left.get_float();
-  float right_val = real_value.get_float();
+  float left_val  = real_left_value.get_float();
+  float right_val = real_right_value.get_float();
   return common::compare_float((void *)&left_val, (void *)&right_val);
 }
 

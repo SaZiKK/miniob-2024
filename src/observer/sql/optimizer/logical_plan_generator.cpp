@@ -178,7 +178,14 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
       auto right_to_left_cost = implicit_cast_cost(right->value_type(), left->value_type());
       if (left_to_right_cost <= right_to_left_cost && left_to_right_cost != INT32_MAX) {
         ExprType left_type = left->type();
-        auto     cast_expr = make_unique<CastExpr>(std::move(left), right->value_type());
+
+        // 特殊判断，如果为 INTS 和 CHARS 比较大小，均转换成 FLOATS 类型
+        unique_ptr<CastExpr> cast_expr;
+        if (left->value_type() == AttrType::CHARS && right->value_type() == AttrType::INTS)
+          cast_expr = make_unique<CastExpr>(std::move(left), AttrType::FLOATS);
+        else
+          cast_expr = make_unique<CastExpr>(std::move(left), right->value_type());
+
         if (left_type == ExprType::VALUE) {
           Value left_val;
           if (OB_FAIL(rc = cast_expr->try_get_value(left_val))) {
@@ -191,7 +198,14 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
         }
       } else if (right_to_left_cost < left_to_right_cost && right_to_left_cost != INT32_MAX) {
         ExprType right_type = right->type();
-        auto     cast_expr  = make_unique<CastExpr>(std::move(right), left->value_type());
+
+        // 特殊判断，如果为 INTS 和 CHARS 比较大小，均转换成 FLOATS 类型
+        unique_ptr<CastExpr> cast_expr;
+        if (left->value_type() == AttrType::INTS && right->value_type() == AttrType::CHARS)
+          cast_expr = make_unique<CastExpr>(std::move(right), AttrType::FLOATS);
+        else
+          cast_expr = make_unique<CastExpr>(std::move(right), left->value_type());
+
         if (right_type == ExprType::VALUE) {
           Value right_val;
           if (OB_FAIL(rc = cast_expr->try_get_value(right_val))) {
