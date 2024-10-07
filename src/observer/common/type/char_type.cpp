@@ -12,12 +12,20 @@ See the Mulan PSL v2 for more details. */
 #include "common/log/log.h"
 #include "common/type/char_type.h"
 #include "common/value.h"
+#include <cmath>
+#include <sstream>
 
 int CharType::compare(const Value &left, const Value &right) const
 {
-  ASSERT(left.attr_type() == AttrType::CHARS && right.attr_type() == AttrType::CHARS, "invalid type");
+  ASSERT(left.attr_type() == AttrType::CHARS, "invalid type");
+
+  Value real_value = right;
+  if (right.attr_type() != AttrType::CHARS) {
+    Value::cast_to(right, AttrType::CHARS, real_value);
+  }
+
   return common::compare_string(
-      (void *)left.value_.pointer_value_, left.length_, (void *)right.value_.pointer_value_, right.length_);
+      (void *)left.value_.pointer_value_, left.length_, (void *)real_value.value_.pointer_value_, real_value.length_);
 }
 
 RC CharType::set_value_from_str(Value &val, const string &data) const
@@ -29,15 +37,52 @@ RC CharType::set_value_from_str(Value &val, const string &data) const
 RC CharType::cast_to(const Value &val, AttrType type, Value &result) const
 {
   switch (type) {
-    default: return RC::UNIMPLEMENTED;
+    // CHARS => INTS
+    case (AttrType::INTS): {
+      string val_str = val.get_string();
+
+      // 如果不存在合法前缀，返回0
+      if (val_str.empty() || !isdigit(val_str[0])) {
+        result.set_int(0);
+      } else {
+        // 构造转换后数字
+        int32_t target = stoi(val.get_string());
+        result.set_int(target);
+      }
+    } break;
+
+    // CHARS => FLOATS
+    case (AttrType::FLOATS): {
+      string val_str = val.get_string();
+
+      // 如果不存在合法前缀，返回0
+      if (val_str.empty() || !isdigit(val_str[0])) {
+        result.set_float(0);
+      } else {
+
+        // 构造转换后数字
+        float target = stof(val.get_string());
+        result.set_float(target);
+      }
+    } break;
+    default: return RC::INVALID_ARGUMENT;
   }
   return RC::SUCCESS;
 }
 
+// FLOATS > INTS > BOOLEANS > CHARS
 int CharType::cast_cost(AttrType type)
 {
-  if (type == AttrType::CHARS) {
-    return 0;
+  switch (type) {
+    case (AttrType::FLOATS): return 1;
+
+    case (AttrType::BOOLEANS): return 1;
+
+    case (AttrType::INTS): return 1;
+
+    case (AttrType::CHARS): return 0;
+
+    default: return INT32_MAX;
   }
   return INT32_MAX;
 }

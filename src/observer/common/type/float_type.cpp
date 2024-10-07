@@ -15,13 +15,19 @@ See the Mulan PSL v2 for more details. */
 #include "common/value.h"
 #include "common/lang/limits.h"
 #include "common/value.h"
+#include <cmath>
 
 int FloatType::compare(const Value &left, const Value &right) const
 {
   ASSERT(left.attr_type() == AttrType::FLOATS, "left type is not integer");
-  ASSERT(right.attr_type() == AttrType::INTS || right.attr_type() == AttrType::FLOATS, "right type is not numeric");
-  float left_val  = left.get_float();
-  float right_val = right.get_float();
+  float left_val = left.get_float();
+
+  Value real_value = right;
+  if (right.attr_type() != AttrType::FLOATS) {
+    Value::cast_to(right, AttrType::FLOATS, real_value);
+  }
+
+  float right_val = real_value.get_float();
   return common::compare_float((void *)&left_val, (void *)&right_val);
 }
 
@@ -61,7 +67,7 @@ RC FloatType::negative(const Value &val, Value &result) const
 
 RC FloatType::set_value_from_str(Value &val, const string &data) const
 {
-  RC                rc = RC::SUCCESS;
+  RC           rc = RC::SUCCESS;
   stringstream deserialize_stream;
   deserialize_stream.clear();
   deserialize_stream.str(data);
@@ -82,4 +88,42 @@ RC FloatType::to_string(const Value &val, string &result) const
   ss << common::double_to_str(val.value_.float_value_);
   result = ss.str();
   return RC::SUCCESS;
+}
+
+RC FloatType::cast_to(const Value &val, AttrType type, Value &result) const
+{
+  switch (type) {
+    // FLOATS => INTS
+    case (AttrType::INTS): {
+      int32_t target = std::round(val.get_float());
+      result.set_int(target);
+    } break;
+
+    // FLOATS => CHARS
+    case (AttrType::CHARS): {
+      string target;
+      to_string(val, target);
+      result.set_string(target.c_str());
+    } break;
+
+    default: return RC::INVALID_ARGUMENT;
+  }
+  return RC::SUCCESS;
+}
+
+// FLOATS > INTS > BOOLEANS > CHARS
+int FloatType::cast_cost(AttrType type)
+{
+  switch (type) {
+    case (AttrType::INTS): return 2;
+
+    case (AttrType::CHARS): return 2;
+
+    case (AttrType::BOOLEANS): return 2;
+
+    case (AttrType::FLOATS): return 0;
+
+    default: return INT32_MAX;
+  }
+  return INT32_MAX;
 }

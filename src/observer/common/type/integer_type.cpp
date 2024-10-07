@@ -17,15 +17,13 @@ See the Mulan PSL v2 for more details. */
 int IntegerType::compare(const Value &left, const Value &right) const
 {
   ASSERT(left.attr_type() == AttrType::INTS, "left type is not integer");
-  ASSERT(right.attr_type() == AttrType::INTS || right.attr_type() == AttrType::FLOATS, "right type is not numeric");
-  if (right.attr_type() == AttrType::INTS) {
-    return common::compare_int((void *)&left.value_.int_value_, (void *)&right.value_.int_value_);
-  } else if (right.attr_type() == AttrType::FLOATS) {
-    float left_val  = left.get_float();
-    float right_val = right.get_float();
-    return common::compare_float((void *)&left_val, (void *)&right_val);
-  }
-  return INT32_MAX;
+
+  Value real_value = right;
+  Value::cast_to(right, AttrType::FLOATS, real_value);
+
+  float left_val  = left.get_float();
+  float right_val = real_value.get_float();
+  return common::compare_float((void *)&left_val, (void *)&right_val);
 }
 
 RC IntegerType::add(const Value &left, const Value &right, Value &result) const
@@ -54,7 +52,7 @@ RC IntegerType::negative(const Value &val, Value &result) const
 
 RC IntegerType::set_value_from_str(Value &val, const string &data) const
 {
-  RC                rc = RC::SUCCESS;
+  RC           rc = RC::SUCCESS;
   stringstream deserialize_stream;
   deserialize_stream.clear();  // 清理stream的状态，防止多次解析出现异常
   deserialize_stream.str(data);
@@ -74,4 +72,41 @@ RC IntegerType::to_string(const Value &val, string &result) const
   ss << val.value_.int_value_;
   result = ss.str();
   return RC::SUCCESS;
+}
+
+RC IntegerType::cast_to(const Value &val, AttrType type, Value &result) const
+{
+  switch (type) {
+    // INTS => FLOATS
+    case (AttrType::FLOATS): {
+      float target = (float)val.get_int();
+      result.set_float(target);
+    } break;
+
+    // INTS => CHARS
+    case (AttrType::CHARS): {
+      string target;
+      to_string(val, target);
+      result.set_string(target.c_str());
+    } break;
+    default: return RC::INVALID_ARGUMENT;
+  }
+  return RC::SUCCESS;
+}
+
+// FLOATS > INTS > BOOLEANS > CHARS
+int IntegerType::cast_cost(AttrType type)
+{
+  switch (type) {
+    case (AttrType::FLOATS): return 1;
+
+    case (AttrType::CHARS): return 2;
+
+    case (AttrType::BOOLEANS): return 2;
+
+    case (AttrType::INTS): return 0;
+
+    default: return INT32_MAX;
+  }
+  return INT32_MAX;
 }
