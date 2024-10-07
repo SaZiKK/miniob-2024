@@ -582,6 +582,7 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value)
 
     // 找到目标域
     if (field_name == attr_name) {
+
       // 类型匹配检查
       if (field_meta->type() != value->attr_type()) {
         return RC::SCHEMA_FIELD_TYPE_MISMATCH;
