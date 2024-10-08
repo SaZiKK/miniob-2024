@@ -5,7 +5,6 @@
 
 RC UpdatePhysicalOperator::open(Trx *trx)
 {
-  // 处理子业务
   if (children_.empty()) {
     return RC::SUCCESS;
   }
@@ -21,17 +20,26 @@ RC UpdatePhysicalOperator::open(Trx *trx)
   trx_ = trx;
 
   while (OB_SUCC(rc = child->next())) {
-    Tuple    *tuple     = child->current_tuple();
-    RowTuple *row_tuple = static_cast<RowTuple *>(tuple);
-    Record   &record    = row_tuple->record();
-    table_->update_record(record, field_meta_->name(), value_);
+    Tuple *tuple = child->current_tuple();
     if (nullptr == tuple) {
-      LOG_WARN("failed to get current record: %s", strrc(rc));
       return rc;
     }
+
+    RowTuple *row_tuple = static_cast<RowTuple *>(tuple);
+    Record   &record    = row_tuple->record();
+    records_.emplace_back(std::move(record));
   }
 
   child->close();
+
+  // 先收集记录再更新
+  // 记录的有效性由事务来保证，如果事务不保证更新的有效性，那说明此事务类型不支持并发控制，比如VacuousTrx
+  for (Record &record : records_) {
+    rc = trx_->update_record(table_, record, field_meta_->name(), value_);
+    if (rc != RC::SUCCESS) {
+      return rc;
+    }
+  }
 
   return RC::SUCCESS;
 }

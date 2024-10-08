@@ -29,3 +29,13 @@ docs/book
 #*#
 src/observer/observer.log.20241005
 src/observer/miniob/db/sys/dblwr.db
+src/observer/storage/field/observer.log.20241007
+src/observer/storage/field/miniob/db/sys/a.data
+src/observer/storage/field/miniob/db/sys/a.table
+src/observer/storage/field/miniob/db/sys/dblwr.db
+src/observer/storage/field/miniob/db/sys/sys.db
+src/observer/storage/table/observer.log.20241006
+src/observer/storage/table/observer.log.20241007
+src/observer/storage/table/miniob/db/sys/a.data
+src/observer/storage/table/miniob/db/sys/a.table
+src/observer/storage/table/miniob/db/sys/dblwr.db

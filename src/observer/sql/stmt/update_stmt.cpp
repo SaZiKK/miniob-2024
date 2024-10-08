@@ -35,18 +35,19 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
   // 拿到目标表格以及名称以及修改域
   const char *table_name = update.relation_name.c_str();
   Table      *table      = db->find_table(table_name);
-  FieldMeta  *field_meta = (FieldMeta *)table->table_meta().field(update.attribute_name.c_str());
-
-  // 参数非法检查
-  if (nullptr == db || nullptr == table_name) {
-    LOG_WARN("invalid argument. db=%p, table_name=%p", db, table_name);
-    return RC::INVALID_ARGUMENT;
-  }
 
   // 目标表格不存在检查
   if (table == nullptr) {
     LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
     return RC::SCHEMA_TABLE_NOT_EXIST;
+  }
+
+  FieldMeta *field_meta = (FieldMeta *)table->table_meta().field(update.attribute_name.c_str());
+
+  // 参数非法检查
+  if (nullptr == db || nullptr == table_name) {
+    LOG_WARN("invalid argument. db=%p, table_name=%p", db, table_name);
+    return RC::INVALID_ARGUMENT;
   }
 
   // 修改域检查
