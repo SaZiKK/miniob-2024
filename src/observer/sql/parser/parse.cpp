@@ -36,3 +36,4 @@ RC parse(const char *st, ParsedSqlResult *sql_result)
   sql_parse(st, sql_result);
   return RC::SUCCESS;
 }
+

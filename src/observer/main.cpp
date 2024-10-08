@@ -28,6 +28,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/log/log.h"
 #include "net/server.h"
 #include "net/server_param.h"
+#include "event/sql_debug.h"
 
 using namespace common;
 
@@ -180,9 +181,8 @@ Learn more about MiniOB at https://github.com/oceanbase/miniob
 int main(int argc, char **argv)
 {
   int rc = STATUS_SUCCESS;
-
-  cout << startup_tips;
-
+  // cout << startup_tips;
+  sql_debug(startup_tips);
   set_signal_handler(quit_signal_handle);
 
   parse_parameter(argc, argv);

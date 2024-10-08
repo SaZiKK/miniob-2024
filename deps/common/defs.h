@@ -55,4 +55,13 @@ static const char FILE_PATH_SPLIT_STR[] = "/";
 
 #define EPSILON (1E-6)
 
+  // LOG使用的颜色
+extern const char* ANSI_RED     ;
+extern const char* ANSI_GREEN   ;
+extern const char* ANSI_YELLOW  ;
+extern const char* ANSI_BLUE    ;
+extern const char* ANSI_MAGENTA ;
+extern const char* ANSI_CYAN    ;
+extern const char* ANSI_RESET   ;
+
 }  // namespace common

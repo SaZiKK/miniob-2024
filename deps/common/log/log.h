@@ -91,7 +91,7 @@ public:
   template <class T>
   int trace(T message);
 
-  int output(const LOG_LEVEL level, const char *module, const char *prefix, const char *f, ...);
+  int output(const LOG_LEVEL level, const char *module,const char* color, const char *prefix, const char *f, ...);
 
   int       set_console_level(const LOG_LEVEL console_level);
   LOG_LEVEL get_console_level();
@@ -215,23 +215,24 @@ extern Log *g_log;
         (int32_t)__LINE__);                                                \
   }
 
-#define LOG_OUTPUT(level, fmt, ...)                                    \
-  do {                                                                 \
-    using namespace common;                                            \
-    if (g_log && g_log->check_output(level, __FILE_NAME__)) {          \
-      char prefix[ONE_KILO] = {0};                                     \
-      LOG_HEAD(prefix, level);                                         \
-      g_log->output(level, __FILE_NAME__, prefix, fmt, ##__VA_ARGS__); \
-    }                                                                  \
+#define LOG_OUTPUT(level, color, fmt, ...)                              \
+  do {                                                                  \
+    using namespace common;                                             \
+    if (g_log && g_log->check_output(level, __FILE_NAME__)) {           \
+      char prefix[ONE_KILO] = {0};                                      \
+      LOG_HEAD(prefix, level);                                          \
+      g_log->output(level, __FILE_NAME__, color, prefix, fmt, ##__VA_ARGS__); \
+    }                                                                   \
   } while (0)
 
-#define LOG_DEFAULT(fmt, ...) LOG_OUTPUT(common::g_log->get_log_level(), fmt, ##__VA_ARGS__)
-#define LOG_PANIC(fmt, ...) LOG_OUTPUT(common::LOG_LEVEL_PANIC, fmt, ##__VA_ARGS__)
-#define LOG_ERROR(fmt, ...) LOG_OUTPUT(common::LOG_LEVEL_ERR, fmt, ##__VA_ARGS__)
-#define LOG_WARN(fmt, ...) LOG_OUTPUT(common::LOG_LEVEL_WARN, fmt, ##__VA_ARGS__)
-#define LOG_INFO(fmt, ...) LOG_OUTPUT(common::LOG_LEVEL_INFO, fmt, ##__VA_ARGS__)
-#define LOG_DEBUG(fmt, ...) LOG_OUTPUT(common::LOG_LEVEL_DEBUG, fmt, ##__VA_ARGS__)
-#define LOG_TRACE(fmt, ...) LOG_OUTPUT(common::LOG_LEVEL_TRACE, fmt, ##__VA_ARGS__)
+#define LOG_DEFAULT(fmt, ...) LOG_OUTPUT(common::g_log->get_log_level(), ANSI_RESET, fmt, ##__VA_ARGS__)
+#define LOG_PANIC(fmt, ...)   LOG_OUTPUT(common::LOG_LEVEL_PANIC, ANSI_RED, fmt, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...)   LOG_OUTPUT(common::LOG_LEVEL_ERR, ANSI_RED, fmt, ##__VA_ARGS__)
+#define LOG_WARN(fmt, ...)    LOG_OUTPUT(common::LOG_LEVEL_WARN, ANSI_YELLOW, fmt, ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...)    LOG_OUTPUT(common::LOG_LEVEL_INFO, ANSI_GREEN, fmt, ##__VA_ARGS__)
+#define LOG_DEBUG(fmt, ...)   LOG_OUTPUT(common::LOG_LEVEL_DEBUG, ANSI_CYAN, fmt, ##__VA_ARGS__)
+#define LOG_TRACE(fmt, ...)   LOG_OUTPUT(common::LOG_LEVEL_TRACE, ANSI_BLUE, fmt, ##__VA_ARGS__)
+
 
 template <class T>
 Log &Log::operator<<(T msg)

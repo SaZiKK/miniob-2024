@@ -24,17 +24,28 @@ See the Mulan PSL v2 for more details. */
 #include "common/log/log.h"
 namespace common {
 
+  // LOG使用的颜色
+const char* ANSI_RED     = "\033[0;31m";
+const char* ANSI_GREEN   = "\033[0;32m";
+const char* ANSI_YELLOW  = "\033[0;33m";
+const char* ANSI_BLUE    = "\033[0;34m";
+const char* ANSI_MAGENTA = "\033[0;35m";
+const char* ANSI_CYAN    = "\033[0;36m";
+const char* ANSI_RESET   = "\033[0m";
+
+
+
 Log *g_log = nullptr;
 
 Log::Log(const string &log_file_name, const LOG_LEVEL log_level, const LOG_LEVEL console_level)
     : log_name_(log_file_name), log_level_(log_level), console_level_(console_level)
 {
-  prefix_map_[LOG_LEVEL_PANIC] = "PANIC:";
-  prefix_map_[LOG_LEVEL_ERR]   = "ERROR:";
-  prefix_map_[LOG_LEVEL_WARN]  = "WARN:";
-  prefix_map_[LOG_LEVEL_INFO]  = "INFO:";
-  prefix_map_[LOG_LEVEL_DEBUG] = "DEBUG:";
-  prefix_map_[LOG_LEVEL_TRACE] = "TRACE:";
+  prefix_map_[LOG_LEVEL_PANIC] = "[PANIC]:";
+  prefix_map_[LOG_LEVEL_ERR]   = "[ERROR]:";
+  prefix_map_[LOG_LEVEL_WARN]  = "[WARN]:";
+  prefix_map_[LOG_LEVEL_INFO]  = "[INFO]:";
+  prefix_map_[LOG_LEVEL_DEBUG] = "[DEBUG]:";
+  prefix_map_[LOG_LEVEL_TRACE] = "[TRACE]:";
 
   pthread_mutex_init(&lock_, nullptr);
 
@@ -85,7 +96,7 @@ bool Log::check_output(const LOG_LEVEL level, const char *module)
   return false;
 }
 
-int Log::output(const LOG_LEVEL level, const char *module, const char *prefix, const char *f, ...)
+int Log::output(const LOG_LEVEL level, const char *module, const char *color, const char *prefix, const char *f, ...)
 {
   bool locked = false;
   try {
@@ -96,18 +107,18 @@ int Log::output(const LOG_LEVEL level, const char *module, const char *prefix, c
     vsnprintf(msg, sizeof(msg), f, args);
     va_end(args);
 
+    // 控制台输出部分
     if (LOG_LEVEL_PANIC <= level && level <= console_level_) {
-      cout << msg << endl;
+      cout << color << prefix_map_[console_level_] << msg << "\033[0m" << endl;
     } else if (default_set_.find(module) != default_set_.end()) {
-      cout << msg << endl;
+      cout << color << prefix_map_[console_level_] << msg << "\033[0m" << endl;
     }
 
+    // 文件输出部分
     if (LOG_LEVEL_PANIC <= level && level <= log_level_) {
       pthread_mutex_lock(&lock_);
       locked = true;
-      ofs_ << prefix;
-      ofs_ << msg;
-      ofs_ << "\n";
+      ofs_ << prefix << msg << "\n";
       ofs_.flush();
       log_line_++;
       pthread_mutex_unlock(&lock_);
@@ -115,9 +126,7 @@ int Log::output(const LOG_LEVEL level, const char *module, const char *prefix, c
     } else if (default_set_.find(module) != default_set_.end()) {
       pthread_mutex_lock(&lock_);
       locked = true;
-      ofs_ << prefix;
-      ofs_ << msg;
-      ofs_ << "\n";
+      ofs_ << prefix << msg << "\n";
       ofs_.flush();
       log_line_++;
       pthread_mutex_unlock(&lock_);
@@ -134,6 +143,7 @@ int Log::output(const LOG_LEVEL level, const char *module, const char *prefix, c
 
   return LOG_STATUS_OK;
 }
+
 
 int Log::set_console_level(LOG_LEVEL console_level)
 {
