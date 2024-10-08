@@ -21,3 +21,6 @@ https://open.oceanbase.com/train/TestRecord?questionId=500003
 ## miniob 训练营评测记录 - 2023
 https://open.oceanbase.com/train/TestRecord?questionId=600004
 
+## oceanbase大赛队员信息
+https://open.oceanbase.com/user/mycompetition
+
