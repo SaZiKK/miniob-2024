@@ -607,14 +607,23 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value)
 
   // 修改旧数据
   char *old_data = record.data();
-  memcpy(old_data + field_offset, value->data(), field_length);
+
+  // 对于 CHARS 这种不定长的记录，如果更新的元素大于原来的长度，需要截断
+  if (value->length() > field_length)
+    memcpy(old_data + field_offset, value->data(), field_length);
+  // 对于 CHARS 这种不定长的记录，如果更新的元素小于原来的长度，需要额外抹去原有元素
+  else {
+    memcpy(old_data + field_offset, value->data(), value->length());
+    memset(old_data + field_offset + value->length(), 0, field_length - value->length());
+  }
+
   record.set_data(old_data);
 
   // 判断索引是否重复
   if (isIndex) {
     RC rc = insert_entry_of_indexes(record.data(), record.rid());
     if (rc != RC::SUCCESS) {
-      rc = delete_entry_of_indexes(record.data(), record.rid(), false);
+      // rc = delete_entry_of_indexes(record.data(), record.rid(), false);
       return rc;
     }
   }
