@@ -16,7 +16,8 @@ See the Mulan PSL v2 for more details. */
 #include "common/log/log.h"
 #include "sql/expr/expression.h"
 
-RC parse(char *st, ParsedSqlNode *sqln);
+
+RC parse(char *st, ParsedSqlNode *sqln); //todo: 意义不明的重载
 
 ParsedSqlNode::ParsedSqlNode() : flag(SCF_ERROR) {}
 
@@ -31,8 +32,13 @@ void ParsedSqlResult::add_sql_node(std::unique_ptr<ParsedSqlNode> sql_node)
 
 int sql_parse(const char *st, ParsedSqlResult *sql_result);
 
+/// @brief 直接调用yacc生成的解析器解析SQL语句
+/// @param st 
+/// @param sql_result 
+/// @return 返回一个RC::SUCCESS
 RC parse(const char *st, ParsedSqlResult *sql_result)
 {
+  // 调用yacc生成的解析器主函数
   sql_parse(st, sql_result);
   return RC::SUCCESS;
 }

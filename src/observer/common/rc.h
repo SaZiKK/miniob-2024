@@ -79,6 +79,7 @@ See the Mulan PSL v2 for more details. */
   DEFINE_RC(UNSUPPORTED)                 \
   DEFINE_RC(RECORD_RECORD_NOT_EXIST)
 
+/// @brief 返回码/错误码
 enum class RC
 {
 #define DEFINE_RC(name) name,
