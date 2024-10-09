@@ -49,14 +49,17 @@ extern double atof();
 #define RETURN_TOKEN(token) LOG_DEBUG("%s", #token);return token
 %}
 
+/* 词法分析器的基础设置 */
 /* Prevent the need for linking with -lfl */
 %option noyywrap
 %option nounput
 %option noinput
-%option bison-bridge
+/* 与yacc的接口,生成与 Bison 的纯解析器(pure parser)兼容的代码 */
+%option bison-bridge   
 %option reentrant
 /* 不区分大小写 */
 %option case-insensitive
+/* 支持位置跟踪 */
 %option bison-locations
 
 WHITE_SAPCE      [\ \t\b\f]
@@ -110,6 +113,7 @@ ROLLBACK                                RETURN_TOKEN(TRX_ROLLBACK);
 INT                                     RETURN_TOKEN(INT_T);
 CHAR                                    RETURN_TOKEN(STRING_T);
 FLOAT                                   RETURN_TOKEN(FLOAT_T);
+DATE                                    RETURN_TOKEN(DATE_T);
 LOAD                                    RETURN_TOKEN(LOAD);
 DATA                                    RETURN_TOKEN(DATA);
 INFILE                                  RETURN_TOKEN(INFILE);
@@ -119,6 +123,7 @@ BY                                      RETURN_TOKEN(BY);
 STORAGE                                 RETURN_TOKEN(STORAGE);
 FORMAT                                  RETURN_TOKEN(FORMAT);
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
+{QUOTE}[0-9]{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01]){QUOTE} yylval->string=strdup(yytext); RETURN_TOKEN(DATE_STR); 
 "("                                     RETURN_TOKEN(LBRACE);
 ")"                                     RETURN_TOKEN(RBRACE);
 

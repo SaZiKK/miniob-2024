@@ -87,6 +87,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         TRX_COMMIT
         TRX_ROLLBACK
         INT_T
+        DATE_T
         STRING_T
         FLOAT_T
         HELP
@@ -135,6 +136,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %token <number> NUMBER
 %token <floats> FLOAT
 %token <string> ID
+%token <string> DATE_STR //注意要在SSS之前定义，否则会被SSS匹配
 %token <string> SSS
 //非终结符
 
@@ -360,6 +362,7 @@ type:
     INT_T      { $$ = static_cast<int>(AttrType::INTS); }
     | STRING_T { $$ = static_cast<int>(AttrType::CHARS); }
     | FLOAT_T  { $$ = static_cast<int>(AttrType::FLOATS); }
+    | DATE_T   { $$ = static_cast<int>(AttrType::DATE); }
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
     INSERT INTO ID VALUES LBRACE value value_list RBRACE 
@@ -400,6 +403,15 @@ value:
     |FLOAT {
       $$ = new Value((float)$1);
       @$ = @1;
+    }
+    |DATE_STR {
+      char *tmp = common::substr($1, 1, strlen($1)-2);  // 去掉首尾的引号
+      int year, month, day;
+      sscanf(tmp, "%d-%d-%d", &year, &month, &day);    //sscanf会自动转换字符串中的数字，不用显式stoi
+      int date_num = year * 10000 + month * 100 + day;
+      $$ = new Value(date_num);
+      free(tmp);
+      free($1);
     }
     |SSS {
       char *tmp = common::substr($1,1,strlen($1)-2);

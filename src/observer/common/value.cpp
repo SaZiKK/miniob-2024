@@ -107,7 +107,7 @@ void Value::reset()
   own_data_  = false;
 }
 
-void Value::set_data(char *data, int length)
+void Value::set_data(char *data, int length) //todo: 加入date
 {
   switch (attr_type_) {
     case AttrType::CHARS: {
