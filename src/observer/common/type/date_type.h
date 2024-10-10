@@ -1,7 +1,8 @@
 #include "common/rc.h"
 #include "common/type/data_type.h"
 
-class DateType : public DataType {
+class DateType : public DataType
+{
 public:
   DateType() : DataType(AttrType::DATE) {}
 
@@ -16,4 +17,8 @@ public:
   int cast_cost(AttrType type) override;
 
   RC to_string(const Value &val, string &result) const override;
+
+  static bool check_date(int y, int m, int d);
+  static bool check_date(string date_str);
+  static bool check_date(const Value *value);
 };
