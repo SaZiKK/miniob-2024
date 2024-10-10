@@ -18,6 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/filter_stmt.h"
 #include "storage/db/db.h"
 #include "storage/table/table.h"
+#include "common/type/date_type.h"
 
 using namespace std;
 using namespace common;
@@ -69,6 +70,14 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to create filter statement. rc=%d:%s", rc, strrc(rc));
     return rc;
+  }
+
+  // check date validity
+  Value value = update.value;
+  if (value.attr_type() == AttrType::DATE) {
+    if (!DateType::check_date(value.get_int())) {
+      return RC::INVALID_ARGUMENT;
+    }
   }
 
   // 创建 update 的 STMT 对象
