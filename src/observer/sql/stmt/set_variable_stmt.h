@@ -18,6 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include <vector>
 
 #include "sql/stmt/stmt.h"
+#include "common/type/date_type.h"
 
 /**
  * @brief SetVairable 语句，设置变量，当前是会话变量，但是只有会话变量，没有全局变量
@@ -36,9 +37,16 @@ public:
 
   static RC create(const SetVariableSqlNode &set_variable, Stmt *&stmt)
   {
-    /// 可以校验是否存在某个变量，但是这里忽略
-    stmt = new SetVariableStmt(set_variable);
-    return RC::SUCCESS;
+    // 检查 date 类型是否合法
+    if (set_variable.value.attr_type() == AttrType::DATE) {
+      if (!DateType::check_date(set_variable.value.get_int())) {
+        return RC::INVALID_ARGUMENT;
+      }
+
+      /// 可以校验是否存在某个变量，但是这里忽略
+      stmt = new SetVariableStmt(set_variable);
+      return RC::SUCCESS;
+    }
   }
 
 private:
