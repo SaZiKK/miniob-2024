@@ -18,7 +18,6 @@ public:
 
   RC to_string(const Value &val, string &result) const override;
 
-  static bool check_date(int y, int m, int d);
-  static bool check_date(string date_str);
   static bool check_date(const Value *value);
+  static bool check_date(int date);
 };

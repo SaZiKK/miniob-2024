@@ -53,28 +53,23 @@ RC DateType::to_string(const Value &val, string &result) const
   return RC::SUCCESS;
 }
 
-bool DateType::check_date(int y, int m, int d)
-{
-  bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
-  return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
-}
-
-bool DateType::check_date(string date_str)
-{
-  std::stringstream ss(date_str);
-  int               numbers[3];
-  string            token;
-  for (int i = 0; i < 3; ++i) {
-    if (getline(ss, token, '-')) {
-      numbers[i] = std::stoi(token);
-    } else {
-      return false;
-    }
+bool DateType::check_date(const Value *value) { 
+  if (value->attr_type() != AttrType::DATE) {
+    return false;
   }
-
-  int  y = numbers[0], m = numbers[1], d = numbers[2];
+  int date = value->get_int();
+  int y = date / 10000;
+  int m = date % 10000 / 100;
+  int d = date % 100;
   bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
   return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
 }
 
-bool DateType::check_date(const Value *value) { return false; }
+bool DateType::check_date(int date)
+{
+  int y = date / 10000;
+  int m = date % 10000 / 100;
+  int d = date % 100;
+  bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
+  return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
+}
