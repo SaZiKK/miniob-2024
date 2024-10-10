@@ -64,7 +64,7 @@ enum CompOp
  */
 struct ConditionSqlNode
 {
-  int left_is_attr;              ///< TRUE if left-hand side is an attribute
+  int            left_is_attr;   ///< TRUE if left-hand side is an attribute
                                  ///< 1时，操作符左边是属性名，0时，是属性值
   Value          left_value;     ///< left-hand side value if left_is_attr = FALSE
   RelAttrSqlNode left_attr;      ///< left-hand side attribute
