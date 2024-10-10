@@ -409,7 +409,7 @@ value:
       int year, month, day;
       sscanf(tmp, "%d-%d-%d", &year, &month, &day);    //sscanf会自动转换字符串中的数字，不用显式stoi
       int date_num = year * 10000 + month * 100 + day;
-      $$ = new Value(date_num);
+      $$ = new Value(date_num, true);
       free(tmp);
       free($1);
     }

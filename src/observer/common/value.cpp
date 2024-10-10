@@ -20,13 +20,13 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/string.h"
 #include "common/log/log.h"
 
-Value::Value(int val) { set_int(val); }
-
 Value::Value(float val) { set_float(val); }
 
 Value::Value(bool val) { set_boolean(val); }
 
 Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
+
+Value::Value(int val, bool is_date) { if (is_date) { set_date(val); } else { set_int(val); } }
 
 Value::Value(const Value &other)
 {
