@@ -39,14 +39,13 @@ public:
   {
     // 检查 date 类型是否合法
     if (set_variable.value.attr_type() == AttrType::DATE) {
-      if (!DateType::check_date(set_variable.value.get_int())) {
+      if (!DateType::check_date(set_variable.value.get_date())) {
         return RC::INVALID_ARGUMENT;
       }
-
-      /// 可以校验是否存在某个变量，但是这里忽略
-      stmt = new SetVariableStmt(set_variable);
-      return RC::SUCCESS;
     }
+    /// 可以校验是否存在某个变量，但是这里忽略
+    stmt = new SetVariableStmt(set_variable);
+    return RC::SUCCESS;
   }
 
 private:

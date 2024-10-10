@@ -52,7 +52,7 @@ RC InsertStmt::create(Db *db, const InsertSqlNode &inserts, Stmt *&stmt)
   for (int i = 0; i < value_num; ++i) {
     Value value = values[i];
     if (value.attr_type() == AttrType::DATE) {
-      if (!DateType::check_date(value.get_int())) {
+      if (!DateType::check_date(value.get_date())) {
         return RC::INVALID_ARGUMENT;
       }
     }

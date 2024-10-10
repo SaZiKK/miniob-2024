@@ -75,7 +75,7 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
   // check date validity
   Value value = update.value;
   if (value.attr_type() == AttrType::DATE) {
-    if (!DateType::check_date(value.get_int())) {
+    if (!DateType::check_date(value.get_date())) {
       return RC::INVALID_ARGUMENT;
     }
   }
