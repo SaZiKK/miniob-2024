@@ -44,7 +44,7 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
     rc = create_filter_unit(db, default_table, tables, conditions[i], filter_unit);
 
     // DATE类型值合法性校验
-    if (conditions[i].left_is_attr) {
+    if (!conditions[i].left_is_attr) {
       if (conditions[i].left_value.attr_type() == AttrType::DATE) {
         int date = conditions[i].left_value.get_date();
         if (DateType::check_date(date) == false) {
@@ -52,7 +52,7 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
         }
       }
     }
-    if (conditions[i].right_is_attr) {
+    if (!conditions[i].right_is_attr) {
       if (conditions[i].right_value.attr_type() == AttrType::DATE) {
         int date = conditions[i].right_value.get_date();
         if (DateType::check_date(date) == false) {
