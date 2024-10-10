@@ -14,7 +14,7 @@ int DateType::compare(const Value &left, const Value &right) const
   ASSERT(left.attr_type() == AttrType::DATE && right.attr_type() == AttrType::DATE, "not type DATE");
   int left_val  = left.get_int();
   int right_val = right.get_int();
-  return common::compare_float((void *)&left_val, (void *)&right_val);
+  return common::compare_int((void *)&left_val, (void *)&right_val);
 }
 
 RC DateType::cast_to(const Value &val, AttrType type, Value &result) const { return RC::INVALID_ARGUMENT; }
@@ -49,27 +49,29 @@ RC DateType::to_string(const Value &val, string &result) const
   if (val.attr_type() != AttrType::DATE)
     return RC::INVALID_ARGUMENT;
 
-  result = std::to_string(val.get_int());
+  string str = std::to_string(val.get_int());
+  result     = str.substr(0, 4) + '-' + str.substr(4, 2) + '-' + str.substr(6, 2);
   return RC::SUCCESS;
 }
 
-bool DateType::check_date(const Value *value) { 
+bool DateType::check_date(const Value *value)
+{
   if (value->attr_type() != AttrType::DATE) {
     return false;
   }
-  int date = value->get_int();
-  int y = date / 10000;
-  int m = date % 10000 / 100;
-  int d = date % 100;
+  int  date = value->get_int();
+  int  y    = date / 10000;
+  int  m    = date % 10000 / 100;
+  int  d    = date % 100;
   bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
   return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
 }
 
 bool DateType::check_date(int date)
 {
-  int y = date / 10000;
-  int m = date % 10000 / 100;
-  int d = date % 100;
+  int  y    = date / 10000;
+  int  m    = date % 10000 / 100;
+  int  d    = date % 100;
   bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
   return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
 }
