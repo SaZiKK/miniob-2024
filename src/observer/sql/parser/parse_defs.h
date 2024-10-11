@@ -19,6 +19,8 @@ See the Mulan PSL v2 for more details. */
 #include <memory>
 
 #include "common/value.h"
+#include <algorithm>  // std::transform
+#include <cctype>     // std::toupper
 
 class Expression;
 
@@ -54,6 +56,22 @@ enum CompOp
   NO_OP
 };
 
+enum AggreOp
+{
+  MAX,       ///< 最大值
+  MIN,       ///< 最小值
+  AVG,       ///< 平均值
+  COUNT,     ///< 计数
+  SUM,       ///< 求和
+  UNDEFINED  ///< 非法
+};
+
+struct AggreSqlNode
+{
+  AggreOp     aggre;
+  std::string attr_name;
+};
+
 /**
  * @brief 表示一个条件比较
  * @ingroup SQLParser
@@ -64,7 +82,7 @@ enum CompOp
  */
 struct ConditionSqlNode
 {
-  int            left_is_attr;   ///< TRUE if left-hand side is an attribute
+  int left_is_attr;              ///< TRUE if left-hand side is an attribute
                                  ///< 1时，操作符左边是属性名，0时，是属性值
   Value          left_value;     ///< left-hand side value if left_is_attr = FALSE
   RelAttrSqlNode left_attr;      ///< left-hand side attribute
@@ -92,6 +110,33 @@ struct SelectSqlNode
   std::vector<std::string>                 relations;    ///< 查询的表
   std::vector<ConditionSqlNode>            conditions;   ///< 查询条件，使用AND串联起来多个条件
   std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
+};
+
+struct SelectAggreSqlNode
+{
+  AggreSqlNode                             aggregation;  ///< 涉及的聚合函数
+  std::vector<std::unique_ptr<Expression>> expressions;  ///< 查询的表达式
+  std::vector<std::string>                 relations;    ///< 查询的表
+  std::vector<ConditionSqlNode>            conditions;   ///< 查询条件，使用AND串联起来多个条件
+  std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
+
+  void set_aggre(string type)
+  {
+    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::toupper(c); });
+    if (type == "MAX") {
+      aggregation.aggre = AggreOp::MAX;
+    } else if (type == "MIN") {
+      aggregation.aggre = AggreOp::MIN;
+    } else if (type == "AVG") {
+      aggregation.aggre = AggreOp::AVG;
+    } else if (type == "SUM") {
+      aggregation.aggre = AggreOp::SUM;
+    } else if (type == "COUNT") {
+      aggregation.aggre = AggreOp::COUNT;
+    } else {
+      aggregation.aggre = AggreOp::UNDEFINED;
+    }
+  }
 };
 
 /**
@@ -259,6 +304,7 @@ enum SqlCommandFlag
   SCF_ERROR = 0,
   SCF_CALC,
   SCF_SELECT,
+  SCF_SELECT_AGGRE,
   SCF_INSERT,
   SCF_UPDATE,
   SCF_DELETE,
@@ -290,6 +336,7 @@ public:
   ErrorSqlNode        error;
   CalcSqlNode         calc;
   SelectSqlNode       selection;
+  SelectAggreSqlNode  selection_aggre;
   InsertSqlNode       insertion;
   DeleteSqlNode       deletion;
   UpdateSqlNode       update;
