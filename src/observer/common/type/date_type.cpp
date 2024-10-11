@@ -12,8 +12,8 @@ static int mon[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 int DateType::compare(const Value &left, const Value &right) const
 {
   ASSERT(left.attr_type() == AttrType::DATE && right.attr_type() == AttrType::DATE, "not type DATE");
-  int left_val  = left.get_int();
-  int right_val = right.get_int();
+  int left_val  = left.get_date();
+  int right_val = right.get_date();
   return common::compare_int((void *)&left_val, (void *)&right_val);
 }
 
