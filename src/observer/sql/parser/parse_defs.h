@@ -56,22 +56,6 @@ enum CompOp
   NO_OP
 };
 
-enum AggreOp
-{
-  MAX,       ///< 最大值
-  MIN,       ///< 最小值
-  AVG,       ///< 平均值
-  COUNT,     ///< 计数
-  SUM,       ///< 求和
-  UNDEFINED  ///< 非法
-};
-
-struct AggreSqlNode
-{
-  AggreOp     aggre;
-  std::string attr_name;
-};
-
 /**
  * @brief 表示一个条件比较
  * @ingroup SQLParser
@@ -110,33 +94,6 @@ struct SelectSqlNode
   std::vector<std::string>                 relations;    ///< 查询的表
   std::vector<ConditionSqlNode>            conditions;   ///< 查询条件，使用AND串联起来多个条件
   std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
-};
-
-struct SelectAggreSqlNode
-{
-  AggreSqlNode                             aggregation;  ///< 涉及的聚合函数
-  std::vector<std::unique_ptr<Expression>> expressions;  ///< 查询的表达式
-  std::vector<std::string>                 relations;    ///< 查询的表
-  std::vector<ConditionSqlNode>            conditions;   ///< 查询条件，使用AND串联起来多个条件
-  std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
-
-  void set_aggre(string type)
-  {
-    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::toupper(c); });
-    if (type == "MAX") {
-      aggregation.aggre = AggreOp::MAX;
-    } else if (type == "MIN") {
-      aggregation.aggre = AggreOp::MIN;
-    } else if (type == "AVG") {
-      aggregation.aggre = AggreOp::AVG;
-    } else if (type == "SUM") {
-      aggregation.aggre = AggreOp::SUM;
-    } else if (type == "COUNT") {
-      aggregation.aggre = AggreOp::COUNT;
-    } else {
-      aggregation.aggre = AggreOp::UNDEFINED;
-    }
-  }
 };
 
 /**
@@ -336,7 +293,6 @@ public:
   ErrorSqlNode        error;
   CalcSqlNode         calc;
   SelectSqlNode       selection;
-  SelectAggreSqlNode  selection_aggre;
   InsertSqlNode       insertion;
   DeleteSqlNode       deletion;
   UpdateSqlNode       update;

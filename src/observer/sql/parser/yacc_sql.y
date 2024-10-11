@@ -106,6 +106,11 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         EXPLAIN
         STORAGE
         FORMAT
+        MAX
+        MIN
+        AVG
+        SUM
+        COUNT
         EQ
         LT
         GT
@@ -136,7 +141,6 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %token <number> NUMBER
 %token <floats> FLOAT
 %token <string> ID
-%token <string> AGGREGATION
 %token <string> DATE_STR //注意要在SSS之前定义，否则会被SSS匹配
 %token <string> SSS
 //非终结符
@@ -161,7 +165,6 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <expression_list>     group_by
 %type <sql_node>            calc_stmt
 %type <sql_node>            select_stmt
-%type <sql_node>            select_aggregation_stmt
 %type <sql_node>            insert_stmt
 %type <sql_node>            update_stmt
 %type <sql_node>            delete_stmt
@@ -199,7 +202,6 @@ commands: command_wrapper opt_semicolon  //commands or sqls. parser starts here.
 command_wrapper:
     calc_stmt
   | select_stmt
-  | select_aggregation_stmt
   | insert_stmt
   | update_stmt
   | delete_stmt
@@ -486,36 +488,6 @@ select_stmt:        /*  select 语句的语法解析树*/
       }
     }
     ;
-select_aggregation_stmt:        /*  select 语句带聚合函数的语法解析树*/
-    SELECT AGGREGATION LBRACE expression_list RBRACE FROM rel_list where group_by
-    {
-      $$ = new ParsedSqlNode(SCF_SELECT_AGGRE);
-      if($2 != nullptr)
-      {
-        $$->selection_aggre.set_aggre($2);
-      }
-
-      if($4 != nullptr)
-      {
-        $$->selection.expressions.swap(*$4);
-        delete $4;
-      }
-
-      if ($7 != nullptr) {
-        $$->selection.relations.swap(*$7);
-        delete $7;
-      }
-
-      if ($8 != nullptr) {
-        $$->selection.conditions.swap(*$8);
-        delete $8;
-      }
-
-      if ($9 != nullptr) {
-        $$->selection.group_by.swap(*$9);
-        delete $9;
-      }
-    }
 calc_stmt:
     CALC expression_list
     {
@@ -575,7 +547,41 @@ expression:
     | '*' {
       $$ = new StarExpr();
     }
-    // your code here
+    | MAX LBRACE rel_attr RBRACE {
+      RelAttrSqlNode *node = $3;
+      $$ = create_aggregate_expression("MAX", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    }
+    | MAX LBRACE '*' RBRACE {
+      $$ = create_aggregate_expression("MAX", new StarExpr(), sql_string, &@$);
+    }
+    | SUM LBRACE rel_attr RBRACE {
+      RelAttrSqlNode *node = $3;
+      $$ = create_aggregate_expression("SUM", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    }
+    | SUM LBRACE '*' RBRACE {
+      $$ = create_aggregate_expression("SUM", new StarExpr(), sql_string, &@$);
+    }
+    | MIN LBRACE rel_attr RBRACE {
+      RelAttrSqlNode *node = $3;
+      $$ = create_aggregate_expression("MIN", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    }
+    | MIN LBRACE '*' RBRACE {
+      $$ = create_aggregate_expression("MIN", new StarExpr(), sql_string, &@$);
+    }
+    | AVG LBRACE rel_attr RBRACE {
+      RelAttrSqlNode *node = $3;
+      $$ = create_aggregate_expression("AVG", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    }
+    | AVG LBRACE '*' RBRACE {
+      $$ = create_aggregate_expression("AVG", new StarExpr(), sql_string, &@$);
+    }
+    | COUNT LBRACE rel_attr RBRACE {
+      RelAttrSqlNode *node = $3;
+      $$ = create_aggregate_expression("COUNT", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    }
+    | COUNT LBRACE '*' RBRACE {
+      $$ = create_aggregate_expression("COUNT", new StarExpr(), sql_string, &@$);
+    }
     ;
 
 rel_attr:
