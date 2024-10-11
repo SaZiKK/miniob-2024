@@ -91,6 +91,9 @@ RC IntegerType::cast_to(const Value &val, AttrType type, Value &result) const
       to_string(val, target);
       result.set_string(target.c_str());
     } break;
+    case (AttrType::INTS): {
+      result = val;
+    } break;
     default: return RC::INVALID_ARGUMENT;
   }
   return RC::SUCCESS;

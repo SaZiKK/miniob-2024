@@ -17,7 +17,14 @@ int DateType::compare(const Value &left, const Value &right) const
   return common::compare_int((void *)&left_val, (void *)&right_val);
 }
 
-RC DateType::cast_to(const Value &val, AttrType type, Value &result) const { return RC::INVALID_ARGUMENT; }
+RC DateType::cast_to(const Value &val, AttrType type, Value &result) const
+{
+  if (type == AttrType::DATE) {
+    result = val;
+    return RC::SUCCESS;
+  }
+  return RC::INVALID_ARGUMENT;
+}
 
 RC DateType::set_value_from_str(Value &val, const string &data) const
 {

@@ -92,9 +92,6 @@ RC AvgAggregator::accumulate(const Value &value)
   num++;
   if (value_.attr_type() == AttrType::UNDEFINED) {
     value_ = value;
-    RC rc  = Value::cast_to(value_, AttrType::FLOATS, value_);
-    if (OB_FAIL(rc))
-      return rc;
     return RC::SUCCESS;
   }
 

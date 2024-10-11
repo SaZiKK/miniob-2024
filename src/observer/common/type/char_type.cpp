@@ -65,6 +65,9 @@ RC CharType::cast_to(const Value &val, AttrType type, Value &result) const
         result.set_float(target);
       }
     } break;
+    case (AttrType::CHARS): {
+      result = val;
+    } break;
     default: return RC::INVALID_ARGUMENT;
   }
   return RC::SUCCESS;
