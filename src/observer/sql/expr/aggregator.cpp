@@ -89,9 +89,11 @@ RC MinAggregator::evaluate(Value &result)
 // Avg
 RC AvgAggregator::accumulate(const Value &value)
 {
+
   num++;
   if (value_.attr_type() == AttrType::UNDEFINED) {
     value_ = value;
+    Value::cast_to(value_, AttrType::FLOATS, value_);
     return RC::SUCCESS;
   }
 

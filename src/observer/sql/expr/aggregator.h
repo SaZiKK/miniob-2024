@@ -53,9 +53,9 @@ public:
 class AvgAggregator : public Aggregator
 {
 public:
-  int num = 0;
-  RC  accumulate(const Value &value) override;
-  RC  evaluate(Value &result) override;
+  float num = 0;
+  RC    accumulate(const Value &value) override;
+  RC    evaluate(Value &result) override;
 };
 
 class CountAggregator : public Aggregator
