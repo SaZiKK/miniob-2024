@@ -111,6 +111,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         AVG
         SUM
         COUNT
+        NOT_LIKE
         LIKE
         EQ
         LT
@@ -743,6 +744,7 @@ comp_op:
     | LE { $$ = LESS_EQUAL; }
     | GE { $$ = GREAT_EQUAL; }
     | NE { $$ = NOT_EQUAL; }
+    | NOT_LIKE { $$ = NOT_LIKE_XXX; }
     | LIKE { $$ = LIKE_XXX; }
     ;
 

@@ -217,7 +217,7 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
           right = std::move(cast_expr);
         }
 
-      } else if (filter_unit->comp() == CompOp::LIKE_XXX){
+      } else if (filter_unit->comp() == CompOp::LIKE_XXX || filter_unit->comp() == CompOp::NOT_LIKE_XXX) {
         ExprType right_type = right->type();
 
     // 如果执行LIKE运算符，把右边转化成CHARS类型
