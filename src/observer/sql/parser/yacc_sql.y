@@ -547,40 +547,35 @@ expression:
     | '*' {
       $$ = new StarExpr();
     }
-    | MAX LBRACE rel_attr RBRACE {
-      RelAttrSqlNode *node = $3;
-      $$ = create_aggregate_expression("MAX", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    | MAX LBRACE expression RBRACE {
+      $$ = create_aggregate_expression("MAX", $3, sql_string, &@$);
     }
-    | MAX LBRACE '*' RBRACE {
-      $$ = create_aggregate_expression("MAX", new StarExpr(), sql_string, &@$);
+    | SUM LBRACE expression RBRACE {
+      $$ = create_aggregate_expression("SUM", $3, sql_string, &@$);
     }
-    | SUM LBRACE rel_attr RBRACE {
-      RelAttrSqlNode *node = $3;
-      $$ = create_aggregate_expression("SUM", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    | MIN LBRACE expression RBRACE {
+      $$ = create_aggregate_expression("MIN", $3, sql_string, &@$);
     }
-    | SUM LBRACE '*' RBRACE {
-      $$ = create_aggregate_expression("SUM", new StarExpr(), sql_string, &@$);
+    | AVG LBRACE expression RBRACE {
+      $$ = create_aggregate_expression("AVG", $3, sql_string, &@$);
     }
-    | MIN LBRACE rel_attr RBRACE {
-      RelAttrSqlNode *node = $3;
-      $$ = create_aggregate_expression("MIN", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    | COUNT LBRACE expression RBRACE {
+      $$ = create_aggregate_expression("COUNT", $3, sql_string, &@$);
     }
-    | MIN LBRACE '*' RBRACE {
-      $$ = create_aggregate_expression("MIN", new StarExpr(), sql_string, &@$);
+    | MAX LBRACE expression_list RBRACE {
+      $$ = create_aggregate_expression("MAX", nullptr, sql_string, &@$);
     }
-    | AVG LBRACE rel_attr RBRACE {
-      RelAttrSqlNode *node = $3;
-      $$ = create_aggregate_expression("AVG", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    | SUM LBRACE expression_list RBRACE {
+      $$ = create_aggregate_expression("SUM", nullptr, sql_string, &@$);
     }
-    | AVG LBRACE '*' RBRACE {
-      $$ = create_aggregate_expression("AVG", new StarExpr(), sql_string, &@$);
+    | MIN LBRACE expression_list RBRACE {
+      $$ = create_aggregate_expression("MIN", nullptr, sql_string, &@$);
     }
-    | COUNT LBRACE rel_attr RBRACE {
-      RelAttrSqlNode *node = $3;
-      $$ = create_aggregate_expression("COUNT", new UnboundFieldExpr(node->relation_name, node->attribute_name), sql_string, &@$);
+    | AVG LBRACE expression_list RBRACE {
+      $$ = create_aggregate_expression("AVG", nullptr, sql_string, &@$);
     }
-    | COUNT LBRACE '*' RBRACE {
-      $$ = create_aggregate_expression("COUNT", new StarExpr(), sql_string, &@$);
+    | COUNT LBRACE expression_list RBRACE {
+      $$ = create_aggregate_expression("COUNT", nullptr, sql_string, &@$);
     }
     ;
 
