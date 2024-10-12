@@ -547,6 +547,21 @@ expression:
     | '*' {
       $$ = new StarExpr();
     }
+    | MAX LBRACE RBRACE {
+      $$ = create_aggregate_expression("MAX", nullptr, sql_string, &@$);
+    }
+    | SUM LBRACE RBRACE {
+      $$ = create_aggregate_expression("SUM", nullptr, sql_string, &@$);
+    }
+    | MIN LBRACE RBRACE {
+      $$ = create_aggregate_expression("MIN", nullptr, sql_string, &@$);
+    }
+    | AVG LBRACE RBRACE {
+      $$ = create_aggregate_expression("AVG", nullptr, sql_string, &@$);
+    }
+    | COUNT LBRACE RBRACE {
+      $$ = create_aggregate_expression("COUNT", nullptr, sql_string, &@$);
+    }
     | MAX LBRACE expression RBRACE {
       $$ = create_aggregate_expression("MAX", $3, sql_string, &@$);
     }
