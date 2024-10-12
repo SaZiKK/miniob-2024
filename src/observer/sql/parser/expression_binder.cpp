@@ -408,8 +408,13 @@ RC ExpressionBinder::bind_aggregate_expression(
     return RC::SUCCESS;
   }
 
-  auto                unbound_aggregate_expr = static_cast<UnboundAggregateExpr *>(expr.get());
-  const char         *aggregate_name         = unbound_aggregate_expr->aggregate_name();
+  // 拿到聚合表达式 UnboundAggregateExpr
+  auto unbound_aggregate_expr = static_cast<UnboundAggregateExpr *>(expr.get());
+
+  // 拿到聚合表达式中的聚合函数名
+  const char *aggregate_name = unbound_aggregate_expr->aggregate_name();
+
+  // 聚合函数名转换为聚合类型
   AggregateExpr::Type aggregate_type;
   RC                  rc = AggregateExpr::type_from_string(aggregate_name, aggregate_type);
   if (OB_FAIL(rc)) {
@@ -417,37 +422,50 @@ RC ExpressionBinder::bind_aggregate_expression(
     return rc;
   }
 
+  // 拿到聚合表达式中的子表达式
   unique_ptr<Expression>        &child_expr = unbound_aggregate_expr->child();
   vector<unique_ptr<Expression>> child_bound_expressions;
 
+  // 如果子表达式为空指针，返回错误结果
   if (child_expr == nullptr)
     return RC::INVALID_ARGUMENT;
+
+  // 如果子表达式为通配符并且聚合函数为 COUNT
   if (child_expr->type() == ExprType::STAR && aggregate_type == AggregateExpr::Type::COUNT) {
     ValueExpr *value_expr = new ValueExpr(Value(1));
     child_expr.reset(value_expr);
-  } else {
+  }
+  // 其他情况
+  else {
+    // 递归绑定其他子表达式
     rc = bind_expression(child_expr, child_bound_expressions);
     if (OB_FAIL(rc)) {
       return rc;
     }
 
+    // 如果子表达式过多或过少，返回错误信息
     if (child_bound_expressions.size() != 1) {
       LOG_WARN("invalid children number of aggregate expression: %d", child_bound_expressions.size());
       return RC::INVALID_ARGUMENT;
     }
 
+    // 如果子表达式不为原子表达式，重置子表达式并释放原子表达式对应部分
     if (child_bound_expressions[0].get() != child_expr.get()) {
       child_expr.reset(child_bound_expressions[0].release());
     }
   }
 
+  // 创建聚合表达式
   auto aggregate_expr = make_unique<AggregateExpr>(aggregate_type, std::move(child_expr));
   aggregate_expr->set_name(unbound_aggregate_expr->name());
+
+  // 校验聚合表达式
   rc = check_aggregate_expression(*aggregate_expr);
   if (OB_FAIL(rc)) {
     return rc;
   }
 
+  // 将聚合表达式添加到输出参数
   bound_expressions.emplace_back(std::move(aggregate_expr));
   return RC::SUCCESS;
 }

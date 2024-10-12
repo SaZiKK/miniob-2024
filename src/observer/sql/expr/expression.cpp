@@ -158,18 +158,19 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
   return rc;
 }
 
-bool ComparisonExpr::likeMatch(const string &str, const string &pattern) {
+bool ComparisonExpr::likeMatch(const string &str, const string &pattern)
+{
   int s = 0, p = 0;
   int starIdx = -1, sTmpIdx = -1;
-    
-  while (s < str.length()) {
+
+  while (s < (int)str.length()) {
     // 如果字符匹配或者模式是'_'，两个指针都前进
-    if (p < pattern.length() && (pattern[p] == '_' || str[s] == pattern[p])) {
+    if (p < (int)pattern.length() && (pattern[p] == '_' || str[s] == pattern[p])) {
       ++s;
       ++p;
     }
     // 如果模式是'%'，记录'%'的位置和当前字符串的位置
-    else if (p < pattern.length() && pattern[p] == '%') {
+    else if (p < (int)pattern.length() && pattern[p] == '%') {
       starIdx = p;
       sTmpIdx = s;
       ++p;
@@ -184,13 +185,13 @@ bool ComparisonExpr::likeMatch(const string &str, const string &pattern) {
       return false;
     }
   }
-    
+
   // 处理模式串末尾的'%'
-  while (p < pattern.length() && pattern[p] == '%') {
+  while (p < (int)pattern.length() && pattern[p] == '%') {
     ++p;
   }
-  
-  return p == pattern.length();
+
+  return p == (int)pattern.length();
 }
 
 RC ComparisonExpr::try_get_value(Value &cell) const
