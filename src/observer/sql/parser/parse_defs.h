@@ -53,6 +53,7 @@ enum CompOp
   LESS_THAN,    ///< "<"
   GREAT_EQUAL,  ///< ">="
   GREAT_THAN,   ///< ">"
+  LIKE_XXX,         ///< "LIKE"通过正则表达式匹配
   NO_OP
 };
 

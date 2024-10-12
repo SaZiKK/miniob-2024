@@ -143,6 +143,9 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
     case GREAT_THAN: {
       result = (cmp_result > 0);
     } break;
+    case LIKE_XXX: {
+      result = ComparisonExpr::likeMatch(left.get_string(), right.get_string());
+    } break;
     default: {
       LOG_WARN("unsupported comparison. %d", comp_);
       rc = RC::INTERNAL;
@@ -150,6 +153,41 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
   }
 
   return rc;
+}
+
+bool ComparisonExpr::likeMatch(const string &str, const string &pattern) {
+  int s = 0, p = 0;
+  int starIdx = -1, sTmpIdx = -1;
+    
+  while (s < str.length()) {
+    // 如果字符匹配或者模式是'_'，两个指针都前进
+    if (p < pattern.length() && (pattern[p] == '_' || str[s] == pattern[p])) {
+      ++s;
+      ++p;
+    }
+    // 如果模式是'%'，记录'%'的位置和当前字符串的位置
+    else if (p < pattern.length() && pattern[p] == '%') {
+      starIdx = p;
+      sTmpIdx = s;
+      ++p;
+    }
+    // 如果之前遇到过'%'，回溯
+    else if (starIdx != -1) {
+      p = starIdx + 1;
+      s = ++sTmpIdx;
+    }
+    // 不匹配
+    else {
+      return false;
+    }
+  }
+    
+  // 处理模式串末尾的'%'
+  while (p < pattern.length() && pattern[p] == '%') {
+    ++p;
+  }
+  
+  return p == pattern.length();
 }
 
 RC ComparisonExpr::try_get_value(Value &cell) const

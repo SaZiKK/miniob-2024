@@ -111,6 +111,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         AVG
         SUM
         COUNT
+        LIKE
         EQ
         LT
         GT
@@ -224,41 +225,48 @@ command_wrapper:
 
 exit_stmt:      
     EXIT {
+      LOG_DEBUG("parse exit_stmt");
       (void)yynerrs;  // 这么写为了消除yynerrs未使用的告警。如果你有更好的方法欢迎提PR
       $$ = new ParsedSqlNode(SCF_EXIT);
     };
 
 help_stmt:
     HELP {
+      LOG_DEBUG("parse help_stmt");
       $$ = new ParsedSqlNode(SCF_HELP);
     };
 
 sync_stmt:
     SYNC {
+      LOG_DEBUG("parse sync_stmt");
       $$ = new ParsedSqlNode(SCF_SYNC);
     }
     ;
 
 begin_stmt:
     TRX_BEGIN  {
+      LOG_DEBUG("parse begin_stmt");
       $$ = new ParsedSqlNode(SCF_BEGIN);
     }
     ;
 
 commit_stmt:
     TRX_COMMIT {
+      LOG_DEBUG("parse commit_stmt");
       $$ = new ParsedSqlNode(SCF_COMMIT);
     }
     ;
 
 rollback_stmt:
     TRX_ROLLBACK  {
+      LOG_DEBUG("parse rollback_stmt");
       $$ = new ParsedSqlNode(SCF_ROLLBACK);
     }
     ;
 
 drop_table_stmt:    /*drop table 语句的语法解析树*/
     DROP TABLE ID {
+      LOG_DEBUG("parse drop_table_stmt");
       $$ = new ParsedSqlNode(SCF_DROP_TABLE);
       $$->drop_table.relation_name = $3;
       free($3);
@@ -266,12 +274,14 @@ drop_table_stmt:    /*drop table 语句的语法解析树*/
 
 show_tables_stmt:
     SHOW TABLES {
+      LOG_DEBUG("parse show_tables_stmt");
       $$ = new ParsedSqlNode(SCF_SHOW_TABLES);
     }
     ;
 
 desc_table_stmt:
     DESC ID  {
+      LOG_DEBUG("parse desc_table_stmt");
       $$ = new ParsedSqlNode(SCF_DESC_TABLE);
       $$->desc_table.relation_name = $2;
       free($2);
@@ -281,6 +291,7 @@ desc_table_stmt:
 create_index_stmt:    /*create index 语句的语法解析树*/
     CREATE INDEX ID ON ID LBRACE ID RBRACE
     {
+      LOG_DEBUG("parse create_index_stmt");
       $$ = new ParsedSqlNode(SCF_CREATE_INDEX);
       CreateIndexSqlNode &create_index = $$->create_index;
       create_index.index_name = $3;
@@ -295,6 +306,7 @@ create_index_stmt:    /*create index 语句的语法解析树*/
 drop_index_stmt:      /*drop index 语句的语法解析树*/
     DROP INDEX ID ON ID
     {
+      LOG_DEBUG("parse drop_index_stmt");
       $$ = new ParsedSqlNode(SCF_DROP_INDEX);
       $$->drop_index.index_name = $3;
       $$->drop_index.relation_name = $5;
@@ -305,6 +317,7 @@ drop_index_stmt:      /*drop index 语句的语法解析树*/
 create_table_stmt:    /*create table 语句的语法解析树*/
     CREATE TABLE ID LBRACE attr_def attr_def_list RBRACE storage_format
     {
+      LOG_DEBUG("parse create_table_stmt");
       $$ = new ParsedSqlNode(SCF_CREATE_TABLE);
       CreateTableSqlNode &create_table = $$->create_table;
       create_table.relation_name = $3;
@@ -328,10 +341,12 @@ create_table_stmt:    /*create table 语句的语法解析树*/
 attr_def_list:
     /* empty */
     {
+      LOG_DEBUG("parse attr_def_list");
       $$ = nullptr;
     }
     | COMMA attr_def attr_def_list
     {
+      LOG_DEBUG("parse attr_def_list");
       if ($3 != nullptr) {
         $$ = $3;
       } else {
@@ -345,6 +360,7 @@ attr_def_list:
 attr_def:
     ID type LBRACE number RBRACE 
     {
+      LOG_DEBUG("parse attr_def");
       $$ = new AttrInfoSqlNode;
       $$->type = (AttrType)$2;
       $$->name = $1;
@@ -353,6 +369,7 @@ attr_def:
     }
     | ID type
     {
+      LOG_DEBUG("parse attr_def");
       $$ = new AttrInfoSqlNode;
       $$->type = (AttrType)$2;
       $$->name = $1;
@@ -372,6 +389,7 @@ type:
 insert_stmt:        /*insert   语句的语法解析树*/
     INSERT INTO ID VALUES LBRACE value value_list RBRACE 
     {
+      LOG_DEBUG("parse insert_stmt");
       $$ = new ParsedSqlNode(SCF_INSERT);
       $$->insertion.relation_name = $3;
       if ($7 != nullptr) {
@@ -388,9 +406,11 @@ insert_stmt:        /*insert   语句的语法解析树*/
 value_list:
     /* empty */
     {
+      LOG_DEBUG("parse value_list");
       $$ = nullptr;
     }
     | COMMA value value_list  { 
+      LOG_DEBUG("parse value_list");
       if ($3 != nullptr) {
         $$ = $3;
       } else {
@@ -402,14 +422,17 @@ value_list:
     ;
 value:
     NUMBER {
+      LOG_DEBUG("parse NUMBER: %d", $1);
       $$ = new Value((int)$1);
       @$ = @1;
     }
     |FLOAT {
+      LOG_DEBUG("parse FLOAT: %f", $1);
       $$ = new Value((float)$1);
       @$ = @1;
     }
     |DATE_STR {
+      LOG_DEBUG("parse DATE_STR: %s", $1);
       char *tmp = common::substr($1, 1, strlen($1)-2);  // 去掉首尾的引号
       int year, month, day;
       sscanf(tmp, "%d-%d-%d", &year, &month, &day);    //sscanf会自动转换字符串中的数字，不用显式stoi
@@ -419,8 +442,9 @@ value:
       free($1);
     }
     |SSS {
+      LOG_DEBUG("parse SSS: %s", $1);
       char *tmp = common::substr($1,1,strlen($1)-2);
-      $$ = new Value(tmp);
+      $$ = new Value(tmp, strlen(tmp));  
       free(tmp);
       free($1);
     }
@@ -439,6 +463,7 @@ storage_format:
 delete_stmt:    /*  delete 语句的语法解析树*/
     DELETE FROM ID where 
     {
+      LOG_DEBUG("parse delete_stmt");
       $$ = new ParsedSqlNode(SCF_DELETE);
       $$->deletion.relation_name = $3;
       if ($4 != nullptr) {
@@ -451,6 +476,7 @@ delete_stmt:    /*  delete 语句的语法解析树*/
 update_stmt:      /*  update 语句的语法解析树*/
     UPDATE ID SET ID EQ value where 
     {
+      LOG_DEBUG("parse update_stmt");
       $$ = new ParsedSqlNode(SCF_UPDATE);
       $$->update.relation_name = $2;
       $$->update.attribute_name = $4;
@@ -466,6 +492,7 @@ update_stmt:      /*  update 语句的语法解析树*/
 select_stmt:        /*  select 语句的语法解析树*/
     SELECT expression_list FROM rel_list where group_by
     {
+      LOG_DEBUG("parse select_stmt");
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
         $$->selection.expressions.swap(*$2);
@@ -491,6 +518,7 @@ select_stmt:        /*  select 语句的语法解析树*/
 calc_stmt:
     CALC expression_list
     {
+      LOG_DEBUG("parse calc_stmt");
       $$ = new ParsedSqlNode(SCF_CALC);
       $$->calc.expressions.swap(*$2);
       delete $2;
@@ -715,6 +743,7 @@ comp_op:
     | LE { $$ = LESS_EQUAL; }
     | GE { $$ = GREAT_EQUAL; }
     | NE { $$ = NOT_EQUAL; }
+    | LIKE { $$ = LIKE_XXX; }
     ;
 
 // your code here
@@ -727,6 +756,7 @@ group_by:
 load_data_stmt:
     LOAD DATA INFILE SSS INTO TABLE ID 
     {
+      LOG_DEBUG("parse load_data_stmt");
       char *tmp_file_name = common::substr($4, 1, strlen($4) - 2);
       
       $$ = new ParsedSqlNode(SCF_LOAD_DATA);
@@ -740,6 +770,7 @@ load_data_stmt:
 explain_stmt:
     EXPLAIN command_wrapper
     {
+      LOG_DEBUG("parse explain_stmt");
       $$ = new ParsedSqlNode(SCF_EXPLAIN);
       $$->explain.sql_node = std::unique_ptr<ParsedSqlNode>($2);
     }
@@ -748,6 +779,7 @@ explain_stmt:
 set_variable_stmt:
     SET ID EQ value
     {
+      LOG_DEBUG("parse set_variable_stmt");
       $$ = new ParsedSqlNode(SCF_SET_VARIABLE);
       $$->set_variable.name  = $2;
       $$->set_variable.value = *$4;

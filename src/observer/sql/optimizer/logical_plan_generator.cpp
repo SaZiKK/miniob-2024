@@ -217,12 +217,34 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
           right = std::move(cast_expr);
         }
 
+      } else if (filter_unit->comp() == CompOp::LIKE_XXX){
+        ExprType right_type = right->type();
+
+    // 如果执行LIKE运算符，把右边转化成CHARS类型
+      unique_ptr<CastExpr> cast_expr;
+      cast_expr = make_unique<CastExpr>(std::move(right), AttrType::CHARS);
+
+      if (right_type == ExprType::VALUE) {
+        Value right_val;
+        if (OB_FAIL(rc = cast_expr->try_get_value(right_val))) {
+          LOG_WARN("failed to get value from right child", strrc(rc));
+          return rc;
+        }
+        right = make_unique<ValueExpr>(right_val);
+      } else {
+        right = std::move(cast_expr);
+      }
+      
       } else {
         rc = RC::UNSUPPORTED;
         LOG_WARN("unsupported cast from %s to %s", attr_type_to_string(left->value_type()), attr_type_to_string(right->value_type()));
         return rc;
       }
+      
     }
+
+    
+
 
     ComparisonExpr *cmp_expr = new ComparisonExpr(filter_unit->comp(), std::move(left), std::move(right));
     cmp_exprs.emplace_back(cmp_expr);

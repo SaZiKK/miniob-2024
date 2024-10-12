@@ -306,6 +306,9 @@ public:
    */
   RC compare_value(const Value &left, const Value &right, bool &value) const;
 
+  /// compare two string with pattern
+  static bool likeMatch(const std::string& str, const std::string& pattern);
+
   template <typename T>
   RC compare_column(const Column &left, const Column &right, std::vector<uint8_t> &result) const;
 

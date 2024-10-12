@@ -11,19 +11,23 @@ static int mon[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 int DateType::compare(const Value &left, const Value &right) const
 {
-  ASSERT(left.attr_type() == AttrType::DATE && right.attr_type() == AttrType::DATE, "not type DATE");
   int left_val  = left.get_date();
   int right_val = right.get_date();
   return common::compare_int((void *)&left_val, (void *)&right_val);
 }
 
-RC DateType::cast_to(const Value &val, AttrType type, Value &result) const
-{
-  if (type == AttrType::DATE) {
-    result = val;
-    return RC::SUCCESS;
+RC DateType::cast_to(const Value &val, AttrType type, Value &result) const { 
+  switch (type) {
+    case AttrType::DATE:
+      result = val;
+      break;
+    case AttrType::CHARS:
+      result.set_string(val.to_string().c_str());
+      break;
+    default:
+      return RC::UNSUPPORTED;
   }
-  return RC::INVALID_ARGUMENT;
+  return RC::SUCCESS; 
 }
 
 RC DateType::set_value_from_str(Value &val, const string &data) const
