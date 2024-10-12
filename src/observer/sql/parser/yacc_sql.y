@@ -69,6 +69,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         CREATE
         DROP
         GROUP
+        INNER_JOIN
         TABLE
         TABLES
         INDEX
@@ -133,6 +134,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   std::vector<std::unique_ptr<Expression>> * expression_list;
   std::vector<Value> *                       value_list;
   std::vector<ConditionSqlNode> *            condition_list;
+  std::vector<JoinSqlNode> *                 join_list;
   std::vector<RelAttrSqlNode> *              rel_attr_list;
   std::vector<std::string> *                 relation_list;
   char *                                     string;
@@ -162,6 +164,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <condition_list>      condition_list
 %type <string>              storage_format
 %type <relation_list>       rel_list
+%type <join_list>           join_list
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <expression_list>     group_by
@@ -491,9 +494,8 @@ update_stmt:      /*  update 语句的语法解析树*/
     }
     ;
 select_stmt:        /*  select 语句的语法解析树*/
-    SELECT expression_list FROM rel_list where group_by
+    SELECT expression_list FROM rel_list join_list where group_by
     {
-      LOG_DEBUG("parse select_stmt");
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
         $$->selection.expressions.swap(*$2);
@@ -506,20 +508,27 @@ select_stmt:        /*  select 语句的语法解析树*/
       }
 
       if ($5 != nullptr) {
-        $$->selection.conditions.swap(*$5);
+        for(auto it = $5->begin(); it != $5->end(); ++it) {
+          $$->selection.conditions.insert($$->selection.conditions.end(), it->conditions.begin(), it->conditions.end());
+          $$->selection.relations.emplace_back(it->relation);
+        }
         delete $5;
       }
 
       if ($6 != nullptr) {
-        $$->selection.group_by.swap(*$6);
+        $$->selection.conditions.swap(*$6);
         delete $6;
+      }
+
+      if ($7 != nullptr) {
+        $$->selection.group_by.swap(*$7);
+        delete $7;
       }
     }
     ;
 calc_stmt:
     CALC expression_list
     {
-      LOG_DEBUG("parse calc_stmt");
       $$ = new ParsedSqlNode(SCF_CALC);
       $$->calc.expressions.swap(*$2);
       delete $2;
@@ -670,6 +679,29 @@ where:
       $$ = $2;  
     }
     ;
+join_list:
+    /* empty */
+    {
+      $$ = nullptr;
+    }
+    | INNER_JOIN ID ON condition_list join_list {
+      if ($5 != nullptr) {
+        $$ = $5;
+      } else {
+        $$ = new std::vector<JoinSqlNode>;
+      }
+
+      JoinSqlNode join;
+      join.relation = $2;
+      // std::reverse($4->begin(), $4->end());
+      if($4 != nullptr) {
+        join.conditions.insert(join.conditions.end(), $4->begin(), $4->end());
+        delete $4;
+      }
+      $$->emplace_back(join);
+    }
+    ;
+
 condition_list:
     /* empty */
     {

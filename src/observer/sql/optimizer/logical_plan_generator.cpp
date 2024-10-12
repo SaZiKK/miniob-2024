@@ -102,13 +102,17 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   unique_ptr<LogicalOperator> table_oper(nullptr);
   last_oper = &table_oper;
 
+  // 获取涉及表格并遍历
   const std::vector<Table *> &tables = select_stmt->tables();
   for (Table *table : tables) {
-
+    // 创建 TableGet 逻辑算子
     unique_ptr<LogicalOperator> table_get_oper(new TableGetLogicalOperator(table, ReadWriteMode::READ_ONLY));
+    // 第一张表格
     if (table_oper == nullptr) {
       table_oper = std::move(table_get_oper);
-    } else {
+    }
+    // 之后的表格，创建 Join 算子
+    else {
       JoinLogicalOperator *join_oper = new JoinLogicalOperator;
       join_oper->add_child(std::move(table_oper));
       join_oper->add_child(std::move(table_get_oper));
@@ -116,6 +120,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
     }
   }
 
+  // 创建 Predicate 逻辑算子
   unique_ptr<LogicalOperator> predicate_oper;
 
   RC rc = create_plan(select_stmt->filter_stmt(), predicate_oper);
@@ -132,6 +137,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
     last_oper = &predicate_oper;
   }
 
+  // 创建 GroupBy 逻辑算子
   unique_ptr<LogicalOperator> group_by_oper;
   rc = create_group_by_plan(select_stmt, group_by_oper);
   if (OB_FAIL(rc)) {
@@ -147,6 +153,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
     last_oper = &group_by_oper;
   }
 
+  // 创建 Projection 逻辑算子
   auto project_oper = make_unique<ProjectLogicalOperator>(std::move(select_stmt->query_expressions()));
   if (*last_oper) {
     project_oper->add_child(std::move(*last_oper));
@@ -220,31 +227,27 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
       } else if (filter_unit->comp() == CompOp::LIKE_XXX || filter_unit->comp() == CompOp::NOT_LIKE_XXX) {
         ExprType right_type = right->type();
 
-    // 如果执行LIKE运算符，把右边转化成CHARS类型
-      unique_ptr<CastExpr> cast_expr;
-      cast_expr = make_unique<CastExpr>(std::move(right), AttrType::CHARS);
+        // 如果执行LIKE运算符，把右边转化成CHARS类型
+        unique_ptr<CastExpr> cast_expr;
+        cast_expr = make_unique<CastExpr>(std::move(right), AttrType::CHARS);
 
-      if (right_type == ExprType::VALUE) {
-        Value right_val;
-        if (OB_FAIL(rc = cast_expr->try_get_value(right_val))) {
-          LOG_WARN("failed to get value from right child", strrc(rc));
-          return rc;
+        if (right_type == ExprType::VALUE) {
+          Value right_val;
+          if (OB_FAIL(rc = cast_expr->try_get_value(right_val))) {
+            LOG_WARN("failed to get value from right child", strrc(rc));
+            return rc;
+          }
+          right = make_unique<ValueExpr>(right_val);
+        } else {
+          right = std::move(cast_expr);
         }
-        right = make_unique<ValueExpr>(right_val);
-      } else {
-        right = std::move(cast_expr);
-      }
-      
+
       } else {
         rc = RC::UNSUPPORTED;
         LOG_WARN("unsupported cast from %s to %s", attr_type_to_string(left->value_type()), attr_type_to_string(right->value_type()));
         return rc;
       }
-      
     }
-
-    
-
 
     ComparisonExpr *cmp_expr = new ComparisonExpr(filter_unit->comp(), std::move(left), std::move(right));
     cmp_exprs.emplace_back(cmp_expr);

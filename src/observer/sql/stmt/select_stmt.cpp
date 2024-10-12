@@ -40,7 +40,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
 
   BinderContext binder_context;
 
-  // collect tables in `from` statement
+  // 找到全部目标表格
   vector<Table *>                tables;
   unordered_map<string, Table *> table_map;
   for (size_t i = 0; i < select_sql.relations.size(); i++) {
@@ -50,6 +50,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
       return RC::INVALID_ARGUMENT;
     }
 
+    // 根据表格名称找到表格，并且完成插入
     Table *table = db->find_table(table_name);
     if (nullptr == table) {
       LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
@@ -61,10 +62,10 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     table_map.insert({table_name, table});
   }
 
-  // collect query fields in `select` statement
+  // 解析查询表达式，将其以及其子表达式统一加入 bound_expressions 中
   vector<unique_ptr<Expression>> bound_expressions;
-  ExpressionBinder expression_binder(binder_context);
-  
+  ExpressionBinder               expression_binder(binder_context);
+
   for (unique_ptr<Expression> &expression : select_sql.expressions) {
     RC rc = expression_binder.bind_expression(expression, bound_expressions);
     if (OB_FAIL(rc)) {
@@ -73,6 +74,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     }
   }
 
+  // 解析 GROUP BY 表达式，将其以及其子表达式统一加入 group_by_expressions 中
   vector<unique_ptr<Expression>> group_by_expressions;
   for (unique_ptr<Expression> &expression : select_sql.group_by) {
     RC rc = expression_binder.bind_expression(expression, group_by_expressions);
@@ -82,12 +84,13 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     }
   }
 
+  // 设置主表格？
   Table *default_table = nullptr;
   if (tables.size() == 1) {
     default_table = tables[0];
   }
 
-  // create filter statement in `where` statement
+  // 创建筛选对应的 STMT 对象
   FilterStmt *filter_stmt = nullptr;
   RC          rc          = FilterStmt::create(db,
       default_table,
@@ -100,13 +103,13 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     return rc;
   }
 
-  // everything alright
+  // 创建 SELECT 对应的 STMT 对象
   SelectStmt *select_stmt = new SelectStmt();
 
   select_stmt->tables_.swap(tables);
   select_stmt->query_expressions_.swap(bound_expressions);
   select_stmt->filter_stmt_ = filter_stmt;
   select_stmt->group_by_.swap(group_by_expressions);
-  stmt                      = select_stmt;
+  stmt = select_stmt;
   return RC::SUCCESS;
 }

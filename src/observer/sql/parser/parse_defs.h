@@ -47,14 +47,14 @@ struct RelAttrSqlNode
  */
 enum CompOp
 {
-  EQUAL_TO,     ///< "="
-  LESS_EQUAL,   ///< "<="
-  NOT_EQUAL,    ///< "<>"
-  LESS_THAN,    ///< "<"
-  GREAT_EQUAL,  ///< ">="
-  GREAT_THAN,   ///< ">"
-  LIKE_XXX,         ///< "LIKE"通过正则表达式匹配
-  NOT_LIKE_XXX,     ///< "NOT LIKE"通过正则表达式匹配
+  EQUAL_TO,      ///< "="
+  LESS_EQUAL,    ///< "<="
+  NOT_EQUAL,     ///< "<>"
+  LESS_THAN,     ///< "<"
+  GREAT_EQUAL,   ///< ">="
+  GREAT_THAN,    ///< ">"
+  LIKE_XXX,      ///< "LIKE"通过正则表达式匹配
+  NOT_LIKE_XXX,  ///< "NOT LIKE"通过正则表达式匹配
   NO_OP
 };
 
@@ -79,6 +79,12 @@ struct ConditionSqlNode
   Value          right_value;    ///< right-hand side value if right_is_attr = FALSE
 };
 
+struct JoinSqlNode
+{
+  std::string                   relation;    ///< 查询的表
+  std::vector<ConditionSqlNode> conditions;  ///< 查询条件，使用AND串联起来多个条件
+};
+
 /**
  * @brief 描述一个select语句
  * @ingroup SQLParser
@@ -92,10 +98,11 @@ struct ConditionSqlNode
 
 struct SelectSqlNode
 {
-  std::vector<std::unique_ptr<Expression>> expressions;  ///< 查询的表达式
-  std::vector<std::string>                 relations;    ///< 查询的表
-  std::vector<ConditionSqlNode>            conditions;   ///< 查询条件，使用AND串联起来多个条件
-  std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
+  std::vector<std::unique_ptr<Expression>> expressions;      ///< 查询的表达式
+  std::vector<std::string>                 relations;        ///< 查询的表
+  std::vector<ConditionSqlNode>            conditions;       ///< 查询条件，使用AND串联起来多个条件
+  std::vector<JoinSqlNode>                 join_conditions;  ///< join clause
+  std::vector<std::unique_ptr<Expression>> group_by;         ///< group by clause
 };
 
 /**

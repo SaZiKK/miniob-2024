@@ -125,6 +125,7 @@ INFILE                                  RETURN_TOKEN(INFILE);
 EXPLAIN                                 RETURN_TOKEN(EXPLAIN);
 GROUP                                   RETURN_TOKEN(GROUP);
 BY                                      RETURN_TOKEN(BY);
+JOIN|INNER[ \t]+JOIN                    RETURN_TOKEN(INNER_JOIN);
 STORAGE                                 RETURN_TOKEN(STORAGE);
 FORMAT                                  RETURN_TOKEN(FORMAT);
 NOT[ \t]+LIKE                           RETURN_TOKEN(NOT_LIKE);
