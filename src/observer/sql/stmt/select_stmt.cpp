@@ -40,6 +40,14 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
 
   BinderContext binder_context;
 
+  // 将节点中的 join 添加到 conditions 以及 relations 当中
+  vector<JoinSqlNode> join = select_sql.join;
+  for (auto it : join) {
+    select_sql.relations.emplace_back(it.relation);
+    for (auto condition : it.conditions)
+      select_sql.conditions.emplace_back(condition);
+  }
+
   // 找到全部目标表格
   vector<Table *>                tables;
   unordered_map<string, Table *> table_map;

@@ -507,17 +507,15 @@ select_stmt:        /*  select 语句的语法解析树*/
         delete $4;
       }
 
-      if ($5 != nullptr) {
-        for(auto it = $5->begin(); it != $5->end(); ++it) {
-          $$->selection.conditions.insert($$->selection.conditions.end(), it->conditions.begin(), it->conditions.end());
-          $$->selection.relations.emplace_back(it->relation);
-        }
-        delete $5;
-      }
-
       if ($6 != nullptr) {
         $$->selection.conditions.swap(*$6);
         delete $6;
+      }
+
+      if ($5 != nullptr) {
+
+        $$->selection.join.swap(*$5);
+        delete $5;
       }
 
       if ($7 != nullptr) {
