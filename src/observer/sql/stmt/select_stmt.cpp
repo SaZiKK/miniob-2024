@@ -47,6 +47,51 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
       select_sql.conditions.emplace_back(condition);
   }
 
+  // 检测并递归生成右子查询stmt  //
+  // todo：支持左子查询以及除了select之外的其他查询
+  for (size_t i = 0; i < select_sql.conditions.size(); ++i) {
+    if (select_sql.conditions[i].right_is_sub_query) {
+      auto right_sub_query = select_sql.conditions[i].right_sub_query;
+      // 右子查询目前必须是select
+      if (right_sub_query->flag != SCF_SELECT) {
+        LOG_WARN("invalid argument. sub query is not select. index=%d", i);
+        return RC::INVALID_ARGUMENT;
+      }
+
+      Stmt *right_sub_query_stmt = nullptr;
+      RC rc = SelectStmt::create(db, right_sub_query->selection,
+                                 right_sub_query_stmt);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to create right sub query stmt. index=%d", i);
+        return rc;
+      }
+
+      // 把生成的stmt回传给上一级ConditonSqlNode
+      auto *sub_select_stmt = dynamic_cast<SelectStmt *>(right_sub_query_stmt);
+      select_sql.conditions[i].right_sub_query_stmt = sub_select_stmt;
+    }
+    if (select_sql.conditions[i].left_is_sub_query) {
+      auto left_sub_query = select_sql.conditions[i].right_sub_query;
+      // 左子查询目前必须是select
+      if (left_sub_query->flag != SCF_SELECT) {
+        LOG_WARN("invalid argument. sub query is not select. index=%d", i);
+        return RC::INVALID_ARGUMENT;
+      }
+
+      Stmt *left_sub_query_stmt = nullptr;
+      RC rc = SelectStmt::create(db, left_sub_query->selection,
+                                 left_sub_query_stmt);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to create right sub query stmt. index=%d", i);
+        return rc;
+      }
+
+      // 把生成的stmt回传给上一级ConditonSqlNode
+      auto *sub_select_stmt = dynamic_cast<SelectStmt *>(left_sub_query_stmt);
+      select_sql.conditions[i].left_sub_query_stmt = sub_select_stmt;
+    }
+  }
+
   // 找到全部目标表格
   vector<Table *> tables;
   unordered_map<string, Table *> table_map;

@@ -23,6 +23,7 @@ See the Mulan PSL v2 for more details. */
 #include <cctype>     // std::toupper
 
 class Expression;
+class SelectStmt;
 
 /**
  * @defgroup SQLParser SQL Parser
@@ -45,16 +46,22 @@ struct RelAttrSqlNode {
  * @ingroup SQLParser
  */
 enum CompOp {
-  EQUAL_TO,      ///< "="
-  LESS_EQUAL,    ///< "<="
-  NOT_EQUAL,     ///< "<>"
-  LESS_THAN,     ///< "<"
-  GREAT_EQUAL,   ///< ">="
-  GREAT_THAN,    ///< ">"
-  LIKE_XXX,      ///< "LIKE"通过正则表达式匹配
-  NOT_LIKE_XXX,  ///< "NOT LIKE"通过正则表达式匹配
+  EQUAL_TO,        ///< "="
+  LESS_EQUAL,      ///< "<="
+  NOT_EQUAL,       ///< "<>"
+  LESS_THAN,       ///< "<"
+  GREAT_EQUAL,     ///< ">="
+  GREAT_THAN,      ///< ">"
+  LIKE_XXX,        ///< "LIKE"通过正则表达式匹配
+  NOT_LIKE_XXX,    ///< "NOT LIKE"通过正则表达式匹配
+  IN_XXX,          ///< "IN"是否在某个集合中
+  NOT_IN_XXX,      ///< "NOT IN"是否不在某个集合中
+  XXX_NOT_EXISTS,  ///< "NOT EXISTS"是否不存在
+  XXX_EXISTS,      ///< "EXISTS"是否存在
   NO_OP
 };
+
+typedef class ParsedSqlNode SubSelectSqlNode;
 
 /**
  * @brief 表示一个条件比较
@@ -64,17 +71,23 @@ enum CompOp {
  * 左边和右边理论上都可以是任意的数据，比如是字段（属性，列），也可以是数值常量。
  * 这个结构中记录的仅仅支持字段和值。
  */
-struct ConditionSqlNode {
+struct ConditionSqlNode {  // todo：支持左子查询以及除了select之外的其他查询
   int left_is_attr;  ///< TRUE if left-hand side is an attribute
                      ///< 1时，操作符左边是属性名，0时，是属性值
   Value left_value;          ///< left-hand side value if left_is_attr = FALSE
   RelAttrSqlNode left_attr;  ///< left-hand side attribute
   CompOp comp;               ///< comparison operator
   int right_is_attr;         ///< TRUE if right-hand side is an attribute
-                      ///< 1时，操作符右边是属性名，0时，是属性值
-  RelAttrSqlNode right_attr;  ///< right-hand side attribute if right_is_attr =
-                              ///< TRUE 右边的属性
+  bool left_is_sub_query;  ///< 1时，操作符左边是属性名，0时，是属性值  // todo:
+                           ///< not support in yaccccccc yet
+  bool right_is_sub_query;  ///< 1时，操作符右边是属性名，0时，是属性值
+  RelAttrSqlNode right_attr;  ///< 右边的属性
   Value right_value;  ///< right-hand side value if right_is_attr = FALSE
+  SubSelectSqlNode* left_sub_query;  ///< sub-query if left_is_sub_query = TRUE
+  SubSelectSqlNode*
+      right_sub_query;               ///< sub-query if right_is_sub_query = TRUE
+  SelectStmt* left_sub_query_stmt;   ///< sub-query stmt
+  SelectStmt* right_sub_query_stmt;  ///< sub-query stmt
 };
 
 struct JoinSqlNode {
@@ -311,7 +324,7 @@ class ParsedSqlResult {
  public:
   void add_sql_node(std::unique_ptr<ParsedSqlNode> sql_node);
 
-  std::vector<std::unique_ptr<ParsedSqlNode>> &sql_nodes() {
+  std::vector<std::unique_ptr<ParsedSqlNode>>& sql_nodes() {
     return sql_nodes_;
   }
 
