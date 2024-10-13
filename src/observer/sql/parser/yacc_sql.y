@@ -114,6 +114,10 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         COUNT
         NOT_LIKE
         LIKE
+        NOT_IN
+        IN
+        NOT_EXISTS
+        EXISTS
         EQ
         LT
         GT
@@ -170,6 +174,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <expression_list>     group_by
 %type <sql_node>            calc_stmt
 %type <sql_node>            select_stmt
+%type <sql_node>            sub_select_stmt
 %type <sql_node>            insert_stmt
 %type <sql_node>            update_stmt
 %type <sql_node>            delete_stmt
@@ -524,6 +529,13 @@ select_stmt:        /*  select 语句的语法解析树*/
       }
     }
     ;
+sub_select_stmt:
+    LBRACE select_stmt RBRACE
+    {
+      LOG_DEBUG("parse sub_select_stmt");
+      $$ = $2;
+    }
+    ;
 calc_stmt:
     CALC expression_list
     {
@@ -723,6 +735,7 @@ condition:
       $$->left_is_attr = 1;
       $$->left_attr = *$1;
       $$->right_is_attr = 0;
+      $$->right_is_sub_query = false;
       $$->right_value = *$3;
       $$->comp = $2;
 
@@ -735,6 +748,7 @@ condition:
       $$->left_is_attr = 0;
       $$->left_value = *$1;
       $$->right_is_attr = 0;
+      $$->right_is_sub_query = false;
       $$->right_value = *$3;
       $$->comp = $2;
 
@@ -747,6 +761,7 @@ condition:
       $$->left_is_attr = 1;
       $$->left_attr = *$1;
       $$->right_is_attr = 1;
+      $$->right_is_sub_query = false;
       $$->right_attr = *$3;
       $$->comp = $2;
 
@@ -759,11 +774,24 @@ condition:
       $$->left_is_attr = 0;
       $$->left_value = *$1;
       $$->right_is_attr = 1;
+      $$->right_is_sub_query = false;
       $$->right_attr = *$3;
       $$->comp = $2;
 
       delete $1;
       delete $3;
+    }
+    | rel_attr comp_op sub_select_stmt
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 1;
+      $$->left_attr = *$1;
+      $$->right_is_attr = 0;
+      $$->right_is_sub_query = true;
+      $$->right_sub_query = $3;
+      $$->comp = $2;
+
+      delete $1;
     }
     ;
 
@@ -776,6 +804,10 @@ comp_op:
     | NE { $$ = NOT_EQUAL; }
     | NOT_LIKE { $$ = NOT_LIKE_XXX; }
     | LIKE { $$ = LIKE_XXX; }
+    | NOT_IN { $$ = NOT_IN_XXX; }
+    | IN { $$ = IN_XXX; }
+    | NOT_EXISTS { $$ = XXX_NOT_EXISTS; }
+    | EXISTS { $$ = XXX_EXISTS; }
     ;
 
 // your code here
