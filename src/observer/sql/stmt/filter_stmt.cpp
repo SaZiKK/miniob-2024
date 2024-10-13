@@ -122,9 +122,11 @@ RC FilterStmt::create_filter_unit(
 
   filter_unit = new FilterUnit;
 
+  // 如果左/右边是属性，那么获取属性的信息，写入到 filter_unit 中
   if (condition.left_is_attr) {
     Table *table = nullptr;
     const FieldMeta *field = nullptr;
+    // 获取表格和字段
     rc = get_table_and_field(db, default_table, tables, condition.left_attr,
                              table, field);
     if (rc != RC::SUCCESS) {
@@ -133,6 +135,11 @@ RC FilterStmt::create_filter_unit(
     }
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
+    filter_unit->set_left(filter_obj);
+  } else if (condition.left_is_sub_query) {
+    // 如果左边是子查询，那么初始化filterObj左边为子查询
+    FilterObj filter_obj;
+    filter_obj.init_sub_query(condition.left_sub_query_stmt);
     filter_unit->set_left(filter_obj);
   } else {
     FilterObj filter_obj;
@@ -143,6 +150,7 @@ RC FilterStmt::create_filter_unit(
   if (condition.right_is_attr) {
     Table *table = nullptr;
     const FieldMeta *field = nullptr;
+    // 获取表格和字段
     rc = get_table_and_field(db, default_table, tables, condition.right_attr,
                              table, field);
     if (rc != RC::SUCCESS) {
@@ -151,6 +159,11 @@ RC FilterStmt::create_filter_unit(
     }
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
+    filter_unit->set_right(filter_obj);
+  } else if (condition.right_is_sub_query) {
+    // 如果右边是子查询，那么初始化filterObj右边为子查询
+    FilterObj filter_obj;
+    filter_obj.init_sub_query(condition.right_sub_query_stmt);
     filter_unit->set_right(filter_obj);
   } else {
     FilterObj filter_obj;

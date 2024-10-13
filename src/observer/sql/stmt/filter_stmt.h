@@ -16,6 +16,7 @@ See the Mulan PSL v2 for more details. */
 
 #include "sql/expr/expression.h"
 #include "sql/parser/parse_defs.h"
+#include "sql/stmt/select_stmt.h"
 #include "sql/stmt/stmt.h"
 #include <unordered_map>
 #include <vector>
@@ -26,17 +27,31 @@ class FieldMeta;
 
 struct FilterObj {
   bool is_attr;
+  bool is_value;
+  bool is_sub_query;
   Field field;
   Value value;
+  SelectStmt *sub_query = nullptr;
 
   void init_attr(const Field &field) {
     is_attr = true;
+    is_value = false;
+    is_sub_query = false;
     this->field = field;
   }
 
   void init_value(const Value &value) {
     is_attr = false;
+    is_value = true;
+    is_sub_query = false;
     this->value = value;
+  }
+
+  void init_sub_query(SelectStmt *sub_query) {
+    is_attr = false;
+    is_value = false;
+    is_sub_query = true;
+    this->sub_query = sub_query;
   }
 };
 
