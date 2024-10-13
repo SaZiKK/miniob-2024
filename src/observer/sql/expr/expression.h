@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include <memory>
 #include <string>
 
+#include "common/log/log.h"
 #include "common/value.h"
 #include "storage/field/field.h"
 #include "sql/expr/aggregator.h"
@@ -46,6 +47,7 @@ enum class ExprType {
   CONJUNCTION,  ///< 多个表达式使用同一种关系(AND或OR)来联结
   ARITHMETIC,   ///< 算术运算
   AGGREGATION,  ///< 聚合运算
+  SUBQUERY      ///< 子查询
 };
 
 /**
@@ -244,6 +246,31 @@ class ValueExpr : public Expression {
 
  private:
   Value value_;
+};
+
+/**
+ * @brief 子查询表达式
+ * @ingroup Expression
+ */
+class SubQueryExpr : public Expression {
+ public:
+  SubQueryExpr() = default;
+  explicit SubQueryExpr(SelectStmt *sub_query) : sub_query_(sub_query) {}
+
+  virtual ~SubQueryExpr() = default;
+
+  ExprType type() const override { return ExprType::SUBQUERY; }
+  AttrType value_type() const override { return AttrType::SUB_QUERY; }
+
+  RC get_value(const Tuple &tuple, Value &value) const override {
+    LOG_WARN("SubQueryExpr::get_value not implemented");
+    return RC::UNIMPLEMENTED;
+  }
+
+  SelectStmt *sub_query() { return sub_query_; }
+
+ private:
+  SelectStmt *sub_query_;
 };
 
 /**
