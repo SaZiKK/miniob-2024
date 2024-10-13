@@ -1,6 +1,8 @@
 BUILD_DIR:= build_debug
+SRC_DIR := src
 
-all: 
+
+all: fmt
 	@echo "Building..."
 	@bash build.sh --make -j20
 
@@ -12,4 +14,11 @@ clean:
 	@echo "Cleaning..."
 	@rm -rf $(BUILD_DIR)
 
-.PHONY: all run clean
+fmt:
+	@echo "Formatting source files..."
+	@find $(SRC_DIR) \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) \
+		-not \( -name 'lex_sql*' -o -name 'yacc_sql*' \) \
+		-print0 | xargs -0 clang-format -i
+	@echo "Formatting complete."
+
+.PHONY: all run clean fmt
