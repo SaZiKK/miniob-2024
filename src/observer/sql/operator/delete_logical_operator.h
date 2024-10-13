@@ -1,7 +1,7 @@
 /* Copyright (c) OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -20,15 +20,16 @@ See the Mulan PSL v2 for more details. */
  * @brief 逻辑算子，用于执行delete语句
  * @ingroup LogicalOperator
  */
-class DeleteLogicalOperator : public LogicalOperator
-{
-public:
+class DeleteLogicalOperator : public LogicalOperator {
+ public:
   DeleteLogicalOperator(Table *table);
   virtual ~DeleteLogicalOperator() = default;
 
-  LogicalOperatorType type() const override { return LogicalOperatorType::DELETE; }
-  Table              *table() const { return table_; }
+  LogicalOperatorType type() const override {
+    return LogicalOperatorType::DELETE;
+  }
+  Table *table() const { return table_; }
 
-private:
+ private:
   Table *table_ = nullptr;
 };

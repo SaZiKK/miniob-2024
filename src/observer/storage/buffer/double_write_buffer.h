@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -24,10 +24,9 @@ class DiskBufferPool;
 struct DoubleWritePage;
 class BufferPoolManager;
 
-class DoubleWriteBuffer
-{
-public:
-  DoubleWriteBuffer()          = default;
+class DoubleWriteBuffer {
+ public:
+  DoubleWriteBuffer() = default;
   virtual ~DoubleWriteBuffer() = default;
 
   /**
@@ -43,48 +42,46 @@ public:
   virtual RC clear_pages(DiskBufferPool *bp) = 0;
 };
 
-struct DoubleWriteBufferHeader
-{
+struct DoubleWriteBufferHeader {
   int32_t page_cnt = 0;
 
   static const int32_t SIZE;
 };
 
 // TODO change to FrameId
-struct DoubleWritePageKey
-{
+struct DoubleWritePageKey {
   int32_t buffer_pool_id;
   PageNum page_num;
 
-  bool operator==(const DoubleWritePageKey &other) const
-  {
+  bool operator==(const DoubleWritePageKey &other) const {
     return buffer_pool_id == other.buffer_pool_id && page_num == other.page_num;
   }
 };
 
-struct DoubleWritePageKeyHash
-{
-  size_t operator()(const DoubleWritePageKey &key) const
-  {
-    return std::hash<int32_t>()(key.buffer_pool_id) ^ std::hash<PageNum>()(key.page_num);
+struct DoubleWritePageKeyHash {
+  size_t operator()(const DoubleWritePageKey &key) const {
+    return std::hash<int32_t>()(key.buffer_pool_id) ^
+           std::hash<PageNum>()(key.page_num);
   }
 };
 
 /**
  * @brief 页面二次缓冲区，为了解决页面原子写入的问题
  * @ingroup BufferPool
- * @details 一个页面通常比较大，不能保证要么都写入磁盘成功，要么不写入磁盘。如果存在写入一部分的情况，
+ * @details
+ * 一个页面通常比较大，不能保证要么都写入磁盘成功，要么不写入磁盘。如果存在写入一部分的情况，
  * 我们应该有手段检测出来，否则会遇到灾难性的数据不一致问题。
  * 这里的解决方案是在我们写入真实页面数据之前，先将数据放入一个公共的缓冲区，也就是DoubleWriteBuffer，
  * DoubleWriteBuffer会先在一个共享磁盘文件中写入页面数据，在确定写入成功后，再写入真实的页面。
  * 当我们从磁盘中读取页面时，会校验页面的checksum，如果校验失败，则说明页面写入不完整，这时候可以从
  * DoubleWriteBuffer中读取数据。
  *
- * @note 每次都要保证，不管在内存中还是在文件中，这里的数据都是最新的，都比Buffer pool中的数据要新
+ * @note
+ * 每次都要保证，不管在内存中还是在文件中，这里的数据都是最新的，都比Buffer
+ * pool中的数据要新
  */
-class DiskDoubleWriteBuffer : public DoubleWriteBuffer
-{
-public:
+class DiskDoubleWriteBuffer : public DoubleWriteBuffer {
+ public:
   /**
    * @brief 构造函数
    *
@@ -122,7 +119,7 @@ public:
    */
   RC recover();
 
-private:
+ private:
   /**
    * 将buffer中的页面写入对应的磁盘
    */
@@ -140,19 +137,19 @@ private:
    */
   RC load_pages();
 
-private:
-  int                     file_desc_ = -1;
-  int                     max_pages_ = 0;
-  common::Mutex           lock_;
-  BufferPoolManager      &bp_manager_;
+ private:
+  int file_desc_ = -1;
+  int max_pages_ = 0;
+  common::Mutex lock_;
+  BufferPoolManager &bp_manager_;
   DoubleWriteBufferHeader header_;
 
-  unordered_map<DoubleWritePageKey, DoubleWritePage *, DoubleWritePageKeyHash> dblwr_pages_;
+  unordered_map<DoubleWritePageKey, DoubleWritePage *, DoubleWritePageKeyHash>
+      dblwr_pages_;
 };
 
-class VacuousDoubleWriteBuffer : public DoubleWriteBuffer
-{
-public:
+class VacuousDoubleWriteBuffer : public DoubleWriteBuffer {
+ public:
   virtual ~VacuousDoubleWriteBuffer() = default;
 
   /**
@@ -160,7 +157,9 @@ public:
    */
   RC add_page(DiskBufferPool *bp, PageNum page_num, Page &page) override;
 
-  RC read_page(DiskBufferPool *bp, PageNum page_num, Page &page) override { return RC::BUFFERPOOL_INVALID_PAGE_NUM; }
+  RC read_page(DiskBufferPool *bp, PageNum page_num, Page &page) override {
+    return RC::BUFFERPOOL_INVALID_PAGE_NUM;
+  }
 
   /**
    * @brief 清空所有与指定buffer pool关联的页面

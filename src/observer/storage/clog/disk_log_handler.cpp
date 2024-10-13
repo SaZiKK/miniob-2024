@@ -1,7 +1,7 @@
 /* Copyright (c) 2021-2022 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -23,14 +23,12 @@ using namespace common;
 ////////////////////////////////////////////////////////////////////////////////
 // LogHandler
 
-RC DiskLogHandler::init(const char *path)
-{
+RC DiskLogHandler::init(const char *path) {
   const int max_entry_number_per_file = 1000;
   return file_manager_.init(path, max_entry_number_per_file);
 }
 
-RC DiskLogHandler::start()
-{
+RC DiskLogHandler::start() {
   if (thread_) {
     LOG_ERROR("log has been started");
     return RC::INTERNAL;
@@ -42,8 +40,7 @@ RC DiskLogHandler::start()
   return RC::SUCCESS;
 }
 
-RC DiskLogHandler::stop()
-{
+RC DiskLogHandler::stop() {
   if (!thread_) {
     LOG_ERROR("log has not been started");
     return RC::INTERNAL;
@@ -55,8 +52,7 @@ RC DiskLogHandler::stop()
   return RC::SUCCESS;
 }
 
-RC DiskLogHandler::await_termination()
-{
+RC DiskLogHandler::await_termination() {
   if (!thread_) {
     LOG_ERROR("log has not been started");
     return RC::INTERNAL;
@@ -73,8 +69,7 @@ RC DiskLogHandler::await_termination()
   return RC::SUCCESS;
 }
 
-RC DiskLogHandler::replay(LogReplayer &replayer, LSN start_lsn)
-{
+RC DiskLogHandler::replay(LogReplayer &replayer, LSN start_lsn) {
   LSN max_lsn = 0;
   auto replay_callback = [&replayer, &max_lsn](LogEntry &entry) -> RC {
     if (entry.lsn() > max_lsn) {
@@ -95,12 +90,12 @@ RC DiskLogHandler::replay(LogReplayer &replayer, LSN start_lsn)
     return rc;
   }
 
-  LOG_INFO("replay clog files done. start lsn=%ld, max_lsn=%ld", start_lsn, max_lsn);
+  LOG_INFO("replay clog files done. start lsn=%ld, max_lsn=%ld", start_lsn,
+           max_lsn);
   return rc;
 }
 
-RC DiskLogHandler::iterate(function<RC(LogEntry&)> consumer, LSN start_lsn)
-{
+RC DiskLogHandler::iterate(function<RC(LogEntry &)> consumer, LSN start_lsn) {
   vector<string> log_files;
   RC rc = file_manager_.list_files(log_files, start_lsn);
   if (OB_FAIL(rc)) {
@@ -112,19 +107,22 @@ RC DiskLogHandler::iterate(function<RC(LogEntry&)> consumer, LSN start_lsn)
     LogFileReader file_handle;
     rc = file_handle.open(file.c_str());
     if (OB_FAIL(rc)) {
-      LOG_WARN("failed to open clog file. rc=%s, file=%s", strrc(rc), file.c_str());
+      LOG_WARN("failed to open clog file. rc=%s, file=%s", strrc(rc),
+               file.c_str());
       return rc;
     }
 
     rc = file_handle.iterate(consumer, start_lsn);
     if (OB_FAIL(rc)) {
-      LOG_WARN("failed to iterate clog file. rc=%s, file=%s", strrc(rc), file.c_str());
+      LOG_WARN("failed to iterate clog file. rc=%s, file=%s", strrc(rc),
+               file.c_str());
       return rc;
     }
 
     rc = file_handle.close();
     if (OB_FAIL(rc)) {
-      LOG_WARN("failed to close clog file. rc=%s, file=%s", strrc(rc), file.c_str());
+      LOG_WARN("failed to close clog file. rc=%s, file=%s", strrc(rc),
+               file.c_str());
       return rc;
     }
   }
@@ -133,10 +131,10 @@ RC DiskLogHandler::iterate(function<RC(LogEntry&)> consumer, LSN start_lsn)
   return RC::SUCCESS;
 }
 
-RC DiskLogHandler::_append(LSN &lsn, LogModule module, vector<char> &&data)
-{
-  ASSERT(running_.load(), "log handler is not running. lsn=%ld, module=%s, size=%d", 
-        lsn, module.name(), data.size());
+RC DiskLogHandler::_append(LSN &lsn, LogModule module, vector<char> &&data) {
+  ASSERT(running_.load(),
+         "log handler is not running. lsn=%ld, module=%s, size=%d", lsn,
+         module.name(), data.size());
 
   RC rc = entry_buffer_.append(lsn, module, std::move(data));
   if (OB_FAIL(rc)) {
@@ -147,8 +145,7 @@ RC DiskLogHandler::_append(LSN &lsn, LogModule module, vector<char> &&data)
   return RC::SUCCESS;
 }
 
-RC DiskLogHandler::wait_lsn(LSN lsn)
-{
+RC DiskLogHandler::wait_lsn(LSN lsn) {
   // 直接强制等待。在生产系统中，我们可能会使用条件变量来等待。
   while (running_.load() && current_flushed_lsn() < lsn) {
     this_thread::sleep_for(chrono::milliseconds(100));
@@ -161,8 +158,7 @@ RC DiskLogHandler::wait_lsn(LSN lsn)
   }
 }
 
-void DiskLogHandler::thread_func()
-{
+void DiskLogHandler::thread_func() {
   /*
   这个线程一直不停的循环，检查日志缓冲区中是否有日志在内存中，如果在内存中就刷新到磁盘。
   这种做法很粗暴简单，与生产数据库的做法不同。生产数据库通常会在内存达到一定量，或者一定时间
@@ -172,7 +168,7 @@ void DiskLogHandler::thread_func()
   LOG_INFO("log handler thread started");
 
   LogFileWriter file_writer;
-  
+
   RC rc = RC::SUCCESS;
   while (running_.load() || entry_buffer_.entry_number() > 0) {
     if (!file_writer.valid() || rc == RC::LOG_FILE_FULL) {
@@ -189,7 +185,8 @@ void DiskLogHandler::thread_func()
         this_thread::sleep_for(chrono::milliseconds(100));
         continue;
       }
-      LOG_INFO("open log file success. file=%s", file_writer.to_string().c_str());
+      LOG_INFO("open log file success. file=%s",
+               file_writer.to_string().c_str());
     }
 
     int flush_count = 0;

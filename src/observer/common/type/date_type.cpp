@@ -9,14 +9,13 @@
 
 static int mon[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-int DateType::compare(const Value &left, const Value &right) const
-{
-  int left_val  = left.get_date();
+int DateType::compare(const Value &left, const Value &right) const {
+  int left_val = left.get_date();
   int right_val = right.get_date();
   return common::compare_int((void *)&left_val, (void *)&right_val);
 }
 
-RC DateType::cast_to(const Value &val, AttrType type, Value &result) const { 
+RC DateType::cast_to(const Value &val, AttrType type, Value &result) const {
   switch (type) {
     case AttrType::DATE:
       result = val;
@@ -27,14 +26,13 @@ RC DateType::cast_to(const Value &val, AttrType type, Value &result) const {
     default:
       return RC::UNSUPPORTED;
   }
-  return RC::SUCCESS; 
+  return RC::SUCCESS;
 }
 
-RC DateType::set_value_from_str(Value &val, const string &data) const
-{
+RC DateType::set_value_from_str(Value &val, const string &data) const {
   std::stringstream ss(data);
-  int               numbers[3];
-  string            token;
+  int numbers[3];
+  string token;
   for (int i = 0; i < 3; ++i) {
     if (getline(ss, token, '-')) {
       numbers[i] = std::stoi(token);
@@ -48,41 +46,37 @@ RC DateType::set_value_from_str(Value &val, const string &data) const
   return RC::SUCCESS;
 }
 
-int DateType::cast_cost(AttrType type)
-{
-  if (type == AttrType::DATE)
-    return 0;
+int DateType::cast_cost(AttrType type) {
+  if (type == AttrType::DATE) return 0;
   return INT32_MAX;
 }
 
-RC DateType::to_string(const Value &val, string &result) const
-{
-  if (val.attr_type() != AttrType::DATE)
-    return RC::INVALID_ARGUMENT;
+RC DateType::to_string(const Value &val, string &result) const {
+  if (val.attr_type() != AttrType::DATE) return RC::INVALID_ARGUMENT;
 
   string str = std::to_string(val.get_int());
-  result     = str.substr(0, 4) + '-' + str.substr(4, 2) + '-' + str.substr(6, 2);
+  result = str.substr(0, 4) + '-' + str.substr(4, 2) + '-' + str.substr(6, 2);
   return RC::SUCCESS;
 }
 
-bool DateType::check_date(const Value *value)
-{
+bool DateType::check_date(const Value *value) {
   if (value->attr_type() != AttrType::DATE) {
     return false;
   }
-  int  date = value->get_int();
-  int  y    = date / 10000;
-  int  m    = date % 10000 / 100;
-  int  d    = date % 100;
+  int date = value->get_int();
+  int y = date / 10000;
+  int m = date % 10000 / 100;
+  int d = date % 100;
   bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
-  return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
+  return y > 0 && (m > 0) && (m <= 12) && (d > 0) &&
+         (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
 }
 
-bool DateType::check_date(int date)
-{
-  int  y    = date / 10000;
-  int  m    = date % 10000 / 100;
-  int  d    = date % 100;
+bool DateType::check_date(int date) {
+  int y = date / 10000;
+  int m = date % 10000 / 100;
+  int d = date % 100;
   bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
-  return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
+  return y > 0 && (m > 0) && (m <= 12) && (d > 0) &&
+         (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
 }

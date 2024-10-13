@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -19,15 +19,14 @@ See the Mulan PSL v2 for more details. */
 #include "sql/optimizer/predicate_pushdown_rewriter.h"
 #include "sql/optimizer/predicate_rewrite.h"
 
-Rewriter::Rewriter()
-{
+Rewriter::Rewriter() {
   rewrite_rules_.emplace_back(new ExpressionRewriter);
   rewrite_rules_.emplace_back(new PredicateRewriteRule);
   rewrite_rules_.emplace_back(new PredicatePushdownRewriter);
 }
 
-RC Rewriter::rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made)
-{
+RC Rewriter::rewrite(std::unique_ptr<LogicalOperator> &oper,
+                     bool &change_made) {
   RC rc = RC::SUCCESS;
 
   change_made = false;
@@ -52,7 +51,7 @@ RC Rewriter::rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made)
   std::vector<std::unique_ptr<LogicalOperator>> &child_opers = oper->children();
   for (auto &child_oper : child_opers) {
     bool sub_change_made = false;
-    rc                   = this->rewrite(child_oper, sub_change_made);
+    rc = this->rewrite(child_oper, sub_change_made);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to rewrite child oper. rc=%s", strrc(rc));
       return rc;

@@ -1,7 +1,7 @@
 /* Copyright (c) 2021-2022 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -32,10 +32,9 @@ class LogFileWriter;
  * 这里的缓存没有考虑高性能操作，比如使用预分配内存、环形缓冲池等。
  * 在生产数据库中，通常会使用预分配内存形式的缓存来提高性能，并且可以减少内存碎片。
  */
-class LogEntryBuffer
-{
-public:
-  LogEntryBuffer()  = default;
+class LogEntryBuffer {
+ public:
+  LogEntryBuffer() = default;
   ~LogEntryBuffer() = default;
 
   RC init(LSN lsn, int32_t max_bytes = 0);
@@ -67,8 +66,9 @@ public:
   LSN current_lsn() const { return current_lsn_.load(); }
   LSN flushed_lsn() const { return flushed_lsn_.load(); }
 
-private:
-  mutex           mutex_;  /// 当前数据结构一定会在多线程中访问，所以强制使用有效的锁，而不是有条件生效的common::Mutex
+ private:
+  mutex
+      mutex_;  /// 当前数据结构一定会在多线程中访问，所以强制使用有效的锁，而不是有条件生效的common::Mutex
   deque<LogEntry> entries_;  /// 日志缓冲区
   atomic<int64_t> bytes_;    /// 当前缓冲区中的日志数据大小
 

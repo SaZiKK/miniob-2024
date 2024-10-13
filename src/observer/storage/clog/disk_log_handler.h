@@ -1,7 +1,7 @@
 /* Copyright (c) 2021-2022 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -37,7 +37,8 @@ class LogReplayer;
  * @code {.cpp}
  * DiskLogHandler handler;
  * handler.init("/path/to/log");
- * // replay 在一次启动只运行一次，它会计算当前日志的一些最新状态，必须在start之前执行
+ * // replay
+ * 在一次启动只运行一次，它会计算当前日志的一些最新状态，必须在start之前执行
  * handler.replay(replayer, start_lsn);
  * handler.start();
  * handler.stop();
@@ -45,10 +46,9 @@ class LogReplayer;
  * @endcode
  *
  */
-class DiskLogHandler : public LogHandler
-{
-public:
-  DiskLogHandler()          = default;
+class DiskLogHandler : public LogHandler {
+ public:
+  DiskLogHandler() = default;
   virtual ~DiskLogHandler() = default;
 
   /**
@@ -102,7 +102,7 @@ public:
   /// @brief 当前刷新到哪个日志
   LSN current_flushed_lsn() const { return entry_buffer_.flushed_lsn(); }
 
-private:
+ private:
   /**
    * @brief 在缓存中增加一条日志
    *
@@ -112,15 +112,15 @@ private:
    */
   RC _append(LSN &lsn, LogModule module, vector<char> &&data) override;
 
-private:
+ private:
   /**
    * @brief 刷新日志的线程函数
    */
   void thread_func();
 
-private:
-  unique_ptr<thread> thread_;          /// 刷新日志的线程
-  atomic_bool        running_{false};  /// 是否还要继续运行
+ private:
+  unique_ptr<thread> thread_;   /// 刷新日志的线程
+  atomic_bool running_{false};  /// 是否还要继续运行
 
   LogFileManager file_manager_;  /// 管理所有的日志文件
   LogEntryBuffer entry_buffer_;  /// 缓存日志

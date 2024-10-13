@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -19,14 +19,14 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-InsertPhysicalOperator::InsertPhysicalOperator(Table *table, vector<Value> &&values)
-    : table_(table), values_(std::move(values))
-{}
+InsertPhysicalOperator::InsertPhysicalOperator(Table *table,
+                                               vector<Value> &&values)
+    : table_(table), values_(std::move(values)) {}
 
-RC InsertPhysicalOperator::open(Trx *trx)
-{
+RC InsertPhysicalOperator::open(Trx *trx) {
   Record record;
-  RC     rc = table_->make_record(static_cast<int>(values_.size()), values_.data(), record);
+  RC rc = table_->make_record(static_cast<int>(values_.size()), values_.data(),
+                              record);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to make record. rc=%s", strrc(rc));
     return rc;

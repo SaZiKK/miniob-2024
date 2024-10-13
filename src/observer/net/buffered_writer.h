@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -22,9 +22,8 @@ See the Mulan PSL v2 for more details. */
  * 看起来直接使用fdopen也可以实现缓存写，不过fdopen会在close时直接关闭fd。
  * @note 在执行close时，描述符fd并不会被关闭
  */
-class BufferedWriter
-{
-public:
+class BufferedWriter {
+ public:
   BufferedWriter(int fd);
   BufferedWriter(int fd, int32_t size);
   ~BufferedWriter();
@@ -57,16 +56,17 @@ public:
    */
   RC flush();
 
-private:
+ private:
   /**
    * @brief 刷新缓存
-   * @details 期望缓存可以刷新size大小的数据，实际刷新的数据量可能小于size也可能大于size。
+   * @details
+   * 期望缓存可以刷新size大小的数据，实际刷新的数据量可能小于size也可能大于size。
    * 通常是在缓存满的时候，希望刷新掉一部分数据，然后继续写入。
    * @param size 期望刷新的数据大小
    */
   RC flush_internal(int32_t size);
 
-private:
-  int        fd_ = -1;
+ private:
+  int fd_ = -1;
   RingBuffer buffer_;
 };

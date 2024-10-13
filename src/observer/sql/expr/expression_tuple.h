@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -21,18 +21,19 @@ See the Mulan PSL v2 for more details. */
 #include "common/rc.h"
 
 template <typename ExprPointerType>
-class ExpressionTuple : public Tuple
-{
-public:
-  ExpressionTuple(const std::vector<ExprPointerType> &expressions) : expressions_(expressions) {}
+class ExpressionTuple : public Tuple {
+ public:
+  ExpressionTuple(const std::vector<ExprPointerType> &expressions)
+      : expressions_(expressions) {}
   virtual ~ExpressionTuple() = default;
 
   void set_tuple(const Tuple *tuple) { child_tuple_ = tuple; }
 
-  int cell_num() const override { return static_cast<int>(expressions_.size()); }
+  int cell_num() const override {
+    return static_cast<int>(expressions_.size());
+  }
 
-  RC cell_at(int index, Value &cell) const override
-  {
+  RC cell_at(int index, Value &cell) const override {
     if (index < 0 || index >= cell_num()) {
       return RC::INVALID_ARGUMENT;
     }
@@ -41,19 +42,17 @@ public:
     return get_value(expression, cell);
   }
 
-  RC spec_at(int index, TupleCellSpec &spec) const override
-  {
+  RC spec_at(int index, TupleCellSpec &spec) const override {
     if (index < 0 || index >= cell_num()) {
       return RC::INVALID_ARGUMENT;
     }
 
     const ExprPointerType &expression = expressions_[index];
-    spec                              = TupleCellSpec(expression->name());
+    spec = TupleCellSpec(expression->name());
     return RC::SUCCESS;
   }
 
-  RC find_cell(const TupleCellSpec &spec, Value &cell) const override
-  {
+  RC find_cell(const TupleCellSpec &spec, Value &cell) const override {
     RC rc = RC::SUCCESS;
     if (child_tuple_ != nullptr) {
       rc = child_tuple_->find_cell(spec, cell);
@@ -73,9 +72,8 @@ public:
     return rc;
   }
 
-private:
-  RC get_value(const ExprPointerType &expression, Value &value) const
-  {
+ private:
+  RC get_value(const ExprPointerType &expression, Value &value) const {
     RC rc = RC::SUCCESS;
     if (child_tuple_ != nullptr) {
       rc = expression->get_value(*child_tuple_, value);
@@ -85,7 +83,7 @@ private:
     return rc;
   }
 
-private:
+ private:
   const std::vector<ExprPointerType> &expressions_;
-  const Tuple                        *child_tuple_ = nullptr;
+  const Tuple *child_tuple_ = nullptr;
 };

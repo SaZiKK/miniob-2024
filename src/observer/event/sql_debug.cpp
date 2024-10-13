@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -18,15 +18,15 @@ See the Mulan PSL v2 for more details. */
 #include "event/sql_debug.h"
 #include "session/session.h"
 
-
-void SqlDebug::add_debug_info(const string &debug_info) { debug_infos_.push_back(debug_info); }
+void SqlDebug::add_debug_info(const string &debug_info) {
+  debug_infos_.push_back(debug_info);
+}
 
 void SqlDebug::clear_debug_info() { debug_infos_.clear(); }
 
 const list<string> &SqlDebug::get_debug_infos() const { return debug_infos_; }
 
-void sql_debug(const char *fmt, ...)
-{
+void sql_debug(const char *fmt, ...) {
   Session *session = Session::current_session();
   if (nullptr == session) {
     return;
@@ -40,7 +40,7 @@ void sql_debug(const char *fmt, ...)
   SqlDebug &sql_debug = request->sql_debug();
 
   const int buffer_size = 4096;
-  char     *str         = new char[buffer_size];
+  char *str = new char[buffer_size];
 
   va_list ap;
   va_start(ap, fmt);

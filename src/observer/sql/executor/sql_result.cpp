@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -20,10 +20,11 @@ See the Mulan PSL v2 for more details. */
 
 SqlResult::SqlResult(Session *session) : session_(session) {}
 
-void SqlResult::set_tuple_schema(const TupleSchema &schema) { tuple_schema_ = schema; }
+void SqlResult::set_tuple_schema(const TupleSchema &schema) {
+  tuple_schema_ = schema;
+}
 
-RC SqlResult::open()
-{
+RC SqlResult::open() {
   if (nullptr == operator_) {
     return RC::INVALID_ARGUMENT;
   }
@@ -33,8 +34,7 @@ RC SqlResult::open()
   return operator_->open(trx);
 }
 
-RC SqlResult::close()
-{
+RC SqlResult::close() {
   if (nullptr == operator_) {
     return RC::INVALID_ARGUMENT;
   }
@@ -58,8 +58,7 @@ RC SqlResult::close()
   return rc;
 }
 
-RC SqlResult::next_tuple(Tuple *&tuple)
-{
+RC SqlResult::next_tuple(Tuple *&tuple) {
   RC rc = operator_->next();
   if (rc != RC::SUCCESS) {
     return rc;
@@ -69,15 +68,14 @@ RC SqlResult::next_tuple(Tuple *&tuple)
   return rc;
 }
 
-RC SqlResult::next_chunk(Chunk &chunk)
-{
+RC SqlResult::next_chunk(Chunk &chunk) {
   RC rc = operator_->next(chunk);
   return rc;
 }
 
-void SqlResult::set_operator(std::unique_ptr<PhysicalOperator> oper)
-{
-  ASSERT(operator_ == nullptr, "current operator is not null. Result is not closed?");
+void SqlResult::set_operator(std::unique_ptr<PhysicalOperator> oper) {
+  ASSERT(operator_ == nullptr,
+         "current operator is not null. Result is not closed?");
   operator_ = std::move(oper);
   operator_->tuple_schema(tuple_schema_);
 }

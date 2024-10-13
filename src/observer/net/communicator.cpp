@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -21,17 +21,16 @@ See the Mulan PSL v2 for more details. */
 
 #include "common/lang/mutex.h"
 
-RC Communicator::init(int fd, unique_ptr<Session> session, const std::string &addr)
-{
-  fd_      = fd;
+RC Communicator::init(int fd, unique_ptr<Session> session,
+                      const std::string &addr) {
+  fd_ = fd;
   session_ = std::move(session);
-  addr_    = addr;
-  writer_  = new BufferedWriter(fd_);
+  addr_ = addr;
+  writer_ = new BufferedWriter(fd_);
   return RC::SUCCESS;
 }
 
-Communicator::~Communicator()
-{
+Communicator::~Communicator() {
   if (fd_ >= 0) {
     close(fd_);
     fd_ = -1;
@@ -45,8 +44,7 @@ Communicator::~Communicator()
 
 /////////////////////////////////////////////////////////////////////////////////
 
-Communicator *CommunicatorFactory::create(CommunicateProtocol protocol)
-{
+Communicator *CommunicatorFactory::create(CommunicateProtocol protocol) {
   switch (protocol) {
     case CommunicateProtocol::PLAIN: {
       return new PlainCommunicator;

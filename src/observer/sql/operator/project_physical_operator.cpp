@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -19,19 +19,17 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-ProjectPhysicalOperator::ProjectPhysicalOperator(vector<unique_ptr<Expression>> &&expressions)
-  : expressions_(std::move(expressions)), tuple_(expressions_)
-{
-}
+ProjectPhysicalOperator::ProjectPhysicalOperator(
+    vector<unique_ptr<Expression>> &&expressions)
+    : expressions_(std::move(expressions)), tuple_(expressions_) {}
 
-RC ProjectPhysicalOperator::open(Trx *trx)
-{
+RC ProjectPhysicalOperator::open(Trx *trx) {
   if (children_.empty()) {
     return RC::SUCCESS;
   }
 
   PhysicalOperator *child = children_[0].get();
-  RC                rc    = child->open(trx);
+  RC rc = child->open(trx);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to open child operator: %s", strrc(rc));
     return rc;
@@ -40,29 +38,25 @@ RC ProjectPhysicalOperator::open(Trx *trx)
   return RC::SUCCESS;
 }
 
-RC ProjectPhysicalOperator::next()
-{
+RC ProjectPhysicalOperator::next() {
   if (children_.empty()) {
     return RC::RECORD_EOF;
   }
   return children_[0]->next();
 }
 
-RC ProjectPhysicalOperator::close()
-{
+RC ProjectPhysicalOperator::close() {
   if (!children_.empty()) {
     children_[0]->close();
   }
   return RC::SUCCESS;
 }
-Tuple *ProjectPhysicalOperator::current_tuple()
-{
+Tuple *ProjectPhysicalOperator::current_tuple() {
   tuple_.set_tuple(children_[0]->current_tuple());
   return &tuple_;
 }
 
-RC ProjectPhysicalOperator::tuple_schema(TupleSchema &schema) const
-{
+RC ProjectPhysicalOperator::tuple_schema(TupleSchema &schema) const {
   for (const unique_ptr<Expression> &expression : expressions_) {
     schema.append_cell(expression->name());
   }

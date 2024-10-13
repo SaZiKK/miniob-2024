@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -17,8 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/value.h"
 #include <cmath>
 
-int FloatType::compare(const Value &left, const Value &right) const
-{
+int FloatType::compare(const Value &left, const Value &right) const {
   ASSERT(left.attr_type() == AttrType::FLOATS, "left type is not integer");
   float left_val = left.get_float();
 
@@ -31,24 +30,23 @@ int FloatType::compare(const Value &left, const Value &right) const
   return common::compare_float((void *)&left_val, (void *)&right_val);
 }
 
-RC FloatType::add(const Value &left, const Value &right, Value &result) const
-{
+RC FloatType::add(const Value &left, const Value &right, Value &result) const {
   result.set_float(left.get_float() + right.get_float());
   return RC::SUCCESS;
 }
-RC FloatType::subtract(const Value &left, const Value &right, Value &result) const
-{
+RC FloatType::subtract(const Value &left, const Value &right,
+                       Value &result) const {
   result.set_float(left.get_float() - right.get_float());
   return RC::SUCCESS;
 }
-RC FloatType::multiply(const Value &left, const Value &right, Value &result) const
-{
+RC FloatType::multiply(const Value &left, const Value &right,
+                       Value &result) const {
   result.set_float(left.get_float() * right.get_float());
   return RC::SUCCESS;
 }
 
-RC FloatType::divide(const Value &left, const Value &right, Value &result) const
-{
+RC FloatType::divide(const Value &left, const Value &right,
+                     Value &result) const {
   if (right.get_float() > -EPSILON && right.get_float() < EPSILON) {
     // NOTE:
     // 设置为浮点数最大值是不正确的。通常的做法是设置为NULL，但是当前的miniob没有NULL概念，所以这里设置为浮点数最大值。
@@ -59,15 +57,13 @@ RC FloatType::divide(const Value &left, const Value &right, Value &result) const
   return RC::SUCCESS;
 }
 
-RC FloatType::negative(const Value &val, Value &result) const
-{
+RC FloatType::negative(const Value &val, Value &result) const {
   result.set_float(-val.get_float());
   return RC::SUCCESS;
 }
 
-RC FloatType::set_value_from_str(Value &val, const string &data) const
-{
-  RC           rc = RC::SUCCESS;
+RC FloatType::set_value_from_str(Value &val, const string &data) const {
+  RC rc = RC::SUCCESS;
   stringstream deserialize_stream;
   deserialize_stream.clear();
   deserialize_stream.str(data);
@@ -82,16 +78,14 @@ RC FloatType::set_value_from_str(Value &val, const string &data) const
   return rc;
 }
 
-RC FloatType::to_string(const Value &val, string &result) const
-{
+RC FloatType::to_string(const Value &val, string &result) const {
   stringstream ss;
   ss << common::double_to_str(val.value_.float_value_);
   result = ss.str();
   return RC::SUCCESS;
 }
 
-RC FloatType::cast_to(const Value &val, AttrType type, Value &result) const
-{
+RC FloatType::cast_to(const Value &val, AttrType type, Value &result) const {
   switch (type) {
     // FLOATS => INTS
     case (AttrType::INTS): {
@@ -110,24 +104,29 @@ RC FloatType::cast_to(const Value &val, AttrType type, Value &result) const
       result = val;
     } break;
 
-    default: return RC::INVALID_ARGUMENT;
+    default:
+      return RC::INVALID_ARGUMENT;
   }
   return RC::SUCCESS;
 }
 
 // FLOATS > INTS > BOOLEANS > CHARS
-int FloatType::cast_cost(AttrType type)
-{
+int FloatType::cast_cost(AttrType type) {
   switch (type) {
-    case (AttrType::INTS): return 2;
+    case (AttrType::INTS):
+      return 2;
 
-    case (AttrType::CHARS): return 2;
+    case (AttrType::CHARS):
+      return 2;
 
-    case (AttrType::BOOLEANS): return 2;
+    case (AttrType::BOOLEANS):
+      return 2;
 
-    case (AttrType::FLOATS): return 0;
+    case (AttrType::FLOATS):
+      return 0;
 
-    default: return INT32_MAX;
+    default:
+      return INT32_MAX;
   }
   return INT32_MAX;
 }

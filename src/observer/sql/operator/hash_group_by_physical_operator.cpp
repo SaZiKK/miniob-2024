@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -21,23 +21,25 @@ using namespace std;
 using namespace common;
 
 HashGroupByPhysicalOperator::HashGroupByPhysicalOperator(
-    vector<unique_ptr<Expression>> &&group_by_exprs, vector<Expression *> &&expressions)
-    : GroupByPhysicalOperator(std::move(expressions)), group_by_exprs_(std::move(group_by_exprs))
-{
-}
+    vector<unique_ptr<Expression>> &&group_by_exprs,
+    vector<Expression *> &&expressions)
+    : GroupByPhysicalOperator(std::move(expressions)),
+      group_by_exprs_(std::move(group_by_exprs)) {}
 
-RC HashGroupByPhysicalOperator::open(Trx *trx)
-{
-  ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
+RC HashGroupByPhysicalOperator::open(Trx *trx) {
+  ASSERT(children_.size() == 1,
+         "group by operator only support one child, but got %d",
+         children_.size());
 
   PhysicalOperator &child = *children_[0];
-  RC                rc    = child.open(trx);
+  RC rc = child.open(trx);
   if (OB_FAIL(rc)) {
     LOG_INFO("failed to open child operator. rc=%s", strrc(rc));
     return rc;
   }
 
-  ExpressionTuple<Expression *> group_value_expression_tuple(value_expressions_);
+  ExpressionTuple<Expression *> group_value_expression_tuple(
+      value_expressions_);
 
   ValueListTuple group_by_evaluated_tuple;
 
@@ -50,7 +52,7 @@ RC HashGroupByPhysicalOperator::open(Trx *trx)
 
     // 找到对应的group
     GroupType *found_group = nullptr;
-    rc                     = find_group(*child_tuple, found_group);
+    rc = find_group(*child_tuple, found_group);
     if (OB_FAIL(rc)) {
       LOG_WARN("failed to find group. rc=%s", strrc(rc));
       return rc;
@@ -88,12 +90,11 @@ RC HashGroupByPhysicalOperator::open(Trx *trx)
   }
 
   current_group_ = groups_.begin();
-  first_emited_  = false;
+  first_emited_ = false;
   return rc;
 }
 
-RC HashGroupByPhysicalOperator::next()
-{
+RC HashGroupByPhysicalOperator::next() {
   if (current_group_ == groups_.end()) {
     return RC::RECORD_EOF;
   }
@@ -110,15 +111,13 @@ RC HashGroupByPhysicalOperator::next()
   return RC::SUCCESS;
 }
 
-RC HashGroupByPhysicalOperator::close()
-{
+RC HashGroupByPhysicalOperator::close() {
   children_[0]->close();
   LOG_INFO("close group by operator");
   return RC::SUCCESS;
 }
 
-Tuple *HashGroupByPhysicalOperator::current_tuple()
-{
+Tuple *HashGroupByPhysicalOperator::current_tuple() {
   if (current_group_ != groups_.end()) {
     GroupValueType &group_value = get<1>(*current_group_);
     return &get<1>(group_value);
@@ -126,16 +125,18 @@ Tuple *HashGroupByPhysicalOperator::current_tuple()
   return nullptr;
 }
 
-RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple, GroupType *&found_group)
-{
+RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple,
+                                           GroupType *&found_group) {
   found_group = nullptr;
 
   RC rc = RC::SUCCESS;
 
-  ExpressionTuple<unique_ptr<Expression>> group_by_expression_tuple(group_by_exprs_);
-  ValueListTuple                          group_by_evaluated_tuple;
+  ExpressionTuple<unique_ptr<Expression>> group_by_expression_tuple(
+      group_by_exprs_);
+  ValueListTuple group_by_evaluated_tuple;
   group_by_expression_tuple.set_tuple(&child_tuple);
-  rc = ValueListTuple::make(group_by_expression_tuple, group_by_evaluated_tuple);
+  rc =
+      ValueListTuple::make(group_by_expression_tuple, group_by_evaluated_tuple);
   if (OB_FAIL(rc)) {
     LOG_WARN("failed to get values from expression tuple. rc=%s", strrc(rc));
     return rc;
@@ -144,7 +145,7 @@ RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple, GroupType *
   // 找到对应的group
   for (GroupType &group : groups_) {
     int compare_result = 0;
-    rc                 = group_by_evaluated_tuple.compare(get<0>(group), compare_result);
+    rc = group_by_evaluated_tuple.compare(get<0>(group), compare_result);
     if (OB_FAIL(rc)) {
       LOG_WARN("failed to compare group by values. rc=%s", strrc(rc));
       return rc;
@@ -169,9 +170,11 @@ RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple, GroupType *
     }
 
     CompositeTuple composite_tuple;
-    composite_tuple.add_tuple(make_unique<ValueListTuple>(std::move(child_tuple_to_value)));
-    groups_.emplace_back(std::move(group_by_evaluated_tuple), 
-                         GroupValueType(std::move(aggregator_list), std::move(composite_tuple)));
+    composite_tuple.add_tuple(
+        make_unique<ValueListTuple>(std::move(child_tuple_to_value)));
+    groups_.emplace_back(
+        std::move(group_by_evaluated_tuple),
+        GroupValueType(std::move(aggregator_list), std::move(composite_tuple)));
     found_group = &groups_.back();
   }
 

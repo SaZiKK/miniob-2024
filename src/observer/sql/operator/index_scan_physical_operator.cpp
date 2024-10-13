@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -16,14 +16,14 @@ See the Mulan PSL v2 for more details. */
 #include "storage/index/index.h"
 #include "storage/trx/trx.h"
 
-IndexScanPhysicalOperator::IndexScanPhysicalOperator(Table *table, Index *index, ReadWriteMode mode, const Value *left_value,
+IndexScanPhysicalOperator::IndexScanPhysicalOperator(
+    Table *table, Index *index, ReadWriteMode mode, const Value *left_value,
     bool left_inclusive, const Value *right_value, bool right_inclusive)
     : table_(table),
       index_(index),
       mode_(mode),
       left_inclusive_(left_inclusive),
-      right_inclusive_(right_inclusive)
-{
+      right_inclusive_(right_inclusive) {
   if (left_value) {
     left_value_ = *left_value;
   }
@@ -32,18 +32,14 @@ IndexScanPhysicalOperator::IndexScanPhysicalOperator(Table *table, Index *index,
   }
 }
 
-RC IndexScanPhysicalOperator::open(Trx *trx)
-{
+RC IndexScanPhysicalOperator::open(Trx *trx) {
   if (nullptr == table_ || nullptr == index_) {
     return RC::INTERNAL;
   }
 
-  IndexScanner *index_scanner = index_->create_scanner(left_value_.data(),
-      left_value_.length(),
-      left_inclusive_,
-      right_value_.data(),
-      right_value_.length(),
-      right_inclusive_);
+  IndexScanner *index_scanner = index_->create_scanner(
+      left_value_.data(), left_value_.length(), left_inclusive_,
+      right_value_.data(), right_value_.length(), right_inclusive_);
   if (nullptr == index_scanner) {
     LOG_WARN("failed to create index scanner");
     return RC::INTERNAL;
@@ -63,16 +59,16 @@ RC IndexScanPhysicalOperator::open(Trx *trx)
   return RC::SUCCESS;
 }
 
-RC IndexScanPhysicalOperator::next()
-{
+RC IndexScanPhysicalOperator::next() {
   RID rid;
-  RC  rc = RC::SUCCESS;
+  RC rc = RC::SUCCESS;
 
   bool filter_result = false;
   while (RC::SUCCESS == (rc = index_scanner_->next_entry(&rid))) {
     rc = record_handler_->get_record(rid, current_record_);
     if (OB_FAIL(rc)) {
-      LOG_TRACE("failed to get record. rid=%s, rc=%s", rid.to_string().c_str(), strrc(rc));
+      LOG_TRACE("failed to get record. rid=%s, rc=%s", rid.to_string().c_str(),
+                strrc(rc));
       return rc;
     }
 
@@ -102,27 +98,24 @@ RC IndexScanPhysicalOperator::next()
   return rc;
 }
 
-RC IndexScanPhysicalOperator::close()
-{
+RC IndexScanPhysicalOperator::close() {
   index_scanner_->destroy();
   index_scanner_ = nullptr;
   return RC::SUCCESS;
 }
 
-Tuple *IndexScanPhysicalOperator::current_tuple()
-{
+Tuple *IndexScanPhysicalOperator::current_tuple() {
   tuple_.set_record(&current_record_);
   return &tuple_;
 }
 
-void IndexScanPhysicalOperator::set_predicates(std::vector<std::unique_ptr<Expression>> &&exprs)
-{
+void IndexScanPhysicalOperator::set_predicates(
+    std::vector<std::unique_ptr<Expression>> &&exprs) {
   predicates_ = std::move(exprs);
 }
 
-RC IndexScanPhysicalOperator::filter(RowTuple &tuple, bool &result)
-{
-  RC    rc = RC::SUCCESS;
+RC IndexScanPhysicalOperator::filter(RowTuple &tuple, bool &result) {
+  RC rc = RC::SUCCESS;
   Value value;
   for (std::unique_ptr<Expression> &expr : predicates_) {
     rc = expr->get_value(tuple, value);
@@ -141,7 +134,6 @@ RC IndexScanPhysicalOperator::filter(RowTuple &tuple, bool &result)
   return rc;
 }
 
-std::string IndexScanPhysicalOperator::param() const
-{
+std::string IndexScanPhysicalOperator::param() const {
   return std::string(index_->index_meta().name()) + " ON " + table_->name();
 }

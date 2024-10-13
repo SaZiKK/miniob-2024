@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -21,13 +21,12 @@ See the Mulan PSL v2 for more details. */
  * @brief Group By 物理算子基类
  * @ingroup PhysicalOperator
  */
-class GroupByPhysicalOperator : public PhysicalOperator
-{
-public:
+class GroupByPhysicalOperator : public PhysicalOperator {
+ public:
   GroupByPhysicalOperator(std::vector<Expression *> &&expressions);
   virtual ~GroupByPhysicalOperator() = default;
 
-protected:
+ protected:
   using AggregatorList = std::vector<std::unique_ptr<Aggregator>>;
   /**
    * @brief 聚合出来的一组数据
@@ -40,7 +39,7 @@ protected:
    */
   using GroupValueType = std::tuple<AggregatorList, CompositeTuple>;
 
-protected:
+ protected:
   void create_aggregator_list(AggregatorList &aggregator_list);
 
   /// @brief 聚合一条记录
@@ -51,7 +50,7 @@ protected:
   /// @brief 所有tuple聚合结束后，运算最终结果
   RC evaluate(GroupValueType &group_value);
 
-protected:
+ protected:
   std::vector<Expression *> aggregate_expressions_;  /// 聚合表达式
-  std::vector<Expression *> value_expressions_;      /// 计算聚合时的表达式
+  std::vector<Expression *> value_expressions_;  /// 计算聚合时的表达式
 };

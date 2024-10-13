@@ -12,9 +12,8 @@ class Db;
  * @ingroup Statement
  * @details 虽然解析成了stmt，但是与原始的SQL解析后的数据也差不多
  */
-class DropTableStmt : public Stmt
-{
-public:
+class DropTableStmt : public Stmt {
+ public:
   // 构造析构
   DropTableStmt(const std::string &table_name) : table_name_(table_name) {}
   virtual ~DropTableStmt() = default;
@@ -28,7 +27,7 @@ public:
   // 创建 STMT 对象
   static RC create(Db *db, const DropTableSqlNode &drop_table, Stmt *&stmt);
 
-private:
+ private:
   // 删除表格只需要表格的名称
   std::string table_name_;
 };

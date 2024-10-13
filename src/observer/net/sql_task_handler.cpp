@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -18,8 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include "event/sql_event.h"
 #include "session/session.h"
 
-RC SqlTaskHandler::handle_event(Communicator *communicator)
-{
+RC SqlTaskHandler::handle_event(Communicator *communicator) {
   SessionEvent *event = nullptr;
   RC rc = communicator->read_event(event);
   if (OB_FAIL(rc)) {
@@ -41,7 +40,8 @@ RC SqlTaskHandler::handle_event(Communicator *communicator)
     event->sql_result()->set_return_code(rc);
   }
 
-  bool need_disconnect = false; //todo: 显然需要进一步维护，有相关的if语句，但是值写死了
+  bool need_disconnect =
+      false;  // todo: 显然需要进一步维护，有相关的if语句，但是值写死了
 
   // 如果处理成功，就将结果返回给客户端
   rc = communicator->write_result(event, need_disconnect);
@@ -57,8 +57,7 @@ RC SqlTaskHandler::handle_event(Communicator *communicator)
   return RC::SUCCESS;
 }
 
-RC SqlTaskHandler::handle_sql(SQLStageEvent *sql_event)
-{
+RC SqlTaskHandler::handle_sql(SQLStageEvent *sql_event) {
   RC rc = query_cache_stage_.handle_request(sql_event);
   if (OB_FAIL(rc)) {
     LOG_TRACE("failed to do query cache. rc=%s", strrc(rc));

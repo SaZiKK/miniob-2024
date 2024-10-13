@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -22,23 +22,26 @@ See the Mulan PSL v2 for more details. */
  * @details 比如使用全表扫描、通过索引获取数据等
  * @ingroup LogicalOperator
  */
-class TableGetLogicalOperator : public LogicalOperator
-{
-public:
+class TableGetLogicalOperator : public LogicalOperator {
+ public:
   TableGetLogicalOperator(Table *table, ReadWriteMode mode);
   virtual ~TableGetLogicalOperator() = default;
 
-  LogicalOperatorType type() const override { return LogicalOperatorType::TABLE_GET; }
+  LogicalOperatorType type() const override {
+    return LogicalOperatorType::TABLE_GET;
+  }
 
-  Table        *table() const { return table_; }
+  Table *table() const { return table_; }
   ReadWriteMode read_write_mode() const { return mode_; }
 
   void set_predicates(std::vector<std::unique_ptr<Expression>> &&exprs);
-  auto predicates() -> std::vector<std::unique_ptr<Expression>> & { return predicates_; }
+  auto predicates() -> std::vector<std::unique_ptr<Expression>> & {
+    return predicates_;
+  }
 
-private:
-  Table        *table_ = nullptr;
-  ReadWriteMode mode_  = ReadWriteMode::READ_WRITE;
+ private:
+  Table *table_ = nullptr;
+  ReadWriteMode mode_ = ReadWriteMode::READ_WRITE;
 
   // 与当前表相关的过滤操作，可以尝试在遍历数据时执行
   // 这里的表达式都是比较简单的比较运算，并且左右两边都是取字段表达式或值表达式

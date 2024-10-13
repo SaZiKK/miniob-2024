@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -22,9 +22,8 @@ class Worker;
  * @brief 一个连接一个线程的线程模型
  * @ingroup ThreadHandler
  */
-class OneThreadPerConnectionThreadHandler : public ThreadHandler
-{
-public:
+class OneThreadPerConnectionThreadHandler : public ThreadHandler {
+ public:
   OneThreadPerConnectionThreadHandler() = default;
   virtual ~OneThreadPerConnectionThreadHandler();
 
@@ -41,9 +40,10 @@ public:
   //! @copydoc ThreadHandler::close_connection
   virtual RC close_connection(Communicator *communicator) override;
 
-private:
+ private:
   /// 记录一个连接Communicator关联的线程数据
-  unordered_map<Communicator *, Worker *> thread_map_;  // 当前编译器没有支持jthread
+  unordered_map<Communicator *, Worker *>
+      thread_map_;  // 当前编译器没有支持jthread
   /// 保护线程安全的锁
   mutex lock_;
 };

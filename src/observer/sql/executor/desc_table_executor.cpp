@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -27,21 +27,20 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-RC DescTableExecutor::execute(SQLStageEvent *sql_event)
-{
-  RC            rc            = RC::SUCCESS;
-  Stmt         *stmt          = sql_event->stmt();
+RC DescTableExecutor::execute(SQLStageEvent *sql_event) {
+  RC rc = RC::SUCCESS;
+  Stmt *stmt = sql_event->stmt();
   SessionEvent *session_event = sql_event->session_event();
-  Session      *session       = session_event->session();
+  Session *session = session_event->session();
   ASSERT(stmt->type() == StmtType::DESC_TABLE,
-      "desc table executor can not run this command: %d",
-      static_cast<int>(stmt->type()));
+         "desc table executor can not run this command: %d",
+         static_cast<int>(stmt->type()));
 
   DescTableStmt *desc_table_stmt = static_cast<DescTableStmt *>(stmt);
-  SqlResult     *sql_result      = session_event->sql_result();
-  const char    *table_name      = desc_table_stmt->table_name().c_str();
+  SqlResult *sql_result = session_event->sql_result();
+  const char *table_name = desc_table_stmt->table_name().c_str();
 
-  Db    *db    = session->get_current_db();
+  Db *db = session->get_current_db();
   Table *table = db->find_table(table_name);
   if (table != nullptr) {
     TupleSchema tuple_schema;
@@ -51,16 +50,16 @@ RC DescTableExecutor::execute(SQLStageEvent *sql_event)
 
     sql_result->set_tuple_schema(tuple_schema);
 
-    auto             oper       = new StringListPhysicalOperator;
+    auto oper = new StringListPhysicalOperator;
     const TableMeta &table_meta = table->table_meta();
     for (int i = table_meta.sys_field_num(); i < table_meta.field_num(); i++) {
       const FieldMeta *field_meta = table_meta.field(i);
-      oper->append({field_meta->name(), attr_type_to_string(field_meta->type()), std::to_string(field_meta->len())});
+      oper->append({field_meta->name(), attr_type_to_string(field_meta->type()),
+                    std::to_string(field_meta->len())});
     }
 
     sql_result->set_operator(unique_ptr<PhysicalOperator>(oper));
   } else {
-
     sql_result->set_return_code(RC::SCHEMA_TABLE_NOT_EXIST);
     sql_result->set_state_string("Table not exists");
   }

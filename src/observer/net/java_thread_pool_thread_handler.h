@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -28,9 +28,8 @@ struct EventCallbackAg;
  * libevent 是一个常用并且高效的异步事件消息库，可以阅读手册了解更多。
  * [libevent 手册](https://libevent.org/doc/index.html)
  */
-class JavaThreadPoolThreadHandler : public ThreadHandler
-{
-public:
+class JavaThreadPoolThreadHandler : public ThreadHandler {
+ public:
   JavaThreadPoolThreadHandler() = default;
   virtual ~JavaThreadPoolThreadHandler();
 
@@ -46,9 +45,10 @@ public:
   //! @copydoc ThreadHandler::close_connection
   virtual RC close_connection(Communicator *communicator) override;
 
-public:
+ public:
   /**
-   * @brief 使用libevent处理消息时，需要有一个回调函数，这里就相当于libevent的回调函数
+   * @brief
+   * 使用libevent处理消息时，需要有一个回调函数，这里就相当于libevent的回调函数
    *
    * @param ag 处理消息回调时的参数，比如libevent的event、连接等
    */
@@ -60,11 +60,11 @@ public:
    */
   void event_loop_thread();
 
-private:
-  mutex                                  lock_;
-  struct event_base                     *event_base_ = nullptr;  /// libevent 的event_base
-  common::ThreadPoolExecutor             executor_;              /// 线程池
-  map<Communicator *, EventCallbackAg *> event_map_;             /// 每个连接与它关联的数据
+ private:
+  mutex lock_;
+  struct event_base *event_base_ = nullptr;  /// libevent 的event_base
+  common::ThreadPoolExecutor executor_;      /// 线程池
+  map<Communicator *, EventCallbackAg *> event_map_;  /// 每个连接与它关联的数据
 
   SqlTaskHandler sql_task_handler_;  /// SQL请求处理器
 };

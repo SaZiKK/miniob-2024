@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -19,14 +19,13 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-ExpressionRewriter::ExpressionRewriter()
-{
+ExpressionRewriter::ExpressionRewriter() {
   expr_rewrite_rules_.emplace_back(new ComparisonSimplificationRule);
   expr_rewrite_rules_.emplace_back(new ConjunctionSimplificationRule);
 }
 
-RC ExpressionRewriter::rewrite(unique_ptr<LogicalOperator> &oper, bool &change_made)
-{
+RC ExpressionRewriter::rewrite(unique_ptr<LogicalOperator> &oper,
+                               bool &change_made) {
   RC rc = RC::SUCCESS;
 
   bool sub_change_made = false;
@@ -50,7 +49,7 @@ RC ExpressionRewriter::rewrite(unique_ptr<LogicalOperator> &oper, bool &change_m
   vector<unique_ptr<LogicalOperator>> &child_opers = oper->children();
   for (unique_ptr<LogicalOperator> &child_oper : child_opers) {
     bool sub_change_made = false;
-    rc                   = rewrite(child_oper, sub_change_made);
+    rc = rewrite(child_oper, sub_change_made);
     if (sub_change_made && !change_made) {
       change_made = true;
     }
@@ -61,15 +60,15 @@ RC ExpressionRewriter::rewrite(unique_ptr<LogicalOperator> &oper, bool &change_m
   return rc;
 }
 
-RC ExpressionRewriter::rewrite_expression(unique_ptr<Expression> &expr, bool &change_made)
-{
+RC ExpressionRewriter::rewrite_expression(unique_ptr<Expression> &expr,
+                                          bool &change_made) {
   RC rc = RC::SUCCESS;
 
   change_made = false;
   for (unique_ptr<ExpressionRewriteRule> &rule : expr_rewrite_rules_) {
     bool sub_change_made = false;
 
-    rc                   = rule->rewrite(expr, sub_change_made);
+    rc = rule->rewrite(expr, sub_change_made);
     if (sub_change_made && !change_made) {
       change_made = true;
     }
@@ -89,27 +88,28 @@ RC ExpressionRewriter::rewrite_expression(unique_ptr<Expression> &expr, bool &ch
     } break;
 
     case ExprType::CAST: {
-      unique_ptr<Expression> &child_expr = (static_cast<CastExpr *>(expr.get()))->child();
+      unique_ptr<Expression> &child_expr =
+          (static_cast<CastExpr *>(expr.get()))->child();
 
-      rc                                      = rewrite_expression(child_expr, change_made);
+      rc = rewrite_expression(child_expr, change_made);
     } break;
 
     case ExprType::COMPARISON: {
-      auto                         comparison_expr = static_cast<ComparisonExpr *>(expr.get());
+      auto comparison_expr = static_cast<ComparisonExpr *>(expr.get());
 
-      unique_ptr<Expression> &left_expr       = comparison_expr->left();
-      unique_ptr<Expression> &right_expr      = comparison_expr->right();
+      unique_ptr<Expression> &left_expr = comparison_expr->left();
+      unique_ptr<Expression> &right_expr = comparison_expr->right();
 
       bool left_change_made = false;
 
-      rc                    = rewrite_expression(left_expr, left_change_made);
+      rc = rewrite_expression(left_expr, left_change_made);
       if (rc != RC::SUCCESS) {
         return rc;
       }
 
       bool right_change_made = false;
 
-      rc                     = rewrite_expression(right_expr, right_change_made);
+      rc = rewrite_expression(right_expr, right_change_made);
       if (rc != RC::SUCCESS) {
         return rc;
       }
@@ -120,16 +120,16 @@ RC ExpressionRewriter::rewrite_expression(unique_ptr<Expression> &expr, bool &ch
     } break;
 
     case ExprType::CONJUNCTION: {
-      auto                                      conjunction_expr = static_cast<ConjunctionExpr *>(expr.get());
+      auto conjunction_expr = static_cast<ConjunctionExpr *>(expr.get());
 
-      vector<unique_ptr<Expression>> &children         = conjunction_expr->children();
+      vector<unique_ptr<Expression>> &children = conjunction_expr->children();
       for (unique_ptr<Expression> &child_expr : children) {
         bool sub_change_made = false;
 
-        rc                   = rewrite_expression(child_expr, sub_change_made);
+        rc = rewrite_expression(child_expr, sub_change_made);
         if (rc != RC::SUCCESS) {
-
-          LOG_WARN("failed to rewriter conjunction sub expression. rc=%s", strrc(rc));
+          LOG_WARN("failed to rewriter conjunction sub expression. rc=%s",
+                   strrc(rc));
           return rc;
         }
 

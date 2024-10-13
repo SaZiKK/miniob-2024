@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -34,33 +34,20 @@ using LSN = int64_t;
  * @brief 读写模式
  * @details 原来的代码中有大量的true/false来表示是否只读，这种代码不易于阅读
  */
-enum class ReadWriteMode
-{
-  READ_ONLY,
-  READ_WRITE
-};
+enum class ReadWriteMode { READ_ONLY, READ_WRITE };
 
 /**
  * @brief 存储格式
  * @details 当前仅支持行存格式（ROW_FORMAT）以及 PAX 存储格式(PAX_FORMAT)。
  */
-enum class StorageFormat
-{
-  UNKNOWN_FORMAT = 0,
-  ROW_FORMAT,
-  PAX_FORMAT
-};
+enum class StorageFormat { UNKNOWN_FORMAT = 0, ROW_FORMAT, PAX_FORMAT };
 
 /**
  * @brief 执行引擎模式
- * @details 当前支持按行处理（TUPLE_ITERATOR）以及按批处理(CHUNK_ITERATOR)两种模式。
+ * @details
+ * 当前支持按行处理（TUPLE_ITERATOR）以及按批处理(CHUNK_ITERATOR)两种模式。
  */
-enum class ExecutionMode
-{
-  UNKNOWN_MODE = 0,
-  TUPLE_ITERATOR,
-  CHUNK_ITERATOR
-};
+enum class ExecutionMode { UNKNOWN_MODE = 0, TUPLE_ITERATOR, CHUNK_ITERATOR };
 
 /// page的CRC校验和
 using CheckSum = unsigned int;

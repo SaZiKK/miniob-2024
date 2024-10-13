@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -25,16 +25,15 @@ class SessionEvent;
  * @brief 表示会话
  * @details 当前一个连接一个会话，没有做特殊的会话管理，这也简化了会话处理
  */
-class Session
-{
-public:
+class Session {
+ public:
   /**
    * @brief 获取默认的会话数据，新生成的会话都基于默认会话设置参数
    * @note 当前并没有会话参数
    */
   static Session &default_session();
 
-public:
+ public:
   Session() = default;
   ~Session();
 
@@ -42,7 +41,7 @@ public:
   void operator=(Session &) = delete;
 
   const char *get_current_db_name() const;
-  Db         *get_current_db() const;
+  Db *get_current_db() const;
 
   /**
    * @brief 设置当前会话关联的数据库
@@ -80,12 +79,14 @@ public:
   void set_sql_debug(bool sql_debug) { sql_debug_ = sql_debug; }
   bool sql_debug_on() const { return sql_debug_; }
 
-  void          set_execution_mode(const ExecutionMode mode) { execution_mode_ = mode; }
+  void set_execution_mode(const ExecutionMode mode) { execution_mode_ = mode; }
   ExecutionMode get_execution_mode() const { return execution_mode_; }
 
   bool used_chunk_mode() { return used_chunk_mode_; }
 
-  void set_used_chunk_mode(bool used_chunk_mode) { used_chunk_mode_ = used_chunk_mode; }
+  void set_used_chunk_mode(bool used_chunk_mode) {
+    used_chunk_mode_ = used_chunk_mode;
+  }
 
   /**
    * @brief 将指定会话设置到线程变量中
@@ -95,16 +96,18 @@ public:
 
   /**
    * @brief 获取当前的会话
-   * @details 当前某个请求开始时，会将会话设置到线程变量中，在整个请求处理过程中不会改变
+   * @details
+   * 当前某个请求开始时，会将会话设置到线程变量中，在整个请求处理过程中不会改变
    */
   static Session *current_session();
 
-private:
-  Db           *db_              = nullptr;
-  Trx          *trx_             = nullptr;
+ private:
+  Db *db_ = nullptr;
+  Trx *trx_ = nullptr;
   SessionEvent *current_request_ = nullptr;  ///< 当前正在处理的请求
 
-  bool trx_multi_operation_mode_ = false;  ///< 当前事务的模式，是否多语句模式. 单语句模式自动提交
+  bool trx_multi_operation_mode_ =
+      false;  ///< 当前事务的模式，是否多语句模式. 单语句模式自动提交
 
   bool sql_debug_ = false;  ///< 是否输出SQL调试信息
 

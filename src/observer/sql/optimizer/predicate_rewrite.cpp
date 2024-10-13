@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -15,8 +15,8 @@ See the Mulan PSL v2 for more details. */
 #include "sql/optimizer/predicate_rewrite.h"
 #include "sql/operator/logical_operator.h"
 
-RC PredicateRewriteRule::rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made)
-{
+RC PredicateRewriteRule::rewrite(std::unique_ptr<LogicalOperator> &oper,
+                                 bool &change_made) {
   std::vector<std::unique_ptr<LogicalOperator>> &child_opers = oper->children();
   if (child_opers.size() != 1) {
     return RC::SUCCESS;
@@ -27,7 +27,8 @@ RC PredicateRewriteRule::rewrite(std::unique_ptr<LogicalOperator> &oper, bool &c
     return RC::SUCCESS;
   }
 
-  std::vector<std::unique_ptr<Expression>> &expressions = child_oper->expressions();
+  std::vector<std::unique_ptr<Expression>> &expressions =
+      child_oper->expressions();
   if (expressions.size() != 1) {
     return RC::SUCCESS;
   }

@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -42,11 +42,10 @@ using namespace std;
 using namespace common;
 
 #ifdef USE_READLINE
-const string HISTORY_FILE            = string(getenv("HOME")) + "/.miniob.history";
-time_t       last_history_write_time = 0;
+const string HISTORY_FILE = string(getenv("HOME")) + "/.miniob.history";
+time_t last_history_write_time = 0;
 
-char *my_readline(const char *prompt)
-{
+char *my_readline(const char *prompt) {
   int size = history_length;
   if (size == 0) {
     read_history(HISTORY_FILE.c_str());
@@ -69,8 +68,7 @@ char *my_readline(const char *prompt)
   return line;
 }
 #else   // USE_READLINE
-char *my_readline(const char *prompt)
-{
+char *my_readline(const char *prompt) {
   char *buffer = (char *)malloc(MAX_MEM_BUFFER_SIZE);
   if (nullptr == buffer) {
     fprintf(stderr, "failed to alloc line buffer");
@@ -87,17 +85,18 @@ char *my_readline(const char *prompt)
 }
 #endif  // USE_READLINE
 
-/* this function config a exit-cmd list, strncasecmp func truncate the command from terminal according to the number,
-   'strncasecmp("exit", cmd, 4)' means that obclient read command string from terminal, truncate it to 4 chars from
-   the beginning, then compare the result with 'exit', if they match, exit the obclient.
+/* this function config a exit-cmd list, strncasecmp func truncate the command
+   from terminal according to the number, 'strncasecmp("exit", cmd, 4)' means
+   that obclient read command string from terminal, truncate it to 4 chars from
+   the beginning, then compare the result with 'exit', if they match, exit the
+   obclient.
 */
-bool is_exit_command(const char *cmd)
-{
-  return 0 == strncasecmp("exit", cmd, 4) || 0 == strncasecmp("bye", cmd, 3) || 0 == strncasecmp("\\q", cmd, 2);
+bool is_exit_command(const char *cmd) {
+  return 0 == strncasecmp("exit", cmd, 4) || 0 == strncasecmp("bye", cmd, 3) ||
+         0 == strncasecmp("\\q", cmd, 2);
 }
 
-int init_unix_sock(const char *unix_sock_path)
-{
+int init_unix_sock(const char *unix_sock_path) {
   int sockfd = socket(PF_UNIX, SOCK_STREAM, 0);
   if (sockfd < 0) {
     fprintf(stderr, "failed to create unix socket. %s", strerror(errno));
@@ -110,36 +109,41 @@ int init_unix_sock(const char *unix_sock_path)
   snprintf(sockaddr.sun_path, sizeof(sockaddr.sun_path), "%s", unix_sock_path);
 
   if (connect(sockfd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) < 0) {
-    fprintf(stderr, "failed to connect to server. unix socket path '%s'. error %s", sockaddr.sun_path, strerror(errno));
+    fprintf(stderr,
+            "failed to connect to server. unix socket path '%s'. error %s",
+            sockaddr.sun_path, strerror(errno));
     close(sockfd);
     return -1;
   }
   return sockfd;
 }
 
-int init_tcp_sock(const char *server_host, int server_port)
-{
-  struct hostent    *host;
+int init_tcp_sock(const char *server_host, int server_port) {
+  struct hostent *host;
   struct sockaddr_in serv_addr;
 
   if ((host = gethostbyname(server_host)) == NULL) {
-    fprintf(stderr, "gethostbyname failed. errmsg=%d:%s\n", errno, strerror(errno));
+    fprintf(stderr, "gethostbyname failed. errmsg=%d:%s\n", errno,
+            strerror(errno));
     return -1;
   }
 
   int sockfd;
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-    fprintf(stderr, "create socket error. errmsg=%d:%s\n", errno, strerror(errno));
+    fprintf(stderr, "create socket error. errmsg=%d:%s\n", errno,
+            strerror(errno));
     return -1;
   }
 
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port   = htons(server_port);
-  serv_addr.sin_addr   = *((struct in_addr *)host->h_addr);
+  serv_addr.sin_port = htons(server_port);
+  serv_addr.sin_addr = *((struct in_addr *)host->h_addr);
   bzero(&(serv_addr.sin_zero), 8);
 
-  if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(struct sockaddr)) == -1) {
-    fprintf(stderr, "Failed to connect. errmsg=%d:%s\n", errno, strerror(errno));
+  if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(struct sockaddr)) ==
+      -1) {
+    fprintf(stderr, "Failed to connect. errmsg=%d:%s\n", errno,
+            strerror(errno));
     close(sockfd);
     return -1;
   }
@@ -156,20 +160,25 @@ Learn more about MiniOB at https://github.com/oceanbase/miniob
 
 )";
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   printf("%s", startup_tips);
 
-  const char  *unix_socket_path = nullptr;
-  const char  *server_host      = "127.0.0.1";
-  int          server_port      = PORT_DEFAULT;
-  int          opt;
+  const char *unix_socket_path = nullptr;
+  const char *server_host = "127.0.0.1";
+  int server_port = PORT_DEFAULT;
+  int opt;
   extern char *optarg;
   while ((opt = getopt(argc, argv, "s:h:p:")) > 0) {
     switch (opt) {
-      case 's': unix_socket_path = optarg; break;
-      case 'p': server_port = atoi(optarg); break;
-      case 'h': server_host = optarg; break;
+      case 's':
+        unix_socket_path = optarg;
+        break;
+      case 'p':
+        server_port = atoi(optarg);
+        break;
+      case 'h':
+        server_host = optarg;
+        break;
     }
   }
 
@@ -202,7 +211,8 @@ int main(int argc, char *argv[])
       break;
     }
 
-    if ((send_bytes = write(sockfd, input_command, strlen(input_command) + 1)) == -1) {  // TODO writen
+    if ((send_bytes = write(sockfd, input_command,
+                            strlen(input_command) + 1)) == -1) {  // TODO writen
       fprintf(stderr, "send error: %d:%s \n", errno, strerror(errno));
       exit(1);
     }

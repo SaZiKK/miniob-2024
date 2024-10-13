@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -24,15 +24,17 @@ See the Mulan PSL v2 for more details. */
  * 表达式时，默认采用这个物理算子（当前也只有这个物理算子）。 NOTE:
  * 当前并没有使用hash方式实现，而是每次使用线性查找的方式。
  */
-class HashGroupByPhysicalOperator : public GroupByPhysicalOperator
-{
-public:
+class HashGroupByPhysicalOperator : public GroupByPhysicalOperator {
+ public:
   HashGroupByPhysicalOperator(
-      std::vector<std::unique_ptr<Expression>> &&group_by_exprs, std::vector<Expression *> &&expressions);
+      std::vector<std::unique_ptr<Expression>> &&group_by_exprs,
+      std::vector<Expression *> &&expressions);
 
   virtual ~HashGroupByPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override { return PhysicalOperatorType::HASH_GROUP_BY; }
+  PhysicalOperatorType type() const override {
+    return PhysicalOperatorType::HASH_GROUP_BY;
+  }
 
   RC open(Trx *trx) override;
   RC next() override;
@@ -40,16 +42,16 @@ public:
 
   Tuple *current_tuple() override;
 
-private:
+ private:
   using AggregatorList = GroupByPhysicalOperator::AggregatorList;
   using GroupValueType = GroupByPhysicalOperator::GroupValueType;
   /// 聚合出来的一组数据
   using GroupType = std::tuple<ValueListTuple, GroupValueType>;
 
-private:
+ private:
   RC find_group(const Tuple &child_tuple, GroupType *&found_group);
 
-private:
+ private:
   std::vector<std::unique_ptr<Expression>> group_by_exprs_;
 
   /// 一组一条数据
@@ -58,5 +60,5 @@ private:
   std::vector<GroupType> groups_;
 
   std::vector<GroupType>::iterator current_group_;
-  bool                             first_emited_ = false;  /// 第一条数据是否已经输出
+  bool first_emited_ = false;  /// 第一条数据是否已经输出
 };

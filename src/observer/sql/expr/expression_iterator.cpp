@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -18,8 +18,8 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-RC ExpressionIterator::iterate_child_expr(Expression &expr, function<RC(unique_ptr<Expression> &)> callback)
-{
+RC ExpressionIterator::iterate_child_expr(
+    Expression &expr, function<RC(unique_ptr<Expression> &)> callback) {
   RC rc = RC::SUCCESS;
 
   switch (expr.type()) {
@@ -29,7 +29,6 @@ RC ExpressionIterator::iterate_child_expr(Expression &expr, function<RC(unique_p
     } break;
 
     case ExprType::COMPARISON: {
-
       auto &comparison_expr = static_cast<ComparisonExpr &>(expr);
       rc = callback(comparison_expr.left());
 
@@ -50,7 +49,6 @@ RC ExpressionIterator::iterate_child_expr(Expression &expr, function<RC(unique_p
     } break;
 
     case ExprType::ARITHMETIC: {
-
       auto &arithmetic_expr = static_cast<ArithmeticExpr &>(expr);
       rc = callback(arithmetic_expr.left());
       if (OB_SUCC(rc)) {

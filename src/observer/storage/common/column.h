@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -15,21 +15,20 @@ See the Mulan PSL v2 for more details. */
 #include "storage/field/field_meta.h"
 
 /**
- * @brief A column contains multiple values in contiguous memory with a specified type.
+ * @brief A column contains multiple values in contiguous memory with a
+ * specified type.
  */
 // TODO: `Column` currently only support fixed-length type.
-class Column
-{
-public:
-  enum class Type
-  {
+class Column {
+ public:
+  enum class Type {
     NORMAL_COLUMN,   /// Normal column represents a list of fixed-length values
     CONSTANT_COLUMN  /// Constant column represents a single value
   };
 
-  Column()               = default;
+  Column() = default;
   Column(const Column &) = delete;
-  Column(Column &&)      = delete;
+  Column(Column &&) = delete;
 
   Column(const FieldMeta &meta, size_t size = DEFAULT_CAPACITY);
   Column(AttrType attr_type, int attr_len, size_t size = DEFAULT_CAPACITY);
@@ -76,13 +75,13 @@ public:
   void set_column_type(Type column_type) { column_type_ = column_type; }
   void set_count(int count) { count_ = count; }
 
-  int      count() const { return count_; }
-  int      capacity() const { return capacity_; }
+  int count() const { return count_; }
+  int capacity() const { return capacity_; }
   AttrType attr_type() const { return attr_type_; }
-  int      attr_len() const { return attr_len_; }
-  Type     column_type() const { return column_type_; }
+  int attr_len() const { return attr_len_; }
+  Type column_type() const { return column_type_; }
 
-private:
+ private:
   static constexpr size_t DEFAULT_CAPACITY = 8192;
 
   char *data_ = nullptr;

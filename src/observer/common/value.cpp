@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -26,13 +26,18 @@ Value::Value(bool val) { set_boolean(val); }
 
 Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
 
-Value::Value(int val, bool is_date) { if (is_date) { set_date(val); } else { set_int(val); } }
+Value::Value(int val, bool is_date) {
+  if (is_date) {
+    set_date(val);
+  } else {
+    set_int(val);
+  }
+}
 
-Value::Value(const Value &other)
-{
+Value::Value(const Value &other) {
   this->attr_type_ = other.attr_type_;
-  this->length_    = other.length_;
-  this->own_data_  = other.own_data_;
+  this->length_ = other.length_;
+  this->own_data_ = other.own_data_;
   switch (this->attr_type_) {
     case AttrType::CHARS: {
       set_string_from_other(other);
@@ -44,25 +49,23 @@ Value::Value(const Value &other)
   }
 }
 
-Value::Value(Value &&other)
-{
+Value::Value(Value &&other) {
   this->attr_type_ = other.attr_type_;
-  this->length_    = other.length_;
-  this->own_data_  = other.own_data_;
-  this->value_     = other.value_;
-  other.own_data_  = false;
-  other.length_    = 0;
+  this->length_ = other.length_;
+  this->own_data_ = other.own_data_;
+  this->value_ = other.value_;
+  other.own_data_ = false;
+  other.length_ = 0;
 }
 
-Value &Value::operator=(const Value &other)
-{
+Value &Value::operator=(const Value &other) {
   if (this == &other) {
     return *this;
   }
   reset();
   this->attr_type_ = other.attr_type_;
-  this->length_    = other.length_;
-  this->own_data_  = other.own_data_;
+  this->length_ = other.length_;
+  this->own_data_ = other.own_data_;
   switch (this->attr_type_) {
     case AttrType::CHARS: {
       set_string_from_other(other);
@@ -75,23 +78,21 @@ Value &Value::operator=(const Value &other)
   return *this;
 }
 
-Value &Value::operator=(Value &&other)
-{
+Value &Value::operator=(Value &&other) {
   if (this == &other) {
     return *this;
   }
   reset();
   this->attr_type_ = other.attr_type_;
-  this->length_    = other.length_;
-  this->own_data_  = other.own_data_;
-  this->value_     = other.value_;
-  other.own_data_  = false;
-  other.length_    = 0;
+  this->length_ = other.length_;
+  this->own_data_ = other.own_data_;
+  this->value_ = other.value_;
+  other.own_data_ = false;
+  other.length_ = 0;
   return *this;
 }
 
-void Value::reset()
-{
+void Value::reset() {
   switch (attr_type_) {
     case AttrType::CHARS:
       if (own_data_ && value_.pointer_value_ != nullptr) {
@@ -99,35 +100,35 @@ void Value::reset()
         value_.pointer_value_ = nullptr;
       }
       break;
-    default: break;
+    default:
+      break;
   }
 
   attr_type_ = AttrType::UNDEFINED;
-  length_    = 0;
-  own_data_  = false;
+  length_ = 0;
+  own_data_ = false;
 }
 
-void Value::set_data(char *data, int length)
-{
+void Value::set_data(char *data, int length) {
   switch (attr_type_) {
     case AttrType::CHARS: {
       set_string(data, length);
     } break;
     case AttrType::INTS: {
       value_.int_value_ = *(int *)data;
-      length_           = length;
+      length_ = length;
     } break;
     case AttrType::FLOATS: {
       value_.float_value_ = *(float *)data;
-      length_             = length;
+      length_ = length;
     } break;
     case AttrType::BOOLEANS: {
       value_.bool_value_ = *(int *)data != 0;
-      length_            = length;
+      length_ = length;
     } break;
     case AttrType::DATE: {
       value_.int_value_ = *(int *)data;
-      length_           = length;
+      length_ = length;
     } break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
@@ -135,36 +136,32 @@ void Value::set_data(char *data, int length)
   }
 }
 
-void Value::set_int(int val)
-{
+void Value::set_int(int val) {
   reset();
-  attr_type_        = AttrType::INTS;
+  attr_type_ = AttrType::INTS;
   value_.int_value_ = val;
-  length_           = sizeof(val);
+  length_ = sizeof(val);
 }
 
-void Value::set_float(float val)
-{
+void Value::set_float(float val) {
   reset();
-  attr_type_          = AttrType::FLOATS;
+  attr_type_ = AttrType::FLOATS;
   value_.float_value_ = val;
-  length_             = sizeof(val);
+  length_ = sizeof(val);
 }
-void Value::set_boolean(bool val)
-{
+void Value::set_boolean(bool val) {
   reset();
-  attr_type_         = AttrType::BOOLEANS;
+  attr_type_ = AttrType::BOOLEANS;
   value_.bool_value_ = val;
-  length_            = sizeof(val);
+  length_ = sizeof(val);
 }
 
-void Value::set_string(const char *s, int len /*= 0*/)
-{
+void Value::set_string(const char *s, int len /*= 0*/) {
   reset();
   attr_type_ = AttrType::CHARS;
   if (s == nullptr) {
     value_.pointer_value_ = nullptr;
-    length_               = 0;
+    length_ = 0;
   } else {
     own_data_ = true;
     if (len > 0) {
@@ -173,22 +170,20 @@ void Value::set_string(const char *s, int len /*= 0*/)
       len = strlen(s);
     }
     value_.pointer_value_ = new char[len + 1];
-    length_               = len;
+    length_ = len;
     memcpy(value_.pointer_value_, s, len);
     value_.pointer_value_[len] = '\0';
   }
 }
 
-void Value::set_date(int val)
-{
+void Value::set_date(int val) {
   reset();
-  attr_type_        = AttrType::DATE;
+  attr_type_ = AttrType::DATE;
   value_.int_value_ = val;
-  length_           = sizeof(val);
+  length_ = sizeof(val);
 }
 
-void Value::set_value(const Value &value)
-{
+void Value::set_value(const Value &value) {
   switch (value.attr_type_) {
     case AttrType::INTS: {
       set_int(value.get_int());
@@ -211,18 +206,17 @@ void Value::set_value(const Value &value)
   }
 }
 
-void Value::set_string_from_other(const Value &other)
-{
+void Value::set_string_from_other(const Value &other) {
   ASSERT(attr_type_ == AttrType::CHARS, "attr type is not CHARS");
   if (own_data_ && other.value_.pointer_value_ != nullptr && length_ != 0) {
     this->value_.pointer_value_ = new char[this->length_ + 1];
-    memcpy(this->value_.pointer_value_, other.value_.pointer_value_, this->length_);
+    memcpy(this->value_.pointer_value_, other.value_.pointer_value_,
+           this->length_);
     this->value_.pointer_value_[this->length_] = '\0';
   }
 }
 
-const char *Value::data() const
-{
+const char *Value::data() const {
   switch (attr_type_) {
     case AttrType::CHARS: {
       return value_.pointer_value_;
@@ -233,30 +227,29 @@ const char *Value::data() const
   }
 }
 
-string Value::to_string() const
-{
+string Value::to_string() const {
   string res;
-  RC     rc = DataType::type_instance(this->attr_type_)->to_string(*this, res);
+  RC rc = DataType::type_instance(this->attr_type_)->to_string(*this, res);
   if (OB_FAIL(rc)) {
-    LOG_WARN("failed to convert value to string. type=%s", attr_type_to_string(this->attr_type_));
+    LOG_WARN("failed to convert value to string. type=%s",
+             attr_type_to_string(this->attr_type_));
     return "";
   }
   return res;
 }
 
-int Value::compare(const Value &other) const
-{
+int Value::compare(const Value &other) const {
   return DataType::type_instance(this->attr_type_)->compare(*this, other);
 }
 
-int Value::get_int() const
-{
+int Value::get_int() const {
   switch (attr_type_) {
     case AttrType::CHARS: {
       try {
         return (int)(std::stol(value_.pointer_value_));
       } catch (exception const &ex) {
-        LOG_TRACE("failed to convert string to number. s=%s, ex=%s", value_.pointer_value_, ex.what());
+        LOG_TRACE("failed to convert string to number. s=%s, ex=%s",
+                  value_.pointer_value_, ex.what());
         return 0;
       }
     }
@@ -280,14 +273,14 @@ int Value::get_int() const
   return 0;
 }
 
-float Value::get_float() const
-{
+float Value::get_float() const {
   switch (attr_type_) {
     case AttrType::CHARS: {
       try {
         return std::stof(value_.pointer_value_);
       } catch (exception const &ex) {
-        LOG_TRACE("failed to convert string to float. s=%s, ex=%s", value_.pointer_value_, ex.what());
+        LOG_TRACE("failed to convert string to float. s=%s, ex=%s",
+                  value_.pointer_value_, ex.what());
         return 0.0;
       }
     } break;
@@ -313,8 +306,7 @@ float Value::get_float() const
 
 string Value::get_string() const { return this->to_string(); }
 
-bool Value::get_boolean() const
-{
+bool Value::get_boolean() const {
   switch (attr_type_) {
     case AttrType::CHARS: {
       try {
@@ -330,7 +322,8 @@ bool Value::get_boolean() const
 
         return value_.pointer_value_ != nullptr;
       } catch (exception const &ex) {
-        LOG_TRACE("failed to convert string to float or integer. s=%s, ex=%s", value_.pointer_value_, ex.what());
+        LOG_TRACE("failed to convert string to float or integer. s=%s, ex=%s",
+                  value_.pointer_value_, ex.what());
         return value_.pointer_value_ != nullptr;
       }
     } break;
@@ -355,8 +348,7 @@ bool Value::get_boolean() const
   return false;
 }
 
-int Value::get_date() const
-{
+int Value::get_date() const {
   switch (attr_type_) {
     case AttrType::DATE: {
       return value_.int_value_;

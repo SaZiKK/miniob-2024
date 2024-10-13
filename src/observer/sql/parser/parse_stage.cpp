@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -27,8 +27,7 @@ See the Mulan PSL v2 for more details. */
 
 using namespace common;
 
-RC ParseStage::handle_request(SQLStageEvent *sql_event)
-{
+RC ParseStage::handle_request(SQLStageEvent *sql_event) {
   RC rc = RC::SUCCESS;
 
   // SQL 语句执行结果，包括错误信息
@@ -54,7 +53,8 @@ RC ParseStage::handle_request(SQLStageEvent *sql_event)
     LOG_WARN("got multi sql commands but only 1 will be handled");
   }
 
-  std::unique_ptr<ParsedSqlNode> sql_node = std::move(parsed_sql_result.sql_nodes().front());
+  std::unique_ptr<ParsedSqlNode> sql_node =
+      std::move(parsed_sql_result.sql_nodes().front());
 
   // 编译错误检查
   if (sql_node->flag == SCF_ERROR) {

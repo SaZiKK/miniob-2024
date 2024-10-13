@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -25,37 +25,31 @@ See the Mulan PSL v2 for more details. */
 
 using namespace common;
 
-class Worker
-{
-public:
-  Worker(ThreadHandler &host, Communicator *communicator) 
-    : host_(host), communicator_(communicator)
-  {}
-  ~Worker()
-  {
+class Worker {
+ public:
+  Worker(ThreadHandler &host, Communicator *communicator)
+      : host_(host), communicator_(communicator) {}
+  ~Worker() {
     if (thread_ != nullptr) {
       stop();
       join();
     }
   }
 
-  RC start()
-  {
+  RC start() {
     thread_ = new thread(std::ref(*this));
     return RC::SUCCESS;
   }
 
-  RC stop()
-  {
+  RC stop() {
     running_ = false;
     return RC::SUCCESS;
   }
 
-  RC join()
-  {
+  RC join() {
     if (thread_) {
       if (thread_->get_id() == this_thread::get_id()) {
-        thread_->detach(); // 如果当前线程join当前线程，就会卡死
+        thread_->detach();  // 如果当前线程join当前线程，就会卡死
       } else {
         thread_->join();
       }
@@ -65,8 +59,7 @@ public:
     return RC::SUCCESS;
   }
 
-  void operator()()
-  {
+  void operator()() {
     LOG_INFO("worker thread start. communicator = %p", communicator_);
     int ret = thread_set_name("SQLWorker");
     if (ret != 0) {
@@ -81,7 +74,8 @@ public:
     while (running_) {
       int ret = poll(&poll_fd, 1, 500);
       if (ret < 0) {
-        LOG_WARN("poll error. fd = %d, ret = %d, error=%s", poll_fd.fd, ret, strerror(errno));
+        LOG_WARN("poll error. fd = %d, ret = %d, error=%s", poll_fd.fd, ret,
+                 strerror(errno));
         break;
       } else if (0 == ret) {
         // LOG_TRACE("poll timeout. fd = %d", poll_fd.fd);
@@ -89,7 +83,8 @@ public:
       }
 
       if (poll_fd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
-        LOG_WARN("poll error. fd = %d, revents = %d", poll_fd.fd, poll_fd.revents);
+        LOG_WARN("poll error. fd = %d, revents = %d", poll_fd.fd,
+                 poll_fd.revents);
         break;
       }
 
@@ -101,10 +96,10 @@ public:
     }
 
     LOG_INFO("worker thread stop. communicator = %p", communicator_);
-    host_.close_connection(communicator_); /// 连接关闭后，当前对象会被删除
+    host_.close_connection(communicator_);  /// 连接关闭后，当前对象会被删除
   }
 
-private:
+ private:
   ThreadHandler &host_;
   SqlTaskHandler task_handler_;
   Communicator *communicator_ = nullptr;
@@ -112,14 +107,13 @@ private:
   volatile bool running_ = true;
 };
 
-OneThreadPerConnectionThreadHandler::~OneThreadPerConnectionThreadHandler()
-{
+OneThreadPerConnectionThreadHandler::~OneThreadPerConnectionThreadHandler() {
   stop();
   await_stop();
 }
 
-RC OneThreadPerConnectionThreadHandler::new_connection(Communicator *communicator)
-{
+RC OneThreadPerConnectionThreadHandler::new_connection(
+    Communicator *communicator) {
   lock_guard guard(lock_);
 
   auto iter = thread_map_.find(communicator);
@@ -133,8 +127,8 @@ RC OneThreadPerConnectionThreadHandler::new_connection(Communicator *communicato
   return worker->start();
 }
 
-RC OneThreadPerConnectionThreadHandler::close_connection(Communicator *communicator)
-{
+RC OneThreadPerConnectionThreadHandler::close_connection(
+    Communicator *communicator) {
   lock_.lock();
   auto iter = thread_map_.find(communicator);
   if (iter == thread_map_.end()) {
@@ -155,8 +149,7 @@ RC OneThreadPerConnectionThreadHandler::close_connection(Communicator *communica
   return RC::SUCCESS;
 }
 
-RC OneThreadPerConnectionThreadHandler::stop()
-{
+RC OneThreadPerConnectionThreadHandler::stop() {
   lock_guard guard(lock_);
   for (auto iter = thread_map_.begin(); iter != thread_map_.end(); ++iter) {
     Worker *worker = iter->second;
@@ -165,8 +158,7 @@ RC OneThreadPerConnectionThreadHandler::stop()
   return RC::SUCCESS;
 }
 
-RC OneThreadPerConnectionThreadHandler::await_stop()
-{
+RC OneThreadPerConnectionThreadHandler::await_stop() {
   LOG_INFO("begin to await stop one thread per connection thread handler");
   while (!thread_map_.empty()) {
     this_thread::sleep_for(chrono::milliseconds(100));

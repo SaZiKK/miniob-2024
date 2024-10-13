@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -26,21 +26,22 @@ class BufferedWriter;
 /**
  * @defgroup Communicator
  * @brief 负责处理与客户端的通讯
- * @details 当前有两种通讯协议，一种是普通的文本协议，以'\0'作为结尾，一种是mysql协议。
+ * @details
+ * 当前有两种通讯协议，一种是普通的文本协议，以'\0'作为结尾，一种是mysql协议。
  */
 
 /**
  * @brief 负责与客户端通讯
  * @ingroup Communicator
  *
- * @details 在listener接收到一个新的连接(参考 server.cpp::accept), 就创建一个Communicator对象。
- * 并调用init进行初始化。
+ * @details 在listener接收到一个新的连接(参考 server.cpp::accept),
+ * 就创建一个Communicator对象。 并调用init进行初始化。
  * 在server中监听到某个连接有新的消息，就通过Communicator::read_event接收消息。
- * TODO 这里的communicator把协议和通讯方式，放在了一起。plain和mysql都是一种协议，他们的通讯手段都是一样的
+ * TODO
+ * 这里的communicator把协议和通讯方式，放在了一起。plain和mysql都是一种协议，他们的通讯手段都是一样的
  */
-class Communicator
-{
-public:
+class Communicator {
+ public:
   virtual ~Communicator();
 
   /**
@@ -50,7 +51,8 @@ public:
 
   /**
    * @brief 监听到有新的数据到达，调用此函数进行接收消息
-   * 如果需要创建新的任务来处理，那么就创建一个SessionEvent 对象并通过event参数返回。
+   * 如果需要创建新的任务来处理，那么就创建一个SessionEvent
+   * 对象并通过event参数返回。
    */
   virtual RC read_event(SessionEvent *&event) = 0;
 
@@ -58,7 +60,8 @@ public:
    * @brief 在任务处理完成后，通过此接口将结果返回给客户端
    * @param event 任务数据，包括处理的结果
    * @param need_disconnect 是否需要断开连接
-   * @return 处理结果。即使返回不是SUCCESS，也不能直接断开连接，需要通过need_disconnect来判断
+   * @return
+   * 处理结果。即使返回不是SUCCESS，也不能直接断开连接，需要通过need_disconnect来判断
    *         是否需要断开连接
    */
   virtual RC write_result(SessionEvent *event, bool &need_disconnect) = 0;
@@ -79,21 +82,21 @@ public:
    */
   int fd() const { return fd_; }
 
-protected:
+ protected:
   unique_ptr<Session> session_;
-  string              addr_;
-  BufferedWriter     *writer_ = nullptr;
-  int                 fd_     = -1;
+  string addr_;
+  BufferedWriter *writer_ = nullptr;
+  int fd_ = -1;
 };
 
 /**
  * @brief 当前支持的通讯协议
  * @ingroup Communicator
  */
-enum class CommunicateProtocol
-{
+enum class CommunicateProtocol {
   PLAIN,  ///< 以'\0'结尾的协议
-  CLI,    ///< 与客户端进行交互的协议。CLI 不应该是一种协议，只是一种通讯的方式而已
+  CLI,    ///< 与客户端进行交互的协议。CLI
+          ///< 不应该是一种协议，只是一种通讯的方式而已
   MYSQL,  ///< mysql通讯协议。具体实现参考 MysqlCommunicator
 };
 
@@ -101,8 +104,7 @@ enum class CommunicateProtocol
  * @brief 通讯协议工厂
  * @ingroup Communicator
  */
-class CommunicatorFactory
-{
-public:
+class CommunicatorFactory {
+ public:
   Communicator *create(CommunicateProtocol protocol);
 };

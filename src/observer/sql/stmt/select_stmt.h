@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -30,27 +30,28 @@ class Table;
  * @brief 表示select语句
  * @ingroup Statement
  */
-class SelectStmt : public Stmt
-{
-public:
+class SelectStmt : public Stmt {
+ public:
   SelectStmt() = default;
   ~SelectStmt() override;
 
   StmtType type() const override { return StmtType::SELECT; }
 
-public:
+ public:
   static RC create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt);
 
-public:
+ public:
   const std::vector<Table *> &tables() const { return tables_; }
-  FilterStmt                 *filter_stmt() const { return filter_stmt_; }
+  FilterStmt *filter_stmt() const { return filter_stmt_; }
 
-  std::vector<std::unique_ptr<Expression>> &query_expressions() { return query_expressions_; }
+  std::vector<std::unique_ptr<Expression>> &query_expressions() {
+    return query_expressions_;
+  }
   std::vector<std::unique_ptr<Expression>> &group_by() { return group_by_; }
 
-private:
+ private:
   std::vector<std::unique_ptr<Expression>> query_expressions_;
-  std::vector<Table *>                     tables_;
-  FilterStmt                              *filter_stmt_ = nullptr;
+  std::vector<Table *> tables_;
+  FilterStmt *filter_stmt_ = nullptr;
   std::vector<std::unique_ptr<Expression>> group_by_;
 };

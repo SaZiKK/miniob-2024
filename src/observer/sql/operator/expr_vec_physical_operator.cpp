@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -16,17 +16,18 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
-ExprVecPhysicalOperator::ExprVecPhysicalOperator(std::vector<Expression *> &&expressions)
-{
+ExprVecPhysicalOperator::ExprVecPhysicalOperator(
+    std::vector<Expression *> &&expressions) {
   expressions_ = std::move(expressions);
 }
 
-RC ExprVecPhysicalOperator::open(Trx *trx)
-{
-  ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
+RC ExprVecPhysicalOperator::open(Trx *trx) {
+  ASSERT(children_.size() == 1,
+         "group by operator only support one child, but got %d",
+         children_.size());
 
   PhysicalOperator &child = *children_[0];
-  RC                rc    = child.open(trx);
+  RC rc = child.open(trx);
   if (OB_FAIL(rc)) {
     LOG_INFO("failed to open child operator. rc=%s", strrc(rc));
     return rc;
@@ -34,10 +35,11 @@ RC ExprVecPhysicalOperator::open(Trx *trx)
   return rc;
 }
 
-RC ExprVecPhysicalOperator::next(Chunk &chunk)
-{
+RC ExprVecPhysicalOperator::next(Chunk &chunk) {
   RC rc = RC::SUCCESS;
-  ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
+  ASSERT(children_.size() == 1,
+         "group by operator only support one child, but got %d",
+         children_.size());
 
   PhysicalOperator &child = *children_[0];
   chunk.reset();
@@ -53,8 +55,7 @@ RC ExprVecPhysicalOperator::next(Chunk &chunk)
   return rc;
 }
 
-RC ExprVecPhysicalOperator::close()
-{
+RC ExprVecPhysicalOperator::close() {
   children_[0]->close();
   LOG_INFO("close group by operator");
   return RC::SUCCESS;

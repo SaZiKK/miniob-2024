@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -29,10 +29,9 @@ class SQLStageEvent;
  * @brief SQL请求的处理器
  * @ingroup SQL
  */
-class SqlTaskHandler
-{
-public:
-  SqlTaskHandler()          = default;
+class SqlTaskHandler {
+ public:
+  SqlTaskHandler() = default;
   virtual ~SqlTaskHandler() = default;
 
   /**
@@ -45,11 +44,12 @@ public:
 
   RC handle_sql(SQLStageEvent *sql_event);
 
-private:
-  SessionStage    session_stage_;      /// 会话阶段
+ private:
+  SessionStage session_stage_;         /// 会话阶段
   QueryCacheStage query_cache_stage_;  /// 查询缓存阶段
-  ParseStage      parse_stage_;        /// 解析阶段。将SQL解析成语法树 ParsedSqlNode
-  ResolveStage    resolve_stage_;      /// 解析阶段。将语法树解析成Stmt(statement)
-  OptimizeStage optimize_stage_;  /// 优化阶段。将语句优化成执行计划，包含规则优化和物理优化
-  ExecuteStage  execute_stage_;   /// 执行阶段
+  ParseStage parse_stage_;  /// 解析阶段。将SQL解析成语法树 ParsedSqlNode
+  ResolveStage resolve_stage_;  /// 解析阶段。将语法树解析成Stmt(statement)
+  OptimizeStage
+      optimize_stage_;  /// 优化阶段。将语句优化成执行计划，包含规则优化和物理优化
+  ExecuteStage execute_stage_;  /// 执行阶段
 };

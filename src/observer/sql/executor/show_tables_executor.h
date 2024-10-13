@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -27,15 +27,13 @@ See the Mulan PSL v2 for more details. */
  * @ingroup Executor
  * @note 与CreateIndex类似，不处理并发
  */
-class ShowTablesExecutor
-{
-public:
-  ShowTablesExecutor()          = default;
+class ShowTablesExecutor {
+ public:
+  ShowTablesExecutor() = default;
   virtual ~ShowTablesExecutor() = default;
 
-  RC execute(SQLStageEvent *sql_event)
-  {
-    SqlResult    *sql_result    = sql_event->session_event()->sql_result();
+  RC execute(SQLStageEvent *sql_event) {
+    SqlResult *sql_result = sql_event->session_event()->sql_result();
     SessionEvent *session_event = sql_event->session_event();
 
     Db *db = session_event->session()->get_current_db();
@@ -44,7 +42,8 @@ public:
     db->all_tables(all_tables);
 
     TupleSchema tuple_schema;
-    tuple_schema.append_cell(TupleCellSpec("", "Tables_in_SYS", "Tables_in_SYS"));
+    tuple_schema.append_cell(
+        TupleCellSpec("", "Tables_in_SYS", "Tables_in_SYS"));
     sql_result->set_tuple_schema(tuple_schema);
 
     auto oper = new StringListPhysicalOperator;

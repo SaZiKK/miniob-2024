@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -25,24 +25,23 @@ class Communicator;
  * @brief 表示一个SQL请求
  *
  */
-class SessionEvent
-{
-public:
+class SessionEvent {
+ public:
   SessionEvent(Communicator *client);
   virtual ~SessionEvent();
 
   Communicator *get_communicator() const;
-  Session      *session() const;
+  Session *session() const;
 
   void set_query(const string &query) { query_ = query; }
 
   const string &query() const { return query_; }
-  SqlResult    *sql_result() { return &sql_result_; }
-  SqlDebug     &sql_debug() { return sql_debug_; }
+  SqlResult *sql_result() { return &sql_result_; }
+  SqlDebug &sql_debug() { return sql_debug_; }
 
-private:
+ private:
   Communicator *communicator_ = nullptr;  ///< 与客户端通讯的对象
-  SqlResult     sql_result_;              ///< SQL执行结果
-  SqlDebug      sql_debug_;               ///< SQL调试信息
-  string        query_;                   ///< SQL语句
+  SqlResult sql_result_;                  ///< SQL执行结果
+  SqlDebug sql_debug_;                    ///< SQL调试信息
+  string query_;                          ///< SQL语句
 };

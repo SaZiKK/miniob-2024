@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -17,23 +17,22 @@ See the Mulan PSL v2 for more details. */
 #include "sql/expr/expression_tuple.h"
 #include "sql/operator/physical_operator.h"
 
-class CalcPhysicalOperator : public PhysicalOperator
-{
-public:
+class CalcPhysicalOperator : public PhysicalOperator {
+ public:
   CalcPhysicalOperator(std::vector<std::unique_ptr<Expression>> &&expressions)
-      : expressions_(std::move(expressions)), tuple_(expressions_)
-  {}
+      : expressions_(std::move(expressions)), tuple_(expressions_) {}
 
   virtual ~CalcPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override { return PhysicalOperatorType::CALC; }
+  PhysicalOperatorType type() const override {
+    return PhysicalOperatorType::CALC;
+  }
 
   std::string name() const override { return "CALC"; }
   std::string param() const override { return ""; }
 
   RC open(Trx *trx) override { return RC::SUCCESS; }
-  RC next() override
-  {
+  RC next() override {
     RC rc = RC::SUCCESS;
     if (emitted_) {
       rc = RC::RECORD_EOF;
@@ -57,18 +56,19 @@ public:
 
   Tuple *current_tuple() override { return &tuple_; }
 
-  const std::vector<std::unique_ptr<Expression>> &expressions() const { return expressions_; }
+  const std::vector<std::unique_ptr<Expression>> &expressions() const {
+    return expressions_;
+  }
 
-  RC tuple_schema(TupleSchema &schema) const override
-  {
+  RC tuple_schema(TupleSchema &schema) const override {
     for (const std::unique_ptr<Expression> &expression : expressions_) {
       schema.append_cell(expression->name());
     }
     return RC::SUCCESS;
   }
 
-private:
-  std::vector<std::unique_ptr<Expression>>     expressions_;
+ private:
+  std::vector<std::unique_ptr<Expression>> expressions_;
   ExpressionTuple<std::unique_ptr<Expression>> tuple_;
-  bool                                         emitted_ = false;
+  bool emitted_ = false;
 };

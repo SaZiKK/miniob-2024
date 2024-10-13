@@ -1,7 +1,7 @@
 /* Copyright (c) 2021-2022 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -29,10 +29,9 @@ class LogEntry;
  * @ingroup CLog
  * @details 日志文件中的日志是按照LSN从小到大排列的
  */
-class LogFileReader
-{
-public:
-  LogFileReader()  = default;
+class LogFileReader {
+ public:
+  LogFileReader() = default;
   ~LogFileReader() = default;
 
   RC open(const char *filename);
@@ -40,7 +39,7 @@ public:
 
   RC iterate(function<RC(LogEntry &)> callback, LSN start_lsn = 0);
 
-private:
+ private:
   /**
    * @brief 跳到第一条不小于start_lsn的日志
    *
@@ -48,8 +47,8 @@ private:
    */
   RC skip_to(LSN start_lsn);
 
-private:
-  int    fd_ = -1;
+ private:
+  int fd_ = -1;
   string filename_;
 };
 
@@ -57,9 +56,8 @@ private:
  * @brief 负责写入一个日志文件
  * @ingroup CLog
  */
-class LogFileWriter
-{
-public:
+class LogFileWriter {
+ public:
   LogFileWriter() = default;
   ~LogFileWriter();
 
@@ -90,23 +88,23 @@ public:
 
   const char *filename() const { return filename_.c_str(); }
 
-private:
-  string filename_;       /// 日志文件名
-  int    fd_       = -1;  /// 日志文件描述符
-  int    last_lsn_ = 0;   /// 写入的最后一条日志LSN
-  int    end_lsn_  = 0;   /// 当前日志文件中允许写入的最大的LSN，包括这条日志
+ private:
+  string filename_;   /// 日志文件名
+  int fd_ = -1;       /// 日志文件描述符
+  int last_lsn_ = 0;  /// 写入的最后一条日志LSN
+  int end_lsn_ = 0;  /// 当前日志文件中允许写入的最大的LSN，包括这条日志
 };
 
 /**
  * @brief 管理所有的日志文件
  * @ingroup CLog
- * @details 日志文件都在某个目录下，使用固定的前缀加上日志文件的第一个LSN作为文件名。
+ * @details
+ * 日志文件都在某个目录下，使用固定的前缀加上日志文件的第一个LSN作为文件名。
  * 每个日志文件没有最大字节数要求，但是以固定条数的日志为一个文件，这样方便查找。
  */
-class LogFileManager
-{
-public:
-  LogFileManager()  = default;
+class LogFileManager {
+ public:
+  LogFileManager() = default;
   ~LogFileManager() = default;
 
   /**
@@ -127,29 +125,31 @@ public:
 
   /**
    * @brief 获取最新的一个日志文件名
-   * @details 如果当前有文件就获取最后一个日志文件，否则创建一个日志文件，也就是第一个日志文件
+   * @details
+   * 如果当前有文件就获取最后一个日志文件，否则创建一个日志文件，也就是第一个日志文件
    */
   RC last_file(LogFileWriter &file_writer);
 
   /**
    * @brief 获取一个新的日志文件名
-   * @details 获取下一个日志文件名。通常是上一个日志文件写满了，通过这个接口生成下一个日志文件
+   * @details
+   * 获取下一个日志文件名。通常是上一个日志文件写满了，通过这个接口生成下一个日志文件
    */
   RC next_file(LogFileWriter &file_writer);
 
-private:
+ private:
   /**
    * @brief 从文件名称中获取LSN
    * @details 如果日志文件名不符合要求，就返回失败
    */
   static RC get_lsn_from_filename(const string &filename, LSN &lsn);
 
-private:
+ private:
   static constexpr const char *file_prefix_ = "clog_";
   static constexpr const char *file_suffix_ = ".log";
 
-  filesystem::path directory_;                  /// 日志文件存放的目录
-  int              max_entry_number_per_file_;  /// 一个文件最大允许存放多少条日志
+  filesystem::path directory_;  /// 日志文件存放的目录
+  int max_entry_number_per_file_;  /// 一个文件最大允许存放多少条日志
 
   map<LSN, filesystem::path> log_files_;  /// 日志文件名和第一个LSN的映射
 };

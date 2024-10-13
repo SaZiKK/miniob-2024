@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -29,12 +29,12 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
-RC ExecuteStage::handle_request(SQLStageEvent *sql_event)
-{
+RC ExecuteStage::handle_request(SQLStageEvent *sql_event) {
   RC rc = RC::SUCCESS;
 
   // 根据物理算子决定执行的两条路径
-  const unique_ptr<PhysicalOperator> &physical_operator = sql_event->physical_operator();
+  const unique_ptr<PhysicalOperator> &physical_operator =
+      sql_event->physical_operator();
 
   // 如果存在物理算子
   if (physical_operator != nullptr) {
@@ -47,7 +47,8 @@ RC ExecuteStage::handle_request(SQLStageEvent *sql_event)
   // 拿到 Resolver 模块创建的 Stmt 对象
   Stmt *stmt = sql_event->stmt();
   if (stmt != nullptr) {
-    // 处理 SQL 语句的执行模块，一些 SQL 语句不会生成对应的执行计划，直接使用 Executor 来执行
+    // 处理 SQL 语句的执行模块，一些 SQL 语句不会生成对应的执行计划，直接使用
+    // Executor 来执行
     CommandExecutor command_executor;
     rc = command_executor.execute(sql_event);
 
@@ -59,12 +60,13 @@ RC ExecuteStage::handle_request(SQLStageEvent *sql_event)
   return rc;
 }
 
-RC ExecuteStage::handle_request_with_physical_operator(SQLStageEvent *sql_event)
-{
+RC ExecuteStage::handle_request_with_physical_operator(
+    SQLStageEvent *sql_event) {
   RC rc = RC::SUCCESS;
 
   // 拿出物理算子
-  unique_ptr<PhysicalOperator> &physical_operator = sql_event->physical_operator();
+  unique_ptr<PhysicalOperator> &physical_operator =
+      sql_event->physical_operator();
   ASSERT(physical_operator != nullptr, "physical operator should not be null");
 
   SqlResult *sql_result = sql_event->session_event()->sql_result();

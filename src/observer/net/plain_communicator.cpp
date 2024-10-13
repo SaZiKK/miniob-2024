@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -20,16 +20,14 @@ See the Mulan PSL v2 for more details. */
 #include "session/session.h"
 #include "sql/expr/tuple.h"
 
-PlainCommunicator::PlainCommunicator()
-{
+PlainCommunicator::PlainCommunicator() {
   send_message_delimiter_.assign(1, '\0');
   debug_message_prefix_.resize(2);
   debug_message_prefix_[0] = '#';
   debug_message_prefix_[1] = ' ';
 }
 
-RC PlainCommunicator::read_event(SessionEvent *&event)
-{
+RC PlainCommunicator::read_event(SessionEvent *&event) {
   RC rc = RC::SUCCESS;
 
   event = nullptr;
@@ -37,7 +35,7 @@ RC PlainCommunicator::read_event(SessionEvent *&event)
   int data_len = 0;
   int read_len = 0;
 
-  const int    max_packet_size = 8192;
+  const int max_packet_size = 8192;
   vector<char> buf(max_packet_size);
 
   // 持续接收消息，直到遇到'\0'。将'\0'遇到的后续数据直接丢弃没有处理，因为目前仅支持一收一发的模式
@@ -92,17 +90,18 @@ RC PlainCommunicator::read_event(SessionEvent *&event)
   return rc;
 }
 
-RC PlainCommunicator::write_state(SessionEvent *event, bool &need_disconnect)
-{
-  SqlResult    *sql_result   = event->sql_result();
-  const int     buf_size     = 2048;
-  char         *buf          = new char[buf_size];
+RC PlainCommunicator::write_state(SessionEvent *event, bool &need_disconnect) {
+  SqlResult *sql_result = event->sql_result();
+  const int buf_size = 2048;
+  char *buf = new char[buf_size];
   const string &state_string = sql_result->state_string();
   if (state_string.empty()) {
-    const char *result = RC::SUCCESS == sql_result->return_code() ? "SUCCESS" : "FAILURE";
+    const char *result =
+        RC::SUCCESS == sql_result->return_code() ? "SUCCESS" : "FAILURE";
     snprintf(buf, buf_size, "%s\n", result);
   } else {
-    snprintf(buf, buf_size, "%s > %s\n", strrc(sql_result->return_code()), state_string.c_str());
+    snprintf(buf, buf_size, "%s > %s\n", strrc(sql_result->return_code()),
+             state_string.c_str());
   }
 
   RC rc = writer_->writen(buf, strlen(buf));
@@ -119,8 +118,8 @@ RC PlainCommunicator::write_state(SessionEvent *event, bool &need_disconnect)
   return RC::SUCCESS;
 }
 
-RC PlainCommunicator::write_debug(SessionEvent *request, bool &need_disconnect)
-{
+RC PlainCommunicator::write_debug(SessionEvent *request,
+                                  bool &need_disconnect) {
   if (!session_->sql_debug_on()) {
     return RC::SUCCESS;
   }
@@ -129,7 +128,8 @@ RC PlainCommunicator::write_debug(SessionEvent *request, bool &need_disconnect)
 
   const list<string> &debug_infos = sql_debug.get_debug_infos();
   for (auto &debug_info : debug_infos) {
-    RC rc = writer_->writen(debug_message_prefix_.data(), debug_message_prefix_.size());
+    RC rc = writer_->writen(debug_message_prefix_.data(),
+                            debug_message_prefix_.size());
     if (OB_FAIL(rc)) {
       LOG_WARN("failed to send data to client. err=%s", strerror(errno));
       need_disconnect = true;
@@ -157,19 +157,21 @@ RC PlainCommunicator::write_debug(SessionEvent *request, bool &need_disconnect)
   return RC::SUCCESS;
 }
 
-RC PlainCommunicator::write_result(SessionEvent *event, bool &need_disconnect)
-{
+RC PlainCommunicator::write_result(SessionEvent *event, bool &need_disconnect) {
   RC rc = write_result_internal(event, need_disconnect);
   if (!need_disconnect) {
     RC rc1 = write_debug(event, need_disconnect);
     if (OB_FAIL(rc1)) {
-      LOG_WARN("failed to send debug info to client. rc=%s, err=%s", strrc(rc), strerror(errno));
+      LOG_WARN("failed to send debug info to client. rc=%s, err=%s", strrc(rc),
+               strerror(errno));
     }
   }
   if (!need_disconnect) {
-    rc = writer_->writen(send_message_delimiter_.data(), send_message_delimiter_.size());
+    rc = writer_->writen(send_message_delimiter_.data(),
+                         send_message_delimiter_.size());
     if (OB_FAIL(rc)) {
-      LOG_ERROR("Failed to send data back to client. ret=%s, error=%s", strrc(rc), strerror(errno));
+      LOG_ERROR("Failed to send data back to client. ret=%s, error=%s",
+                strrc(rc), strerror(errno));
       need_disconnect = true;
       return rc;
     }
@@ -178,8 +180,8 @@ RC PlainCommunicator::write_result(SessionEvent *event, bool &need_disconnect)
   return rc;
 }
 
-RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disconnect)
-{
+RC PlainCommunicator::write_result_internal(SessionEvent *event,
+                                            bool &need_disconnect) {
   RC rc = RC::SUCCESS;
 
   need_disconnect = true;
@@ -197,12 +199,12 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
     return write_state(event, need_disconnect);
   }
 
-  const TupleSchema &schema   = sql_result->tuple_schema();
-  const int          cell_num = schema.cell_num();
+  const TupleSchema &schema = sql_result->tuple_schema();
+  const int cell_num = schema.cell_num();
 
   for (int i = 0; i < cell_num; i++) {
-    const TupleCellSpec &spec  = schema.cell_at(i);
-    const char          *alias = spec.alias();
+    const TupleCellSpec &spec = schema.cell_at(i);
+    const char *alias = spec.alias();
     if (nullptr != alias || alias[0] != 0) {
       if (0 != i) {
         const char *delim = " | ";
@@ -237,8 +239,8 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
   }
 
   rc = RC::SUCCESS;
-  if (event->session()->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR
-      && event->session()->used_chunk_mode()) {
+  if (event->session()->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR &&
+      event->session()->used_chunk_mode()) {
     rc = write_chunk_result(sql_result);
   } else {
     rc = write_tuple_result(sql_result);
@@ -270,8 +272,7 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
   return rc;
 }
 
-RC PlainCommunicator::write_tuple_result(SqlResult *sql_result)
-{
+RC PlainCommunicator::write_tuple_result(SqlResult *sql_result) {
   RC rc = RC::SUCCESS;
   Tuple *tuple = nullptr;
   while (RC::SUCCESS == (rc = sql_result->next_tuple(tuple))) {
@@ -324,8 +325,7 @@ RC PlainCommunicator::write_tuple_result(SqlResult *sql_result)
   return rc;
 }
 
-RC PlainCommunicator::write_chunk_result(SqlResult *sql_result)
-{
+RC PlainCommunicator::write_chunk_result(SqlResult *sql_result) {
   RC rc = RC::SUCCESS;
   Chunk chunk;
   while (RC::SUCCESS == (rc = sql_result->next_chunk(chunk))) {

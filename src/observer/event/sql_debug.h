@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -24,10 +24,9 @@ See the Mulan PSL v2 for more details. */
  * 当前把调试信息都放在了session上，可以随着SQL语句输出。
  * 但是现在还不支持与输出调试信息与行数据同步输出。
  */
-class SqlDebug
-{
-public:
-  SqlDebug()          = default;
+class SqlDebug {
+ public:
+  SqlDebug() = default;
   virtual ~SqlDebug() = default;
 
   void add_debug_info(const string &debug_info);
@@ -35,7 +34,7 @@ public:
 
   const list<string> &get_debug_infos() const;
 
-private:
+ private:
   list<string> debug_infos_;
 };
 

@@ -3,8 +3,7 @@
 #include "storage/table/table.h"
 #include "storage/trx/trx.h"
 
-RC UpdatePhysicalOperator::open(Trx *trx)
-{
+RC UpdatePhysicalOperator::open(Trx *trx) {
   if (children_.empty()) {
     return RC::SUCCESS;
   }
@@ -26,7 +25,7 @@ RC UpdatePhysicalOperator::open(Trx *trx)
     }
 
     RowTuple *row_tuple = static_cast<RowTuple *>(tuple);
-    Record   &record    = row_tuple->record();
+    Record &record = row_tuple->record();
     records_.emplace_back(std::move(record));
   }
 

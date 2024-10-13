@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -36,23 +36,22 @@ See the Mulan PSL v2 for more details. */
  * @brief SQL处理的session阶段，也是第一个阶段
  * @ingroup SQLStage
  */
-class SessionStage
-{
-public:
+class SessionStage {
+ public:
   SessionStage() = default;
   virtual ~SessionStage();
 
-public:
+ public:
   void handle_request2(SessionEvent *event);
 
-public:
+ public:
   void handle_request(SessionEvent *event);
-  RC   handle_sql(SQLStageEvent *sql_event);
+  RC handle_sql(SQLStageEvent *sql_event);
 
-private:
+ private:
   QueryCacheStage query_cache_stage_;
-  ParseStage      parse_stage_;
-  ResolveStage    resolve_stage_;
-  OptimizeStage   optimize_stage_;
-  ExecuteStage    execute_stage_;
+  ParseStage parse_stage_;
+  ResolveStage resolve_stage_;
+  OptimizeStage optimize_stage_;
+  ExecuteStage execute_stage_;
 };

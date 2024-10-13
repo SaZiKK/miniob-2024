@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -29,30 +29,28 @@ class SharedMutex;
 /**
  * @brief 对指定页面做的操作类型
  */
-enum class LatchMemoType
-{
+enum class LatchMemoType {
   NONE,       /// 什么都不做
   SHARED,     /// 共享锁
   EXCLUSIVE,  /// 独占锁
   PIN,        /// pin住页面，增加引用计数
 };
 
-struct LatchMemoItem
-{
+struct LatchMemoItem {
   LatchMemoItem() = default;
   LatchMemoItem(LatchMemoType type, Frame *frame);
   LatchMemoItem(LatchMemoType type, common::SharedMutex *lock);
 
-  LatchMemoType        type  = LatchMemoType::NONE;
-  Frame               *frame = nullptr;
-  common::SharedMutex *lock  = nullptr;
+  LatchMemoType type = LatchMemoType::NONE;
+  Frame *frame = nullptr;
+  common::SharedMutex *lock = nullptr;
 };
 
-class LatchMemo final
-{
-public:
+class LatchMemo final {
+ public:
   /**
-   * @brief 当前遇到的场景都是针对单个BufferPool的，不过从概念上讲，不一定做这个限制
+   * @brief
+   * 当前遇到的场景都是针对单个BufferPool的，不过从概念上讲，不一定做这个限制
    */
   LatchMemo(DiskBufferPool *buffer_pool);
   ~LatchMemo();
@@ -80,11 +78,11 @@ public:
 
   int memo_point() const { return static_cast<int>(items_.size()); }
 
-private:
+ private:
   void release_item(LatchMemoItem &item);
 
-private:
-  DiskBufferPool      *buffer_pool_ = nullptr;
+ private:
+  DiskBufferPool *buffer_pool_ = nullptr;
   deque<LatchMemoItem> items_;
-  vector<PageNum>      disposed_pages_;  /// 等待释放的页面
+  vector<PageNum> disposed_pages_;  /// 等待释放的页面
 };

@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -22,13 +22,13 @@ class Communicator;
 /**
  * @defgroup  ThreadHandler
  * @brief 线程池处理模型接口
- * @details 处理连接上所有的消息。可以使用不同的模型来处理，当前有一个连接一个线程的模式和线程池模式。
+ * @details
+ * 处理连接上所有的消息。可以使用不同的模型来处理，当前有一个连接一个线程的模式和线程池模式。
  * 线程模型仅处理与客户端通讯的连接，不处理observer监听套接字。
  */
-class ThreadHandler
-{
-public:
-  ThreadHandler()          = default;
+class ThreadHandler {
+ public:
+  ThreadHandler() = default;
   virtual ~ThreadHandler() = default;
 
   /**
@@ -58,7 +58,7 @@ public:
    */
   virtual RC close_connection(Communicator *communicator) = 0;
 
-public:
+ public:
   /**
    * @brief 创建一个线程模型
    */

@@ -1,7 +1,7 @@
 /* Copyright (c) 2021-2022 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -19,19 +19,16 @@ See the Mulan PSL v2 for more details. */
 #include "storage/clog/disk_log_handler.h"
 #include "storage/clog/vacuous_log_handler.h"
 
-RC LogHandler::append(LSN &lsn, LogModule::Id module, span<const char> data)
-{
+RC LogHandler::append(LSN &lsn, LogModule::Id module, span<const char> data) {
   vector<char> data_vec(data.begin(), data.end());
   return append(lsn, module, std::move(data_vec));
 }
 
-RC LogHandler::append(LSN &lsn, LogModule::Id module, vector<char> &&data)
-{
+RC LogHandler::append(LSN &lsn, LogModule::Id module, vector<char> &&data) {
   return _append(lsn, LogModule(module), std::move(data));
 }
 
-RC LogHandler::create(const char *name, LogHandler *&log_handler)
-{
+RC LogHandler::create(const char *name, LogHandler *&log_handler) {
   if (name == nullptr || common::is_blank(name)) {
     name = "vacuous";
   }

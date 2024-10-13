@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -18,8 +18,8 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/logical_operator.h"
 #include "sql/operator/table_get_logical_operator.h"
 
-RC PredicatePushdownRewriter::rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made)
-{
+RC PredicatePushdownRewriter::rewrite(std::unique_ptr<LogicalOperator> &oper,
+                                      bool &change_made) {
   RC rc = RC::SUCCESS;
   if (oper->type() != LogicalOperatorType::PREDICATE) {
     return rc;
@@ -34,14 +34,16 @@ RC PredicatePushdownRewriter::rewrite(std::unique_ptr<LogicalOperator> &oper, bo
     return rc;
   }
 
-  auto table_get_oper = static_cast<TableGetLogicalOperator *>(child_oper.get());
+  auto table_get_oper =
+      static_cast<TableGetLogicalOperator *>(child_oper.get());
 
-  std::vector<std::unique_ptr<Expression>> &predicate_oper_exprs = oper->expressions();
+  std::vector<std::unique_ptr<Expression>> &predicate_oper_exprs =
+      oper->expressions();
   if (predicate_oper_exprs.size() != 1) {
     return rc;
   }
 
-  std::unique_ptr<Expression>             &predicate_expr = predicate_oper_exprs.front();
+  std::unique_ptr<Expression> &predicate_expr = predicate_oper_exprs.front();
   std::vector<std::unique_ptr<Expression>> pushdown_exprs;
   rc = get_exprs_can_pushdown(predicate_expr, pushdown_exprs);
   if (rc != RC::SUCCESS) {
@@ -51,8 +53,11 @@ RC PredicatePushdownRewriter::rewrite(std::unique_ptr<LogicalOperator> &oper, bo
 
   if (!predicate_expr || is_empty_predicate(predicate_expr)) {
     // 所有的表达式都下推到了下层算子
-    // 这个predicate operator其实就可以不要了。但是这里没办法删除，弄一个空的表达式吧
-    LOG_TRACE("all expressions of predicate operator were pushdown to table get operator, then make a fake one");
+    // 这个predicate
+    // operator其实就可以不要了。但是这里没办法删除，弄一个空的表达式吧
+    LOG_TRACE(
+        "all expressions of predicate operator were pushdown to table get "
+        "operator, then make a fake one");
 
     Value value((bool)true);
     predicate_expr = std::unique_ptr<Expression>(new ValueExpr(value));
@@ -65,15 +70,16 @@ RC PredicatePushdownRewriter::rewrite(std::unique_ptr<LogicalOperator> &oper, bo
   return rc;
 }
 
-bool PredicatePushdownRewriter::is_empty_predicate(std::unique_ptr<Expression> &expr)
-{
+bool PredicatePushdownRewriter::is_empty_predicate(
+    std::unique_ptr<Expression> &expr) {
   bool bool_ret = false;
   if (!expr) {
     return true;
   }
 
   if (expr->type() == ExprType::CONJUNCTION) {
-    ConjunctionExpr *conjunction_expr = static_cast<ConjunctionExpr *>(expr.get());
+    ConjunctionExpr *conjunction_expr =
+        static_cast<ConjunctionExpr *>(expr.get());
     if (conjunction_expr->children().empty()) {
       bool_ret = true;
     }
@@ -84,16 +90,18 @@ bool PredicatePushdownRewriter::is_empty_predicate(std::unique_ptr<Expression> &
 
 /**
  * 查看表达式是否可以直接下放到table get算子的filter
- * @param expr 是当前的表达式。如果可以下放给table get 算子，执行完成后expr就失效了
- * @param pushdown_exprs 当前所有要下放给table get 算子的filter。此函数执行多次，
- *                       pushdown_exprs 只会增加，不要做清理操作
+ * @param expr 是当前的表达式。如果可以下放给table get
+ * 算子，执行完成后expr就失效了
+ * @param pushdown_exprs 当前所有要下放给table get
+ * 算子的filter。此函数执行多次， pushdown_exprs 只会增加，不要做清理操作
  */
 RC PredicatePushdownRewriter::get_exprs_can_pushdown(
-    std::unique_ptr<Expression> &expr, std::vector<std::unique_ptr<Expression>> &pushdown_exprs)
-{
+    std::unique_ptr<Expression> &expr,
+    std::vector<std::unique_ptr<Expression>> &pushdown_exprs) {
   RC rc = RC::SUCCESS;
   if (expr->type() == ExprType::CONJUNCTION) {
-    ConjunctionExpr *conjunction_expr = static_cast<ConjunctionExpr *>(expr.get());
+    ConjunctionExpr *conjunction_expr =
+        static_cast<ConjunctionExpr *>(expr.get());
     // 或 操作的比较，太复杂，现在不考虑
     if (conjunction_expr->conjunction_type() == ConjunctionExpr::Type::OR) {
       LOG_WARN("unsupported or operation");
@@ -101,7 +109,8 @@ RC PredicatePushdownRewriter::get_exprs_can_pushdown(
       return rc;
     }
 
-    std::vector<std::unique_ptr<Expression>> &child_exprs = conjunction_expr->children();
+    std::vector<std::unique_ptr<Expression>> &child_exprs =
+        conjunction_expr->children();
     for (auto iter = child_exprs.begin(); iter != child_exprs.end();) {
       // 对每个子表达式，判断是否可以下放到table get 算子
       // 如果可以的话，就从当前孩子节点中删除他
@@ -119,16 +128,19 @@ RC PredicatePushdownRewriter::get_exprs_can_pushdown(
     }
   } else if (expr->type() == ExprType::COMPARISON) {
     // 如果是比较操作，并且比较的左边或右边是表某个列值，那么就下推下去
-    auto   comparison_expr = static_cast<ComparisonExpr *>(expr.get());
+    auto comparison_expr = static_cast<ComparisonExpr *>(expr.get());
 
-    std::unique_ptr<Expression> &left_expr  = comparison_expr->left();
+    std::unique_ptr<Expression> &left_expr = comparison_expr->left();
     std::unique_ptr<Expression> &right_expr = comparison_expr->right();
     // 比较操作的左右两边只要有一个是取列字段值的并且另一边也是取字段值或常量，就pushdown
-    if (left_expr->type() != ExprType::FIELD && right_expr->type() != ExprType::FIELD) {
+    if (left_expr->type() != ExprType::FIELD &&
+        right_expr->type() != ExprType::FIELD) {
       return rc;
     }
-    if (left_expr->type() != ExprType::FIELD && left_expr->type() != ExprType::VALUE &&
-        right_expr->type() != ExprType::FIELD && right_expr->type() != ExprType::VALUE) {
+    if (left_expr->type() != ExprType::FIELD &&
+        left_expr->type() != ExprType::VALUE &&
+        right_expr->type() != ExprType::FIELD &&
+        right_expr->type() != ExprType::VALUE) {
       return rc;
     }
 

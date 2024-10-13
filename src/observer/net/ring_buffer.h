@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -21,9 +21,8 @@ See the Mulan PSL v2 for more details. */
  * @brief 环形缓存，当前用于通讯写入数据时的缓存
  * @ingroup Communicator
  */
-class RingBuffer
-{
-public:
+class RingBuffer {
+ public:
   /**
    * @brief 使用默认缓存大小的构造函数，默认大小16K
    */
@@ -47,7 +46,8 @@ public:
 
   /**
    * @brief 从缓存中读取数据，不会移动读指针
-   * @details 读取数据时直接返回缓存中的指针，不会移动读指针。读取完成后执行forward函数移动读指针。
+   * @details
+   * 读取数据时直接返回缓存中的指针，不会移动读指针。读取完成后执行forward函数移动读指针。
    * @param buf 读取的数据
    * @param read_size 数据大小
    */
@@ -83,11 +83,13 @@ public:
    */
   int32_t size() const { return data_size_; }
 
-private:
-  int32_t read_pos() const { return (write_pos_ - this->size() + capacity()) % capacity(); }
+ private:
+  int32_t read_pos() const {
+    return (write_pos_ - this->size() + capacity()) % capacity();
+  }
 
-private:
-  vector<char> buffer_;         ///< 缓存使用的内存，使用vector方便管理
-  int32_t      data_size_ = 0;  ///< 已经写入的数据量
-  int32_t      write_pos_ = 0;  ///< 当前写指针的位置，范围不会超出[0, capacity)
+ private:
+  vector<char> buffer_;    ///< 缓存使用的内存，使用vector方便管理
+  int32_t data_size_ = 0;  ///< 已经写入的数据量
+  int32_t write_pos_ = 0;  ///< 当前写指针的位置，范围不会超出[0, capacity)
 };

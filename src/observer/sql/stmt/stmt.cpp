@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -34,8 +34,7 @@ See the Mulan PSL v2 for more details. */
 // 添加
 #include "sql/stmt/drop_table_stmt.h"
 
-bool stmt_type_ddl(StmtType type)
-{
+bool stmt_type_ddl(StmtType type) {
   switch (type) {
     case StmtType::CREATE_TABLE:
     case StmtType::DROP_TABLE:
@@ -48,8 +47,7 @@ bool stmt_type_ddl(StmtType type)
     }
   }
 }
-RC Stmt::create_stmt(Db *db, ParsedSqlNode &sql_node, Stmt *&stmt)
-{
+RC Stmt::create_stmt(Db *db, ParsedSqlNode &sql_node, Stmt *&stmt) {
   stmt = nullptr;
 
   switch (sql_node.flag) {
@@ -124,7 +122,8 @@ RC Stmt::create_stmt(Db *db, ParsedSqlNode &sql_node, Stmt *&stmt)
     }
 
     default: {
-      LOG_INFO("Command::type %d doesn't need to create statement.", sql_node.flag);
+      LOG_INFO("Command::type %d doesn't need to create statement.",
+               sql_node.flag);
     } break;
   }
   return RC::UNIMPLEMENTED;

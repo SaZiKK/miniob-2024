@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -17,19 +17,21 @@ See the Mulan PSL v2 for more details. */
  * @brief Group By 物理算子(vectorized)
  * @ingroup PhysicalOperator
  */
-class GroupByVecPhysicalOperator : public PhysicalOperator
-{
-public:
+class GroupByVecPhysicalOperator : public PhysicalOperator {
+ public:
   GroupByVecPhysicalOperator(
-      std::vector<std::unique_ptr<Expression>> &&group_by_exprs, std::vector<Expression *> &&expressions){};
+      std::vector<std::unique_ptr<Expression>> &&group_by_exprs,
+      std::vector<Expression *> &&expressions){};
 
   virtual ~GroupByVecPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override { return PhysicalOperatorType::GROUP_BY_VEC; }
+  PhysicalOperatorType type() const override {
+    return PhysicalOperatorType::GROUP_BY_VEC;
+  }
 
   RC open(Trx *trx) override { return RC::UNIMPLEMENTED; }
   RC next(Chunk &chunk) override { return RC::UNIMPLEMENTED; }
   RC close() override { return RC::UNIMPLEMENTED; }
 
-private:
+ private:
 };

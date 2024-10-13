@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -14,8 +14,7 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-RC TableScanVecPhysicalOperator::open(Trx *trx)
-{
+RC TableScanVecPhysicalOperator::open(Trx *trx) {
   RC rc = table_->get_chunk_scanner(chunk_scanner_, trx, mode_);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to get chunk scanner", strrc(rc));
@@ -23,16 +22,16 @@ RC TableScanVecPhysicalOperator::open(Trx *trx)
   }
   // TODO: don't need to fetch all columns from record manager
   for (int i = 0; i < table_->table_meta().field_num(); ++i) {
-    all_columns_.add_column(
-        make_unique<Column>(*table_->table_meta().field(i)), table_->table_meta().field(i)->field_id());
+    all_columns_.add_column(make_unique<Column>(*table_->table_meta().field(i)),
+                            table_->table_meta().field(i)->field_id());
     filterd_columns_.add_column(
-        make_unique<Column>(*table_->table_meta().field(i)), table_->table_meta().field(i)->field_id());
+        make_unique<Column>(*table_->table_meta().field(i)),
+        table_->table_meta().field(i)->field_id());
   }
   return rc;
 }
 
-RC TableScanVecPhysicalOperator::next(Chunk &chunk)
-{
+RC TableScanVecPhysicalOperator::next(Chunk &chunk) {
   RC rc = RC::SUCCESS;
 
   all_columns_.reset_data();
@@ -54,7 +53,9 @@ RC TableScanVecPhysicalOperator::next(Chunk &chunk)
         }
         for (int j = 0; j < all_columns_.column_num(); j++) {
           filterd_columns_.column(j).append_one(
-              (char *)all_columns_.column(filterd_columns_.column_ids(j)).get_value(i).data());
+              (char *)all_columns_.column(filterd_columns_.column_ids(j))
+                  .get_value(i)
+                  .data());
         }
       }
       chunk.reference(filterd_columns_);
@@ -67,13 +68,12 @@ RC TableScanVecPhysicalOperator::close() { return chunk_scanner_.close_scan(); }
 
 string TableScanVecPhysicalOperator::param() const { return table_->name(); }
 
-void TableScanVecPhysicalOperator::set_predicates(vector<unique_ptr<Expression>> &&exprs)
-{
+void TableScanVecPhysicalOperator::set_predicates(
+    vector<unique_ptr<Expression>> &&exprs) {
   predicates_ = std::move(exprs);
 }
 
-RC TableScanVecPhysicalOperator::filter(Chunk &chunk)
-{
+RC TableScanVecPhysicalOperator::filter(Chunk &chunk) {
   RC rc = RC::SUCCESS;
   for (unique_ptr<Expression> &expr : predicates_) {
     rc = expr->eval(chunk, select_);

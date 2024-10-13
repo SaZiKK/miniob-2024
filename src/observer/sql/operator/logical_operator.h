@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -22,7 +22,8 @@ See the Mulan PSL v2 for more details. */
 /**
  * @brief 逻辑算子
  * @defgroup LogicalOperator
- * @details 逻辑算子描述当前执行计划要做什么，比如从表中获取数据，过滤，投影，连接等等。
+ * @details
+ * 逻辑算子描述当前执行计划要做什么，比如从表中获取数据，过滤，投影，连接等等。
  * 物理算子会描述怎么做某件事情，这是与其不同的地方。
  */
 
@@ -30,8 +31,7 @@ See the Mulan PSL v2 for more details. */
  * @brief 逻辑算子类型
  *
  */
-enum class LogicalOperatorType
-{
+enum class LogicalOperatorType {
   CALC,
   TABLE_GET,   ///< 从表中获取数据
   PREDICATE,   ///< 过滤，就是谓词
@@ -48,20 +48,23 @@ enum class LogicalOperatorType
  * @brief 逻辑算子描述当前执行计划要做什么
  * @details 可以看OptimizeStage中相关的代码
  */
-class LogicalOperator
-{
-public:
+class LogicalOperator {
+ public:
   LogicalOperator() = default;
   virtual ~LogicalOperator();
 
   virtual LogicalOperatorType type() const = 0;
 
-  void        add_child(std::unique_ptr<LogicalOperator> oper);
-  auto        children() -> std::vector<std::unique_ptr<LogicalOperator>>        &{ return children_; }
-  auto        expressions() -> std::vector<std::unique_ptr<Expression>>        &{ return expressions_; }
+  void add_child(std::unique_ptr<LogicalOperator> oper);
+  auto children() -> std::vector<std::unique_ptr<LogicalOperator>> & {
+    return children_;
+  }
+  auto expressions() -> std::vector<std::unique_ptr<Expression>> & {
+    return expressions_;
+  }
   static bool can_generate_vectorized_operator(const LogicalOperatorType &type);
 
-protected:
+ protected:
   std::vector<std::unique_ptr<LogicalOperator>> children_;  ///< 子算子
 
   ///< 表达式，比如select中的列，where中的谓词等等，都可以使用表达式来表示

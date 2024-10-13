@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -32,9 +32,8 @@ See the Mulan PSL v2 for more details. */
 
 using namespace common;
 
-bool *&_get_init()
-{
-  static bool  util_init   = false;
+bool *&_get_init() {
+  static bool util_init = false;
   static bool *util_init_p = &util_init;
   return util_init_p;
 }
@@ -43,16 +42,14 @@ bool get_init() { return *_get_init(); }
 
 void set_init(bool value) { *_get_init() = value; }
 
-void sig_handler(int sig)
-{
+void sig_handler(int sig) {
   // Signal handler will be add in the next step.
   //  Add action to shutdown
 
   LOG_INFO("Receive one signal of %d.", sig);
 }
 
-int init_log(ProcessParam *process_cfg, Ini &properties)
-{
+int init_log(ProcessParam *process_cfg, Ini &properties) {
   const string &proc_name = process_cfg->get_process_name();
   try {
     // we had better alloc one lock to do so, but simplify the logic
@@ -60,10 +57,12 @@ int init_log(ProcessParam *process_cfg, Ini &properties)
       return 0;
     }
 
-    auto log_context_getter = []() { return reinterpret_cast<intptr_t>(Session::current_session()); };
+    auto log_context_getter = []() {
+      return reinterpret_cast<intptr_t>(Session::current_session());
+    };
 
-    const string        log_section_name = "LOG";
-    map<string, string> log_section      = properties.get(log_section_name);
+    const string log_section_name = "LOG";
+    map<string, string> log_section = properties.get(log_section_name);
 
     string log_file_name;
 
@@ -81,8 +80,8 @@ int init_log(ProcessParam *process_cfg, Ini &properties)
     log_file_name = getAboslutPath(log_file_name.c_str());
 
     LOG_LEVEL log_level = LOG_LEVEL_INFO;
-    key                 = ("LOG_FILE_LEVEL");
-    it                  = log_section.find(key);
+    key = ("LOG_FILE_LEVEL");
+    it = log_section.find(key);
     if (it != log_section.end()) {
       int log = (int)log_level;
       str_to_val(it->second, log);
@@ -90,8 +89,8 @@ int init_log(ProcessParam *process_cfg, Ini &properties)
     }
 
     LOG_LEVEL console_level = LOG_LEVEL_INFO;
-    key                     = ("LOG_CONSOLE_LEVEL");
-    it                      = log_section.find(key);
+    key = ("LOG_CONSOLE_LEVEL");
+    it = log_section.find(key);
     if (it != log_section.end()) {
       int log = (int)console_level;
       str_to_val(it->second, log);
@@ -102,7 +101,7 @@ int init_log(ProcessParam *process_cfg, Ini &properties)
     g_log->set_context_getter(log_context_getter);
 
     key = ("DefaultLogModules");
-    it  = log_section.find(key);
+    it = log_section.find(key);
     if (it != log_section.end()) {
       g_log->set_default_module(it->second);
     }
@@ -113,35 +112,29 @@ int init_log(ProcessParam *process_cfg, Ini &properties)
 
     return 0;
   } catch (exception &e) {
-    cerr << "Failed to init log for " << proc_name << SYS_OUTPUT_FILE_POS << SYS_OUTPUT_ERROR << endl;
+    cerr << "Failed to init log for " << proc_name << SYS_OUTPUT_FILE_POS
+         << SYS_OUTPUT_ERROR << endl;
     return errno;
   }
 
   return 0;
 }
 
-void cleanup_log()
-{
-
+void cleanup_log() {
   if (g_log) {
     delete g_log;
     g_log = nullptr;
   }
 }
 
-int prepare_init_seda()
-{
-  return 0;
-}
+int prepare_init_seda() { return 0; }
 
-int init_global_objects(ProcessParam *process_param, Ini &properties)
-{
+int init_global_objects(ProcessParam *process_param, Ini &properties) {
   GCTX.handler_ = new DefaultHandler();
 
   int ret = 0;
 
-  RC rc = GCTX.handler_->init("miniob", 
-                              process_param->trx_kit_name().c_str(),
+  RC rc = GCTX.handler_->init("miniob", process_param->trx_kit_name().c_str(),
                               process_param->durability_mode().c_str());
   if (OB_FAIL(rc)) {
     LOG_ERROR("failed to init handler. rc=%s", strrc(rc));
@@ -150,16 +143,14 @@ int init_global_objects(ProcessParam *process_param, Ini &properties)
   return ret;
 }
 
-int uninit_global_objects()
-{
+int uninit_global_objects() {
   delete GCTX.handler_;
   GCTX.handler_ = nullptr;
 
   return 0;
 }
 
-int init(ProcessParam *process_param)
-{
+int init(ProcessParam *process_param) {
   if (get_init()) {
     return 0;
   }
@@ -169,7 +160,8 @@ int init(ProcessParam *process_param)
   // Run as daemon if daemonization requested
   int rc = STATUS_SUCCESS;
   if (process_param->is_demon()) {
-    rc = daemonize_service(process_param->get_std_out().c_str(), process_param->get_std_err().c_str());
+    rc = daemonize_service(process_param->get_std_out().c_str(),
+                           process_param->get_std_err().c_str());
     if (rc != 0) {
       cerr << "Shutdown due to failed to daemon current process!" << endl;
       return rc;
@@ -217,8 +209,7 @@ int init(ProcessParam *process_param)
   return STATUS_SUCCESS;
 }
 
-void cleanup_util()
-{
+void cleanup_util() {
   uninit_global_objects();
 
   if (nullptr != get_properties()) {

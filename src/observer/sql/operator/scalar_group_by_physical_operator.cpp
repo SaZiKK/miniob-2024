@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -20,22 +20,24 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
-ScalarGroupByPhysicalOperator::ScalarGroupByPhysicalOperator(vector<Expression *> &&expressions)
-    : GroupByPhysicalOperator(std::move(expressions))
-{}
+ScalarGroupByPhysicalOperator::ScalarGroupByPhysicalOperator(
+    vector<Expression *> &&expressions)
+    : GroupByPhysicalOperator(std::move(expressions)) {}
 
-RC ScalarGroupByPhysicalOperator::open(Trx *trx)
-{
-  ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
+RC ScalarGroupByPhysicalOperator::open(Trx *trx) {
+  ASSERT(children_.size() == 1,
+         "group by operator only support one child, but got %d",
+         children_.size());
 
   PhysicalOperator &child = *children_[0];
-  RC                rc    = child.open(trx);
+  RC rc = child.open(trx);
   if (OB_FAIL(rc)) {
     LOG_INFO("failed to open child operator. rc=%s", strrc(rc));
     return rc;
   }
 
-  ExpressionTuple<Expression *> group_value_expression_tuple(value_expressions_);
+  ExpressionTuple<Expression *> group_value_expression_tuple(
+      value_expressions_);
 
   ValueListTuple group_by_evaluated_tuple;
 
@@ -62,10 +64,12 @@ RC ScalarGroupByPhysicalOperator::open(Trx *trx)
       }
 
       CompositeTuple composite_tuple;
-      composite_tuple.add_tuple(make_unique<ValueListTuple>(std::move(child_tuple_to_value)));
-      group_value_ = make_unique<GroupValueType>(std::move(aggregator_list), std::move(composite_tuple));
+      composite_tuple.add_tuple(
+          make_unique<ValueListTuple>(std::move(child_tuple_to_value)));
+      group_value_ = make_unique<GroupValueType>(std::move(aggregator_list),
+                                                 std::move(composite_tuple));
     }
-    
+
     rc = aggregate(get<0>(*group_value_), group_value_expression_tuple);
     if (OB_FAIL(rc)) {
       LOG_WARN("failed to aggregate values. rc=%s", strrc(rc));
@@ -91,8 +95,7 @@ RC ScalarGroupByPhysicalOperator::open(Trx *trx)
   return rc;
 }
 
-RC ScalarGroupByPhysicalOperator::next()
-{
+RC ScalarGroupByPhysicalOperator::next() {
   if (group_value_ == nullptr || emitted_) {
     return RC::RECORD_EOF;
   }
@@ -102,15 +105,13 @@ RC ScalarGroupByPhysicalOperator::next()
   return RC::SUCCESS;
 }
 
-RC ScalarGroupByPhysicalOperator::close()
-{
+RC ScalarGroupByPhysicalOperator::close() {
   group_value_.reset();
   emitted_ = false;
   return RC::SUCCESS;
 }
 
-Tuple *ScalarGroupByPhysicalOperator::current_tuple()
-{
+Tuple *ScalarGroupByPhysicalOperator::current_tuple() {
   if (group_value_ == nullptr) {
     return nullptr;
   }

@@ -1,9 +1,8 @@
 #include "common/rc.h"
 #include "common/type/data_type.h"
 
-class DateType : public DataType
-{
-public:
+class DateType : public DataType {
+ public:
   DateType() : DataType(AttrType::DATE) {}
 
   virtual ~DateType() = default;

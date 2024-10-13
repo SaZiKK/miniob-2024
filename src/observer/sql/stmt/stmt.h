@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -52,21 +52,21 @@ class Db;
   DEFINE_ENUM_ITEM(PREDICATE)    \
   DEFINE_ENUM_ITEM(SET_VARIABLE)
 
-enum class StmtType
-{
+enum class StmtType {
 #define DEFINE_ENUM_ITEM(name) name,
   DEFINE_ENUM()
 #undef DEFINE_ENUM_ITEM
 };
 
-inline const char *stmt_type_name(StmtType type)
-{
+inline const char *stmt_type_name(StmtType type) {
   switch (type) {
 #define DEFINE_ENUM_ITEM(name) \
-  case StmtType::name: return #name;
+  case StmtType::name:         \
+    return #name;
     DEFINE_ENUM()
 #undef DEFINE_ENUM_ITEM
-    default: return "unkown";
+    default:
+      return "unkown";
   }
 }
 
@@ -78,16 +78,15 @@ bool stmt_type_ddl(StmtType type);
  * @details SQL解析后的语句，再进一步解析成Stmt，使用内部的数据结构来表示。
  * 比如table_name，解析成具体的 Table对象，attr/field name解析成Field对象。
  */
-class Stmt
-{
-public:
-  Stmt()          = default;
+class Stmt {
+ public:
+  Stmt() = default;
   virtual ~Stmt() = default;
 
   virtual StmtType type() const = 0;
 
-public:
+ public:
   static RC create_stmt(Db *db, ParsedSqlNode &sql_node, Stmt *&stmt);
 
-private:
+ private:
 };

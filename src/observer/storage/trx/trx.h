@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -41,53 +41,53 @@ class LogReplayer;
  * @details 通常包含一个操作的类型，以及操作的对象和具体的数据
  * @note 这个名称太通用，可以考虑改成更具体的名称
  */
-class Operation
-{
-public:
+class Operation {
+ public:
   /**
    * @brief 操作的类型
    * @ingroup Transaction
    */
-  enum class Type : int
-  {
+  enum class Type : int {
     INSERT,
     UPDATE,
     DELETE,
     UNDEFINED,
   };
 
-public:
+ public:
   Operation(Type type, Table *table, const RID &rid)
-      : type_(type), table_(table), page_num_(rid.page_num), slot_num_(rid.slot_num)
-  {}
+      : type_(type),
+        table_(table),
+        page_num_(rid.page_num),
+        slot_num_(rid.slot_num) {}
 
-  Type    type() const { return type_; }
+  Type type() const { return type_; }
   int32_t table_id() const { return table_->table_id(); }
-  Table  *table() const { return table_; }
+  Table *table() const { return table_; }
   PageNum page_num() const { return page_num_; }
   SlotNum slot_num() const { return slot_num_; }
 
-private:
+ private:
   ///< 操作的哪张表。这里直接使用表其实并不准确，因为表中的索引也可能有日志
   Type type_;
 
-  Table  *table_ = nullptr;
+  Table *table_ = nullptr;
   PageNum page_num_;  // TODO use RID instead of page num and slot num
   SlotNum slot_num_;
 };
 
-class OperationHasher
-{
-public:
-  size_t operator()(const Operation &op) const { return (((size_t)op.page_num()) << 32) | (op.slot_num()); }
+class OperationHasher {
+ public:
+  size_t operator()(const Operation &op) const {
+    return (((size_t)op.page_num()) << 32) | (op.slot_num());
+  }
 };
 
-class OperationEqualer
-{
-public:
-  bool operator()(const Operation &op1, const Operation &op2) const
-  {
-    return op1.table_id() == op2.table_id() && op1.page_num() == op2.page_num() && op1.slot_num() == op2.slot_num();
+class OperationEqualer {
+ public:
+  bool operator()(const Operation &op1, const Operation &op2) const {
+    return op1.table_id() == op2.table_id() &&
+           op1.page_num() == op2.page_num() && op1.slot_num() == op2.slot_num();
   }
 };
 
@@ -95,25 +95,23 @@ public:
  * @brief 事务管理器
  * @ingroup Transaction
  */
-class TrxKit
-{
-public:
+class TrxKit {
+ public:
   /**
    * @brief 事务管理器的类型
    * @ingroup Transaction
    * @details 进程启动时根据事务管理器的类型来创建具体的对象
    */
-  enum Type
-  {
+  enum Type {
     VACUOUS,  ///< 空的事务管理器，不做任何事情
     MVCC,     ///< 支持MVCC的事务管理器
   };
 
-public:
-  TrxKit()          = default;
+ public:
+  TrxKit() = default;
   virtual ~TrxKit() = default;
 
-  virtual RC                       init()             = 0;
+  virtual RC init() = 0;
   virtual const vector<FieldMeta> *trx_fields() const = 0;
 
   virtual Trx *create_trx(LogHandler &log_handler) = 0;
@@ -122,14 +120,14 @@ public:
    * @brief 创建一个事务，日志回放时使用
    */
   virtual Trx *create_trx(LogHandler &log_handler, int32_t trx_id) = 0;
-  virtual Trx *find_trx(int32_t trx_id)                            = 0;
-  virtual void all_trxes(vector<Trx *> &trxes)                     = 0;
+  virtual Trx *find_trx(int32_t trx_id) = 0;
+  virtual void all_trxes(vector<Trx *> &trxes) = 0;
 
   virtual void destroy_trx(Trx *trx) = 0;
 
   virtual LogReplayer *create_log_replayer(Db &db, LogHandler &log_handler) = 0;
 
-public:
+ public:
   static TrxKit *create(const char *name);
 };
 
@@ -137,20 +135,20 @@ public:
  * @brief 事务接口
  * @ingroup Transaction
  */
-class Trx
-{
-public:
-  Trx()          = default;
+class Trx {
+ public:
+  Trx() = default;
   virtual ~Trx() = default;
 
-  virtual RC insert_record(Table *table, Record &record)                                      = 0;
-  virtual RC delete_record(Table *table, Record &record)                                      = 0;
-  virtual RC update_record(Table *table, Record &record, const char *attr_name, Value *value) = 0;
-  virtual RC visit_record(Table *table, Record &record, ReadWriteMode mode)                   = 0;
+  virtual RC insert_record(Table *table, Record &record) = 0;
+  virtual RC delete_record(Table *table, Record &record) = 0;
+  virtual RC update_record(Table *table, Record &record, const char *attr_name,
+                           Value *value) = 0;
+  virtual RC visit_record(Table *table, Record &record, ReadWriteMode mode) = 0;
 
   virtual RC start_if_need() = 0;
-  virtual RC commit()        = 0;
-  virtual RC rollback()      = 0;
+  virtual RC commit() = 0;
+  virtual RC rollback() = 0;
 
   virtual RC redo(Db *db, const LogEntry &log_entry) = 0;
 

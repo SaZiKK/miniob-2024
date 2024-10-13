@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
 miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
+You can use this software according to the terms and conditions of the Mulan PSL
+v2. You may obtain a copy of Mulan PSL v2 at:
          http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -58,9 +58,8 @@ class Deserializer;
  * 在日志回滚或者重做的过程中，其实不需要再记录新的日志，但是调用的B+树本身的接口都是同一个，并没有编写特殊的
  * 类似redo_xxx函数，因此需要这个类本身做判断，是否需要记录日志。
  */
-class BplusTreeLogger final
-{
-public:
+class BplusTreeLogger final {
+ public:
   /**
    * @brief 构造函数
    * @param log_handler 日志处理器。实际上就会调用此对象进行日志记录
@@ -79,7 +78,8 @@ public:
    * @param root_page_num 更新后的根页编号
    * @param old_page_num 更新前的根页编号。用于回滚
    */
-  RC update_root_page(Frame *frame, PageNum root_page_num, PageNum old_page_num);
+  RC update_root_page(Frame *frame, PageNum root_page_num,
+                      PageNum old_page_num);
 
   /**
    * @brief 在某个页面中插入一些元素
@@ -88,7 +88,8 @@ public:
    * @param items 插入的元素
    * @param item_num 元素个数
    */
-  RC node_insert_items(IndexNodeHandler &node_handler, int index, span<const char> items, int item_num);
+  RC node_insert_items(IndexNodeHandler &node_handler, int index,
+                       span<const char> items, int item_num);
   /**
    * @brief 在某个页面中删除一些元素
    * @param node_handler 页面处理器。同时也包含了页面编号、页帧
@@ -97,7 +98,8 @@ public:
    * @param item_num 元素个数
    * @details 会在内存中记录一些数据帮助回滚操作
    */
-  RC node_remove_items(IndexNodeHandler &node_handler, int index, span<const char> items, int item_num);
+  RC node_remove_items(IndexNodeHandler &node_handler, int index,
+                       span<const char> items, int item_num);
 
   /**
    * @brief 初始化一个空的叶子节点
@@ -106,7 +108,8 @@ public:
   /**
    * @brief 修改叶子节点的下一个兄弟节点编号
    */
-  RC leaf_set_next_page(IndexNodeHandler &node_handler, PageNum page_num, PageNum old_page_num);
+  RC leaf_set_next_page(IndexNodeHandler &node_handler, PageNum page_num,
+                        PageNum old_page_num);
 
   /**
    * @brief 初始化一个空的内部节点
@@ -115,17 +118,20 @@ public:
   /**
    * @brief 创建一个新的根节点
    */
-  RC internal_create_new_root(
-      IndexNodeHandler &node_handler, PageNum first_page_num, span<const char> key, PageNum page_num);
+  RC internal_create_new_root(IndexNodeHandler &node_handler,
+                              PageNum first_page_num, span<const char> key,
+                              PageNum page_num);
   /**
    * @brief 更新某个内部页面上，更新指定位置的键值
    */
-  RC internal_update_key(IndexNodeHandler &node_handler, int index, span<const char> key, span<const char> old_key);
+  RC internal_update_key(IndexNodeHandler &node_handler, int index,
+                         span<const char> key, span<const char> old_key);
 
   /**
    * @brief 修改某个页面的父节点编号
    */
-  RC set_parent_page(IndexNodeHandler &node_handler, PageNum page_num, PageNum old_page_num);
+  RC set_parent_page(IndexNodeHandler &node_handler, PageNum page_num,
+                     PageNum old_page_num);
 
   /**
    * @brief 提交。表示整个操作成功
@@ -145,64 +151,68 @@ public:
    */
   static string log_entry_to_string(const LogEntry &entry);
 
-private:
-  RC __redo(LSN lsn, BplusTreeMiniTransaction &mtr, BplusTreeHandler &tree_handler, common::Deserializer &redo_buffer);
+ private:
+  RC __redo(LSN lsn, BplusTreeMiniTransaction &mtr,
+            BplusTreeHandler &tree_handler, common::Deserializer &redo_buffer);
 
-protected:
+ protected:
   RC append_log_entry(unique_ptr<bplus_tree::LogEntryHandler> entry);
 
-private:
+ private:
   LogHandler &log_handler_;
-  int32_t     buffer_pool_id_ = -1;  /// 关联的缓冲池ID
+  int32_t buffer_pool_id_ = -1;  /// 关联的缓冲池ID
 
-  vector<unique_ptr<bplus_tree::LogEntryHandler>> entries_;  /// 当前记录了的日志
+  vector<unique_ptr<bplus_tree::LogEntryHandler>>
+      entries_;  /// 当前记录了的日志
 
-  bool need_log_ = true;  /// 是否需要记录日志。在回滚或重做过程中，不需要记录日志。
+  bool need_log_ =
+      true;  /// 是否需要记录日志。在回滚或重做过程中，不需要记录日志。
 };
 
 /**
  * @brief B+树使用的事务辅助类
  * @ingroup BPlusTree
- * @details B+树的修改操作，通常会涉及到多个动作，比如插入一条数据可能会引起页面分裂，删除一条数据可能会引起页面合并。
+ * @details
+ * B+树的修改操作，通常会涉及到多个动作，比如插入一条数据可能会引起页面分裂，删除一条数据可能会引起页面合并。
  * 我们需要保证这些动作一起成功或一起失败，即使在重启后也保证B+树的一致性。
  */
-class BplusTreeMiniTransaction final
-{
-public:
+class BplusTreeMiniTransaction final {
+ public:
   /**
    * @brief 构造函数
    * @param tree_handler B+树处理器
-   * @param operation_result 操作结果。如果不为nullptr，会在事务结束后，自动根据结果来提交或回滚。
+   * @param operation_result
+   * 操作结果。如果不为nullptr，会在事务结束后，自动根据结果来提交或回滚。
    */
-  BplusTreeMiniTransaction(BplusTreeHandler &tree_handler, RC *operation_result = nullptr);
+  BplusTreeMiniTransaction(BplusTreeHandler &tree_handler,
+                           RC *operation_result = nullptr);
   ~BplusTreeMiniTransaction();
 
-  LatchMemo       &latch_memo() { return latch_memo_; }
+  LatchMemo &latch_memo() { return latch_memo_; }
   BplusTreeLogger &logger() { return logger_; }
 
   RC commit();
   RC rollback();
 
-private:
+ private:
   BplusTreeHandler &tree_handler_;
-  RC               *operation_result_ = nullptr;
-  LatchMemo         latch_memo_;
-  BplusTreeLogger   logger_;
+  RC *operation_result_ = nullptr;
+  LatchMemo latch_memo_;
+  BplusTreeLogger logger_;
 };
 
 /**
  * @brief B+树日志重做器
  * @ingroup CLog
  */
-class BplusTreeLogReplayer final : public LogReplayer
-{
-public:
+class BplusTreeLogReplayer final : public LogReplayer {
+ public:
   BplusTreeLogReplayer(BufferPoolManager &bpm);
   virtual ~BplusTreeLogReplayer() = default;
 
   /// @copydoc LogReplayer::replay
   virtual RC replay(const LogEntry &entry) override;
 
-private:
+ private:
   BufferPoolManager &buffer_pool_manager_;
 };

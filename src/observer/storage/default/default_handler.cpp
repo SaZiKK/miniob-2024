@@ -1,10 +1,9 @@
-/* Copyright (c) 2021 Xie Meiyi(xiemeiyi@hust.edu.cn) and OceanBase and/or its affiliates. All rights reserved.
-miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
-THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+/* Copyright (c) 2021 Xie Meiyi(xiemeiyi@hust.edu.cn) and OceanBase and/or its
+affiliates. All rights reserved. miniob is licensed under Mulan PSL v2. You can
+use this software according to the terms and conditions of the Mulan PSL v2. You
+may obtain a copy of Mulan PSL v2 at: http://license.coscl.org.cn/MulanPSL2 THIS
+SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
@@ -33,19 +32,21 @@ DefaultHandler::DefaultHandler() {}
 
 DefaultHandler::~DefaultHandler() noexcept { destroy(); }
 
-RC DefaultHandler::init(const char *base_dir, const char *trx_kit_name, const char *log_handler_name)
-{
+RC DefaultHandler::init(const char *base_dir, const char *trx_kit_name,
+                        const char *log_handler_name) {
   // 检查目录是否存在，或者创建
   filesystem::path db_dir(base_dir);
   db_dir /= "db";
   error_code ec;
-  if (!filesystem::is_directory(db_dir) && !filesystem::create_directories(db_dir, ec)) {
-    LOG_ERROR("Cannot access base dir: %s. msg=%d:%s", db_dir.c_str(), errno, strerror(errno));
+  if (!filesystem::is_directory(db_dir) &&
+      !filesystem::create_directories(db_dir, ec)) {
+    LOG_ERROR("Cannot access base dir: %s. msg=%d:%s", db_dir.c_str(), errno,
+              strerror(errno));
     return RC::INTERNAL;
   }
 
   base_dir_ = base_dir;
-  db_dir_   = db_dir;
+  db_dir_ = db_dir;
   trx_kit_name_ = trx_kit_name;
   log_handler_name_ = log_handler_name;
 
@@ -70,8 +71,7 @@ RC DefaultHandler::init(const char *base_dir, const char *trx_kit_name, const ch
   return RC::SUCCESS;
 }
 
-void DefaultHandler::destroy()
-{
+void DefaultHandler::destroy() {
   sync();
 
   for (const auto &iter : opened_dbs_) {
@@ -80,8 +80,7 @@ void DefaultHandler::destroy()
   opened_dbs_.clear();
 }
 
-RC DefaultHandler::create_db(const char *dbname)
-{
+RC DefaultHandler::create_db(const char *dbname) {
   if (nullptr == dbname || common::is_blank(dbname)) {
     LOG_WARN("Invalid db name");
     return RC::INVALID_ARGUMENT;
@@ -104,8 +103,7 @@ RC DefaultHandler::create_db(const char *dbname)
 
 RC DefaultHandler::drop_db(const char *dbname) { return RC::INTERNAL; }
 
-RC DefaultHandler::open_db(const char *dbname)
-{
+RC DefaultHandler::open_db(const char *dbname) {
   if (nullptr == dbname || common::is_blank(dbname)) {
     LOG_WARN("Invalid db name");
     return RC::INVALID_ARGUMENT;
@@ -121,9 +119,10 @@ RC DefaultHandler::open_db(const char *dbname)
   }
 
   // open db
-  Db *db  = new Db();
-  RC  ret = RC::SUCCESS;
-  if ((ret = db->init(dbname, dbpath.c_str(), trx_kit_name_.c_str(), log_handler_name_.c_str())) != RC::SUCCESS) {
+  Db *db = new Db();
+  RC ret = RC::SUCCESS;
+  if ((ret = db->init(dbname, dbpath.c_str(), trx_kit_name_.c_str(),
+                      log_handler_name_.c_str())) != RC::SUCCESS) {
     LOG_ERROR("Failed to open db: %s. error=%s", dbname, strrc(ret));
     delete db;
   } else {
@@ -134,8 +133,8 @@ RC DefaultHandler::open_db(const char *dbname)
 
 RC DefaultHandler::close_db(const char *dbname) { return RC::UNIMPLEMENTED; }
 
-RC DefaultHandler::create_table(const char *dbname, const char *relation_name, span<const AttrInfoSqlNode> attributes)
-{
+RC DefaultHandler::create_table(const char *dbname, const char *relation_name,
+                                span<const AttrInfoSqlNode> attributes) {
   Db *db = find_db(dbname);
   if (db == nullptr) {
     return RC::SCHEMA_DB_NOT_OPENED;
@@ -143,10 +142,11 @@ RC DefaultHandler::create_table(const char *dbname, const char *relation_name, s
   return db->create_table(relation_name, attributes);
 }
 
-RC DefaultHandler::drop_table(const char *dbname, const char *relation_name) { return RC::UNIMPLEMENTED; }
+RC DefaultHandler::drop_table(const char *dbname, const char *relation_name) {
+  return RC::UNIMPLEMENTED;
+}
 
-Db *DefaultHandler::find_db(const char *dbname) const
-{
+Db *DefaultHandler::find_db(const char *dbname) const {
   map<string, Db *>::const_iterator iter = opened_dbs_.find(dbname);
   if (iter == opened_dbs_.end()) {
     return nullptr;
@@ -154,8 +154,8 @@ Db *DefaultHandler::find_db(const char *dbname) const
   return iter->second;
 }
 
-Table *DefaultHandler::find_table(const char *dbname, const char *table_name) const
-{
+Table *DefaultHandler::find_table(const char *dbname,
+                                  const char *table_name) const {
   if (dbname == nullptr || table_name == nullptr) {
     LOG_WARN("Invalid argument. dbname=%p, table_name=%p", dbname, table_name);
     return nullptr;
@@ -168,14 +168,14 @@ Table *DefaultHandler::find_table(const char *dbname, const char *table_name) co
   return db->find_table(table_name);
 }
 
-RC DefaultHandler::sync()
-{
+RC DefaultHandler::sync() {
   RC rc = RC::SUCCESS;
   for (const auto &db_pair : opened_dbs_) {
     Db *db = db_pair.second;
-    rc     = db->sync();
+    rc = db->sync();
     if (rc != RC::SUCCESS) {
-      LOG_ERROR("Failed to sync db. name=%s, rc=%d:%s", db->name(), rc, strrc(rc));
+      LOG_ERROR("Failed to sync db. name=%s, rc=%d:%s", db->name(), rc,
+                strrc(rc));
       return rc;
     }
   }
