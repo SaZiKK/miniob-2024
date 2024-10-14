@@ -118,6 +118,9 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         IN
         NOT_EXISTS
         EXISTS
+        LENGTH
+        ROUND
+        DATE_FORMAT
         EQ
         LT
         GT
@@ -598,47 +601,52 @@ expression:
     | MAX LBRACE RBRACE {
       $$ = create_aggregate_expression("MAX", nullptr, sql_string, &@$);
     }
-    | SUM LBRACE RBRACE {
-      $$ = create_aggregate_expression("SUM", nullptr, sql_string, &@$);
-    }
     | MIN LBRACE RBRACE {
       $$ = create_aggregate_expression("MIN", nullptr, sql_string, &@$);
     }
     | AVG LBRACE RBRACE {
       $$ = create_aggregate_expression("AVG", nullptr, sql_string, &@$);
     }
+    | SUM LBRACE RBRACE {
+      $$ = create_aggregate_expression("SUM", nullptr, sql_string, &@$);
+    }
     | COUNT LBRACE RBRACE {
       $$ = create_aggregate_expression("COUNT", nullptr, sql_string, &@$);
     }
-    | MAX LBRACE expression RBRACE {
-      $$ = create_aggregate_expression("MAX", $3, sql_string, &@$);
-    }
-    | SUM LBRACE expression RBRACE {
-      $$ = create_aggregate_expression("SUM", $3, sql_string, &@$);
-    }
-    | MIN LBRACE expression RBRACE {
-      $$ = create_aggregate_expression("MIN", $3, sql_string, &@$);
-    }
-    | AVG LBRACE expression RBRACE {
-      $$ = create_aggregate_expression("AVG", $3, sql_string, &@$);
-    }
-    | COUNT LBRACE expression RBRACE {
-      $$ = create_aggregate_expression("COUNT", $3, sql_string, &@$);
-    }
     | MAX LBRACE expression_list RBRACE {
-      $$ = create_aggregate_expression("MAX", nullptr, sql_string, &@$);
-    }
-    | SUM LBRACE expression_list RBRACE {
-      $$ = create_aggregate_expression("SUM", nullptr, sql_string, &@$);
+      if($3->size() != 1) {
+        $$ = create_aggregate_expression("MAX", nullptr, sql_string, &@$);
+      } else {
+        $$ = create_aggregate_expression("MAX", $3->at(0).get(), sql_string, &@$);
+      }
     }
     | MIN LBRACE expression_list RBRACE {
-      $$ = create_aggregate_expression("MIN", nullptr, sql_string, &@$);
-    }
-    | AVG LBRACE expression_list RBRACE {
-      $$ = create_aggregate_expression("AVG", nullptr, sql_string, &@$);
+      if($3->size() != 1) {
+        $$ = create_aggregate_expression("MIN", nullptr, sql_string, &@$);
+      } else {
+        $$ = create_aggregate_expression("MIN", $3->at(0).get(), sql_string, &@$);
+      }
     }
     | COUNT LBRACE expression_list RBRACE {
-      $$ = create_aggregate_expression("COUNT", nullptr, sql_string, &@$);
+      if($3->size() != 1) {
+        $$ = create_aggregate_expression("COUNT", nullptr, sql_string, &@$);
+      } else {
+        $$ = create_aggregate_expression("COUNT", $3->at(0).get(), sql_string, &@$);
+      }
+    }
+    | AVG LBRACE expression_list RBRACE {
+      if($3->size() != 1) {
+        $$ = create_aggregate_expression("AVG", nullptr, sql_string, &@$);
+      } else {
+        $$ = create_aggregate_expression("AVG", $3->at(0).get(), sql_string, &@$);
+      }
+    }
+    | SUM LBRACE expression_list RBRACE {
+      if($3->size() != 1) {
+        $$ = create_aggregate_expression("SUM", nullptr, sql_string, &@$);
+      } else {
+        $$ = create_aggregate_expression("SUM", $3->at(0).get(), sql_string, &@$);
+      }
     }
     ;
 
