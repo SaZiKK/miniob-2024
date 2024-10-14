@@ -735,6 +735,7 @@ condition:
       $$->left_is_attr = 1;
       $$->left_attr = *$1;
       $$->right_is_attr = 0;
+      $$->left_is_sub_query = false;
       $$->right_is_sub_query = false;
       $$->right_value = *$3;
       $$->comp = $2;
@@ -748,6 +749,7 @@ condition:
       $$->left_is_attr = 0;
       $$->left_value = *$1;
       $$->right_is_attr = 0;
+      $$->left_is_sub_query = false;
       $$->right_is_sub_query = false;
       $$->right_value = *$3;
       $$->comp = $2;
@@ -761,6 +763,7 @@ condition:
       $$->left_is_attr = 1;
       $$->left_attr = *$1;
       $$->right_is_attr = 1;
+      $$->left_is_sub_query = false;
       $$->right_is_sub_query = false;
       $$->right_attr = *$3;
       $$->comp = $2;
@@ -774,6 +777,7 @@ condition:
       $$->left_is_attr = 0;
       $$->left_value = *$1;
       $$->right_is_attr = 1;
+      $$->left_is_sub_query = false;
       $$->right_is_sub_query = false;
       $$->right_attr = *$3;
       $$->comp = $2;
@@ -787,6 +791,7 @@ condition:
       $$->left_is_attr = 1;
       $$->left_attr = *$1;
       $$->right_is_attr = 0;
+      $$->left_is_sub_query = false;
       $$->right_is_sub_query = true;
       $$->right_sub_query = $3;
       $$->comp = $2;
