@@ -56,8 +56,7 @@ class Db {
    * @param trx_kit_name 使用哪种类型的事务模型
    * @note 数据库不是放在dbpath/name下，是直接使用dbpath目录
    */
-  RC init(const char *name, const char *dbpath, const char *trx_kit_name,
-          const char *log_handler_name);
+  RC init(const char *name, const char *dbpath, const char *trx_kit_name, const char *log_handler_name);
 
   /**
    * @brief 创建一个表
@@ -65,9 +64,7 @@ class Db {
    * @param attributes 表的属性
    * @param storage_format 表的存储格式
    */
-  RC create_table(
-      const char *table_name, span<const AttrInfoSqlNode> attributes,
-      const StorageFormat storage_format = StorageFormat::ROW_FORMAT);
+  RC create_table(const char *table_name, span<const AttrInfoSqlNode> attributes, const StorageFormat storage_format = StorageFormat::ROW_FORMAT);
 
   /**
    * @brief 根据表名查找表
@@ -124,13 +121,12 @@ class Db {
   RC init_dblwr_buffer();
 
  private:
-  string name_;  ///< 数据库名称
-  string path_;  ///< 数据库文件存放的目录
-  unordered_map<string, Table *> opened_tables_;  ///< 当前所有打开的表
-  unique_ptr<BufferPoolManager>
-      buffer_pool_manager_;  ///< 当前数据库的buffer pool管理器
-  unique_ptr<LogHandler> log_handler_;  ///< 当前数据库的日志处理器
-  unique_ptr<TrxKit> trx_kit_;          ///< 当前数据库的事务管理器
+  string name_;                                        ///< 数据库名称
+  string path_;                                        ///< 数据库文件存放的目录
+  unordered_map<string, Table *> opened_tables_;       ///< 当前所有打开的表
+  unique_ptr<BufferPoolManager> buffer_pool_manager_;  ///< 当前数据库的buffer pool管理器
+  unique_ptr<LogHandler> log_handler_;                 ///< 当前数据库的日志处理器
+  unique_ptr<TrxKit> trx_kit_;                         ///< 当前数据库的事务管理器
 
   /// 给每个table都分配一个ID，用来记录日志。这里假设所有的DDL都不会并发操作，所以相关的数据都不上锁
   int32_t next_table_id_ = 0;

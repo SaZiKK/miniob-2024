@@ -12,13 +12,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/common/column.h"
 
 Column::Column(const FieldMeta &meta, size_t size)
-    : data_(nullptr),
-      count_(0),
-      capacity_(0),
-      own_(true),
-      attr_type_(meta.type()),
-      attr_len_(meta.len()),
-      column_type_(Type::NORMAL_COLUMN) {
+    : data_(nullptr), count_(0), capacity_(0), own_(true), attr_type_(meta.type()), attr_len_(meta.len()), column_type_(Type::NORMAL_COLUMN) {
   // TODO: optimized the memory usage if it doesn't need to allocate memory
   data_ = new char[size * attr_len_];
   capacity_ = size;

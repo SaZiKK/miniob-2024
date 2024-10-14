@@ -16,7 +16,4 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-ProjectLogicalOperator::ProjectLogicalOperator(
-    vector<unique_ptr<Expression>> &&expressions) {
-  expressions_ = std::move(expressions);
-}
+ProjectLogicalOperator::ProjectLogicalOperator(vector<unique_ptr<Expression>> &&expressions) { expressions_ = std::move(expressions); }

@@ -31,9 +31,7 @@ class DataType {
 
   virtual ~DataType() = default;
 
-  inline static DataType *type_instance(AttrType attr_type) {
-    return type_instances_.at(static_cast<int>(attr_type)).get();
-  }
+  inline static DataType *type_instance(AttrType attr_type) { return type_instances_.at(static_cast<int>(attr_type)).get(); }
 
   inline AttrType get_attr_type() const { return attr_type_; }
 
@@ -44,61 +42,42 @@ class DataType {
    *  1 表示 left > right
    *  INT32_MAX 表示未实现的比较
    */
-  virtual int compare(const Value &left, const Value &right) const {
-    return INT32_MAX;
-  }
+  virtual int compare(const Value &left, const Value &right) const { return INT32_MAX; }
 
   /**
    * @brief 计算 left + right，并将结果保存到 result 中
    */
-  virtual RC add(const Value &left, const Value &right, Value &result) const {
-    return RC::UNSUPPORTED;
-  }
+  virtual RC add(const Value &left, const Value &right, Value &result) const { return RC::UNSUPPORTED; }
 
   /**
    * @brief 计算 left - right，并将结果保存到 result 中
    */
-  virtual RC subtract(const Value &left, const Value &right,
-                      Value &result) const {
-    return RC::UNSUPPORTED;
-  }
+  virtual RC subtract(const Value &left, const Value &right, Value &result) const { return RC::UNSUPPORTED; }
 
   /**
    * @brief 计算 left * right，并将结果保存到 result 中
    */
-  virtual RC multiply(const Value &left, const Value &right,
-                      Value &result) const {
-    return RC::UNSUPPORTED;
-  }
+  virtual RC multiply(const Value &left, const Value &right, Value &result) const { return RC::UNSUPPORTED; }
 
   /**
    * @brief 计算 left / right，并将结果保存到 result 中
    */
-  virtual RC divide(const Value &left, const Value &right,
-                    Value &result) const {
-    return RC::UNSUPPORTED;
-  }
+  virtual RC divide(const Value &left, const Value &right, Value &result) const { return RC::UNSUPPORTED; }
 
   /**
    * @brief 计算 -val，并将结果保存到 result 中
    */
-  virtual RC negative(const Value &val, Value &result) const {
-    return RC::UNSUPPORTED;
-  }
+  virtual RC negative(const Value &val, Value &result) const { return RC::UNSUPPORTED; }
 
   /**
    * @brief 将 val 转换为 type 类型，并将结果保存到 result 中
    */
-  virtual RC cast_to(const Value &val, AttrType type, Value &result) const {
-    return RC::UNSUPPORTED;
-  }
+  virtual RC cast_to(const Value &val, AttrType type, Value &result) const { return RC::UNSUPPORTED; }
 
   /**
    * @brief 将 val 转换为 string，并将结果保存到 result 中
    */
-  virtual RC to_string(const Value &val, string &result) const {
-    return RC::UNSUPPORTED;
-  }
+  virtual RC to_string(const Value &val, string &result) const { return RC::UNSUPPORTED; }
 
   /**
    * @brief 计算从 type 到 attr_type 的隐式转换的 cost，如果无法转换，返回
@@ -111,13 +90,10 @@ class DataType {
     return INT32_MAX;
   }
 
-  virtual RC set_value_from_str(Value &val, const string &data) const {
-    return RC::UNSUPPORTED;
-  }
+  virtual RC set_value_from_str(Value &val, const string &data) const { return RC::UNSUPPORTED; }
 
  protected:
   AttrType attr_type_;
 
-  static array<unique_ptr<DataType>, static_cast<int>(AttrType::MAXTYPE)>
-      type_instances_;
+  static array<unique_ptr<DataType>, static_cast<int>(AttrType::MAXTYPE)> type_instances_;
 };

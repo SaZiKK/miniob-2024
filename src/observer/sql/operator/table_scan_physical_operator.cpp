@@ -32,8 +32,7 @@ RC TableScanPhysicalOperator::next() {
 
   bool filter_result = false;
   while (OB_SUCC(rc = record_scanner_.next(current_record_))) {
-    LOG_TRACE("got a record. rid=%s",
-              current_record_.rid().to_string().c_str());
+    LOG_TRACE("got a record. rid=%s", current_record_.rid().to_string().c_str());
 
     tuple_.set_record(&current_record_);
     rc = filter(tuple_, filter_result);
@@ -61,10 +60,7 @@ Tuple *TableScanPhysicalOperator::current_tuple() {
 
 string TableScanPhysicalOperator::param() const { return table_->name(); }
 
-void TableScanPhysicalOperator::set_predicates(
-    vector<unique_ptr<Expression>> &&exprs) {
-  predicates_ = std::move(exprs);
-}
+void TableScanPhysicalOperator::set_predicates(vector<unique_ptr<Expression>> &&exprs) { predicates_ = std::move(exprs); }
 
 RC TableScanPhysicalOperator::filter(RowTuple &tuple, bool &result) {
   RC rc = RC::SUCCESS;

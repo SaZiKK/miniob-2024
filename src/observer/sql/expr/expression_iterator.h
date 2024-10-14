@@ -23,7 +23,5 @@ class Expression;
 
 class ExpressionIterator {
  public:
-  static RC iterate_child_expr(
-      Expression &expr,
-      std::function<RC(std::unique_ptr<Expression> &)> callback);
+  static RC iterate_child_expr(Expression &expr, std::function<RC(std::unique_ptr<Expression> &)> callback);
 };

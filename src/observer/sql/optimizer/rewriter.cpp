@@ -25,8 +25,7 @@ Rewriter::Rewriter() {
   rewrite_rules_.emplace_back(new PredicatePushdownRewriter);
 }
 
-RC Rewriter::rewrite(std::unique_ptr<LogicalOperator> &oper,
-                     bool &change_made) {
+RC Rewriter::rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made) {
   RC rc = RC::SUCCESS;
 
   change_made = false;

@@ -53,8 +53,6 @@ std::string physical_operator_type_name(PhysicalOperatorType type) {
   }
 }
 
-std::string PhysicalOperator::name() const {
-  return physical_operator_type_name(type());
-}
+std::string PhysicalOperator::name() const { return physical_operator_type_name(type()); }
 
 std::string PhysicalOperator::param() const { return ""; }

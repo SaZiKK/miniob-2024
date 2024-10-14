@@ -17,6 +17,4 @@ See the Mulan PSL v2 for more details. */
 
 thread_local ThreadData *ThreadData::thread_data_;
 
-Trx *ThreadData::trx() const {
-  return (session_ == nullptr) ? nullptr : session_->current_trx();
-}
+Trx *ThreadData::trx() const { return (session_ == nullptr) ? nullptr : session_->current_trx(); }

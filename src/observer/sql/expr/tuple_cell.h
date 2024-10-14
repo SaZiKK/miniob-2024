@@ -20,8 +20,7 @@ See the Mulan PSL v2 for more details. */
 class TupleCellSpec final {
  public:
   TupleCellSpec() = default;
-  TupleCellSpec(const char *table_name, const char *field_name,
-                const char *alias = nullptr);
+  TupleCellSpec(const char *table_name, const char *field_name, const char *alias = nullptr);
   explicit TupleCellSpec(const char *alias);
   explicit TupleCellSpec(const std::string &alias);
 
@@ -30,8 +29,7 @@ class TupleCellSpec final {
   const char *alias() const { return alias_.c_str(); }
 
   bool equals(const TupleCellSpec &other) const {
-    return table_name_ == other.table_name_ &&
-           field_name_ == other.field_name_ && alias_ == other.alias_;
+    return table_name_ == other.table_name_ && field_name_ == other.field_name_ && alias_ == other.alias_;
   }
 
  private:

@@ -24,8 +24,7 @@ ExpressionRewriter::ExpressionRewriter() {
   expr_rewrite_rules_.emplace_back(new ConjunctionSimplificationRule);
 }
 
-RC ExpressionRewriter::rewrite(unique_ptr<LogicalOperator> &oper,
-                               bool &change_made) {
+RC ExpressionRewriter::rewrite(unique_ptr<LogicalOperator> &oper, bool &change_made) {
   RC rc = RC::SUCCESS;
 
   bool sub_change_made = false;
@@ -60,8 +59,7 @@ RC ExpressionRewriter::rewrite(unique_ptr<LogicalOperator> &oper,
   return rc;
 }
 
-RC ExpressionRewriter::rewrite_expression(unique_ptr<Expression> &expr,
-                                          bool &change_made) {
+RC ExpressionRewriter::rewrite_expression(unique_ptr<Expression> &expr, bool &change_made) {
   RC rc = RC::SUCCESS;
 
   change_made = false;
@@ -88,8 +86,7 @@ RC ExpressionRewriter::rewrite_expression(unique_ptr<Expression> &expr,
     } break;
 
     case ExprType::CAST: {
-      unique_ptr<Expression> &child_expr =
-          (static_cast<CastExpr *>(expr.get()))->child();
+      unique_ptr<Expression> &child_expr = (static_cast<CastExpr *>(expr.get()))->child();
 
       rc = rewrite_expression(child_expr, change_made);
     } break;
@@ -128,8 +125,7 @@ RC ExpressionRewriter::rewrite_expression(unique_ptr<Expression> &expr,
 
         rc = rewrite_expression(child_expr, sub_change_made);
         if (rc != RC::SUCCESS) {
-          LOG_WARN("failed to rewriter conjunction sub expression. rc=%s",
-                   strrc(rc));
+          LOG_WARN("failed to rewriter conjunction sub expression. rc=%s", strrc(rc));
           return rc;
         }
 

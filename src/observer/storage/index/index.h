@@ -68,9 +68,7 @@ class Index {
    * @param right_len 右边界的长度
    * @param right_inclusive 是否包含右边界
    */
-  virtual IndexScanner *create_scanner(const char *left_key, int left_len,
-                                       bool left_inclusive,
-                                       const char *right_key, int right_len,
+  virtual IndexScanner *create_scanner(const char *left_key, int left_len, bool left_inclusive, const char *right_key, int right_len,
                                        bool right_inclusive) = 0;
 
   /**

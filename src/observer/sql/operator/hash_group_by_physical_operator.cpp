@@ -20,16 +20,11 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
-HashGroupByPhysicalOperator::HashGroupByPhysicalOperator(
-    vector<unique_ptr<Expression>> &&group_by_exprs,
-    vector<Expression *> &&expressions)
-    : GroupByPhysicalOperator(std::move(expressions)),
-      group_by_exprs_(std::move(group_by_exprs)) {}
+HashGroupByPhysicalOperator::HashGroupByPhysicalOperator(vector<unique_ptr<Expression>> &&group_by_exprs, vector<Expression *> &&expressions)
+    : GroupByPhysicalOperator(std::move(expressions)), group_by_exprs_(std::move(group_by_exprs)) {}
 
 RC HashGroupByPhysicalOperator::open(Trx *trx) {
-  ASSERT(children_.size() == 1,
-         "group by operator only support one child, but got %d",
-         children_.size());
+  ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
 
   PhysicalOperator &child = *children_[0];
   RC rc = child.open(trx);
@@ -38,8 +33,7 @@ RC HashGroupByPhysicalOperator::open(Trx *trx) {
     return rc;
   }
 
-  ExpressionTuple<Expression *> group_value_expression_tuple(
-      value_expressions_);
+  ExpressionTuple<Expression *> group_value_expression_tuple(value_expressions_);
 
   ValueListTuple group_by_evaluated_tuple;
 
@@ -125,18 +119,15 @@ Tuple *HashGroupByPhysicalOperator::current_tuple() {
   return nullptr;
 }
 
-RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple,
-                                           GroupType *&found_group) {
+RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple, GroupType *&found_group) {
   found_group = nullptr;
 
   RC rc = RC::SUCCESS;
 
-  ExpressionTuple<unique_ptr<Expression>> group_by_expression_tuple(
-      group_by_exprs_);
+  ExpressionTuple<unique_ptr<Expression>> group_by_expression_tuple(group_by_exprs_);
   ValueListTuple group_by_evaluated_tuple;
   group_by_expression_tuple.set_tuple(&child_tuple);
-  rc =
-      ValueListTuple::make(group_by_expression_tuple, group_by_evaluated_tuple);
+  rc = ValueListTuple::make(group_by_expression_tuple, group_by_evaluated_tuple);
   if (OB_FAIL(rc)) {
     LOG_WARN("failed to get values from expression tuple. rc=%s", strrc(rc));
     return rc;
@@ -170,11 +161,8 @@ RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple,
     }
 
     CompositeTuple composite_tuple;
-    composite_tuple.add_tuple(
-        make_unique<ValueListTuple>(std::move(child_tuple_to_value)));
-    groups_.emplace_back(
-        std::move(group_by_evaluated_tuple),
-        GroupValueType(std::move(aggregator_list), std::move(composite_tuple)));
+    composite_tuple.add_tuple(make_unique<ValueListTuple>(std::move(child_tuple_to_value)));
+    groups_.emplace_back(std::move(group_by_evaluated_tuple), GroupValueType(std::move(aggregator_list), std::move(composite_tuple)));
     found_group = &groups_.back();
   }
 

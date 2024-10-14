@@ -29,8 +29,7 @@ class RewriteRule {
  public:
   virtual ~RewriteRule() = default;
 
-  virtual RC rewrite(std::unique_ptr<LogicalOperator> &oper,
-                     bool &change_made) = 0;
+  virtual RC rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made) = 0;
 };
 
 /**

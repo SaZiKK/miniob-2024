@@ -18,8 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/logical_operator.h"
 #include "sql/operator/table_get_logical_operator.h"
 
-RC PredicatePushdownRewriter::rewrite(std::unique_ptr<LogicalOperator> &oper,
-                                      bool &change_made) {
+RC PredicatePushdownRewriter::rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made) {
   RC rc = RC::SUCCESS;
   if (oper->type() != LogicalOperatorType::PREDICATE) {
     return rc;
@@ -34,11 +33,9 @@ RC PredicatePushdownRewriter::rewrite(std::unique_ptr<LogicalOperator> &oper,
     return rc;
   }
 
-  auto table_get_oper =
-      static_cast<TableGetLogicalOperator *>(child_oper.get());
+  auto table_get_oper = static_cast<TableGetLogicalOperator *>(child_oper.get());
 
-  std::vector<std::unique_ptr<Expression>> &predicate_oper_exprs =
-      oper->expressions();
+  std::vector<std::unique_ptr<Expression>> &predicate_oper_exprs = oper->expressions();
   if (predicate_oper_exprs.size() != 1) {
     return rc;
   }
@@ -70,16 +67,14 @@ RC PredicatePushdownRewriter::rewrite(std::unique_ptr<LogicalOperator> &oper,
   return rc;
 }
 
-bool PredicatePushdownRewriter::is_empty_predicate(
-    std::unique_ptr<Expression> &expr) {
+bool PredicatePushdownRewriter::is_empty_predicate(std::unique_ptr<Expression> &expr) {
   bool bool_ret = false;
   if (!expr) {
     return true;
   }
 
   if (expr->type() == ExprType::CONJUNCTION) {
-    ConjunctionExpr *conjunction_expr =
-        static_cast<ConjunctionExpr *>(expr.get());
+    ConjunctionExpr *conjunction_expr = static_cast<ConjunctionExpr *>(expr.get());
     if (conjunction_expr->children().empty()) {
       bool_ret = true;
     }
@@ -95,13 +90,10 @@ bool PredicatePushdownRewriter::is_empty_predicate(
  * @param pushdown_exprs 当前所有要下放给table get
  * 算子的filter。此函数执行多次， pushdown_exprs 只会增加，不要做清理操作
  */
-RC PredicatePushdownRewriter::get_exprs_can_pushdown(
-    std::unique_ptr<Expression> &expr,
-    std::vector<std::unique_ptr<Expression>> &pushdown_exprs) {
+RC PredicatePushdownRewriter::get_exprs_can_pushdown(std::unique_ptr<Expression> &expr, std::vector<std::unique_ptr<Expression>> &pushdown_exprs) {
   RC rc = RC::SUCCESS;
   if (expr->type() == ExprType::CONJUNCTION) {
-    ConjunctionExpr *conjunction_expr =
-        static_cast<ConjunctionExpr *>(expr.get());
+    ConjunctionExpr *conjunction_expr = static_cast<ConjunctionExpr *>(expr.get());
     // 或 操作的比较，太复杂，现在不考虑
     if (conjunction_expr->conjunction_type() == ConjunctionExpr::Type::OR) {
       LOG_WARN("unsupported or operation");
@@ -109,8 +101,7 @@ RC PredicatePushdownRewriter::get_exprs_can_pushdown(
       return rc;
     }
 
-    std::vector<std::unique_ptr<Expression>> &child_exprs =
-        conjunction_expr->children();
+    std::vector<std::unique_ptr<Expression>> &child_exprs = conjunction_expr->children();
     for (auto iter = child_exprs.begin(); iter != child_exprs.end();) {
       // 对每个子表达式，判断是否可以下放到table get 算子
       // 如果可以的话，就从当前孩子节点中删除他
@@ -133,13 +124,10 @@ RC PredicatePushdownRewriter::get_exprs_can_pushdown(
     std::unique_ptr<Expression> &left_expr = comparison_expr->left();
     std::unique_ptr<Expression> &right_expr = comparison_expr->right();
     // 比较操作的左右两边只要有一个是取列字段值的并且另一边也是取字段值或常量，就pushdown
-    if (left_expr->type() != ExprType::FIELD &&
-        right_expr->type() != ExprType::FIELD) {
+    if (left_expr->type() != ExprType::FIELD && right_expr->type() != ExprType::FIELD) {
       return rc;
     }
-    if (left_expr->type() != ExprType::FIELD &&
-        left_expr->type() != ExprType::VALUE &&
-        right_expr->type() != ExprType::FIELD &&
+    if (left_expr->type() != ExprType::FIELD && left_expr->type() != ExprType::VALUE && right_expr->type() != ExprType::FIELD &&
         right_expr->type() != ExprType::VALUE) {
       return rc;
     }

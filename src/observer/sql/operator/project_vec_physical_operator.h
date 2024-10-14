@@ -20,14 +20,11 @@ See the Mulan PSL v2 for more details. */
 class ProjectVecPhysicalOperator : public PhysicalOperator {
  public:
   ProjectVecPhysicalOperator() {}
-  ProjectVecPhysicalOperator(
-      std::vector<std::unique_ptr<Expression>> &&expressions);
+  ProjectVecPhysicalOperator(std::vector<std::unique_ptr<Expression>> &&expressions);
 
   virtual ~ProjectVecPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::PROJECT_VEC;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::PROJECT_VEC; }
 
   RC open(Trx *trx) override;
   RC next(Chunk &chunk) override;
@@ -35,9 +32,7 @@ class ProjectVecPhysicalOperator : public PhysicalOperator {
 
   RC tuple_schema(TupleSchema &schema) const override;
 
-  std::vector<std::unique_ptr<Expression>> &expressions() {
-    return expressions_;
-  }
+  std::vector<std::unique_ptr<Expression>> &expressions() { return expressions_; }
 
  private:
   std::vector<std::unique_ptr<Expression>> expressions_;

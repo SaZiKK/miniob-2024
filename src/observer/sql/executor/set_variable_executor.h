@@ -34,6 +34,5 @@ class SetVariableExecutor {
  private:
   RC var_value_to_boolean(const Value &var_value, bool &bool_value) const;
 
-  RC get_execution_mode(const Value &var_value,
-                        ExecutionMode &execution_mode) const;
+  RC get_execution_mode(const Value &var_value, ExecutionMode &execution_mode) const;
 };

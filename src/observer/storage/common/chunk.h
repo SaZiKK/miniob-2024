@@ -64,9 +64,7 @@ class Chunk {
    * @note 没有检查 col_idx 和 row_idx 是否越界
    *
    */
-  Value get_value(int col_idx, int row_idx) const {
-    return columns_[col_idx]->get_value(row_idx);
-  }
+  Value get_value(int col_idx, int row_idx) const { return columns_[col_idx]->get_value(row_idx); }
 
   /**
    * @brief 重置 Chunk 中的数据，不会修改 Chunk 的列属性。

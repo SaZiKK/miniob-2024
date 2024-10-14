@@ -27,16 +27,13 @@ class Table;
  */
 class TableScanPhysicalOperator : public PhysicalOperator {
  public:
-  TableScanPhysicalOperator(Table *table, ReadWriteMode mode)
-      : table_(table), mode_(mode) {}
+  TableScanPhysicalOperator(Table *table, ReadWriteMode mode) : table_(table), mode_(mode) {}
 
   virtual ~TableScanPhysicalOperator() = default;
 
   std::string param() const override;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::TABLE_SCAN;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::TABLE_SCAN; }
 
   RC open(Trx *trx) override;
   RC next() override;
@@ -56,6 +53,5 @@ class TableScanPhysicalOperator : public PhysicalOperator {
   RecordFileScanner record_scanner_;
   Record current_record_;
   RowTuple tuple_;
-  std::vector<std::unique_ptr<Expression>>
-      predicates_;  // TODO chang predicate to table tuple filter
+  std::vector<std::unique_ptr<Expression>> predicates_;  // TODO chang predicate to table tuple filter
 };

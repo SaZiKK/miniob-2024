@@ -44,8 +44,7 @@ class IndexMeta {
 
  public:
   void to_json(Json::Value &json_value) const;
-  static RC from_json(const TableMeta &table, const Json::Value &json_value,
-                      IndexMeta &index);
+  static RC from_json(const TableMeta &table, const Json::Value &json_value, IndexMeta &index);
 
  protected:
   string name_;   // index's name

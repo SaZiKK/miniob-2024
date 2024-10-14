@@ -28,13 +28,8 @@ class FieldMeta;
 class UpdateStmt : public Stmt {
  public:
   UpdateStmt() = default;
-  UpdateStmt(Table *table, Value *values, int value_amount,
-             FilterStmt *filter_stmt, FieldMeta *field_meta)
-      : table_(table),
-        values_(values),
-        value_amount_(value_amount),
-        filter_stmt_(filter_stmt),
-        field_meta_(field_meta) {}
+  UpdateStmt(Table *table, Value *values, int value_amount, FilterStmt *filter_stmt, FieldMeta *field_meta)
+      : table_(table), values_(values), value_amount_(value_amount), filter_stmt_(filter_stmt), field_meta_(field_meta) {}
   ~UpdateStmt() override;
 
  public:

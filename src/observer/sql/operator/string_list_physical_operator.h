@@ -33,18 +33,14 @@ class StringListPhysicalOperator : public PhysicalOperator {
     strings_.emplace_back(begin, end);
   }
 
-  void append(std::initializer_list<std::string> init) {
-    strings_.emplace_back(init);
-  }
+  void append(std::initializer_list<std::string> init) { strings_.emplace_back(init); }
 
   template <typename T>
   void append(const T &v) {
     strings_.emplace_back(1, v);
   }
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::STRING_LIST;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::STRING_LIST; }
 
   RC open(Trx *) override { return RC::SUCCESS; }
 

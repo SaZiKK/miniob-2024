@@ -27,17 +27,13 @@ class TableGetLogicalOperator : public LogicalOperator {
   TableGetLogicalOperator(Table *table, ReadWriteMode mode);
   virtual ~TableGetLogicalOperator() = default;
 
-  LogicalOperatorType type() const override {
-    return LogicalOperatorType::TABLE_GET;
-  }
+  LogicalOperatorType type() const override { return LogicalOperatorType::TABLE_GET; }
 
   Table *table() const { return table_; }
   ReadWriteMode read_write_mode() const { return mode_; }
 
   void set_predicates(std::vector<std::unique_ptr<Expression>> &&exprs);
-  auto predicates() -> std::vector<std::unique_ptr<Expression>> & {
-    return predicates_;
-  }
+  auto predicates() -> std::vector<std::unique_ptr<Expression>> & { return predicates_; }
 
  private:
   Table *table_ = nullptr;

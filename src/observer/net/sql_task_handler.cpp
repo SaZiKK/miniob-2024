@@ -40,8 +40,7 @@ RC SqlTaskHandler::handle_event(Communicator *communicator) {
     event->sql_result()->set_return_code(rc);
   }
 
-  bool need_disconnect =
-      false;  // todo: 显然需要进一步维护，有相关的if语句，但是值写死了
+  bool need_disconnect = false;  // todo: 显然需要进一步维护，有相关的if语句，但是值写死了
 
   // 如果处理成功，就将结果返回给客户端
   rc = communicator->write_result(event, need_disconnect);

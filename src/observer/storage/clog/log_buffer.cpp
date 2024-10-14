@@ -28,10 +28,7 @@ RC LogEntryBuffer::init(LSN lsn, int32_t max_bytes /*= 0*/) {
   return RC::SUCCESS;
 }
 
-RC LogEntryBuffer::append(LSN &lsn, LogModule::Id module_id,
-                          vector<char> &&data) {
-  return append(lsn, LogModule(module_id), std::move(data));
-}
+RC LogEntryBuffer::append(LSN &lsn, LogModule::Id module_id, vector<char> &&data) { return append(lsn, LogModule(module_id), std::move(data)); }
 
 RC LogEntryBuffer::append(LSN &lsn, LogModule module, vector<char> &&data) {
   /// 控制当前buffer使用的内存
@@ -69,8 +66,7 @@ RC LogEntryBuffer::flush(LogFileWriter &writer, int &count) {
       }
 
       LogEntry &front_entry = entries_.front();
-      ASSERT(front_entry.lsn() > 0 && front_entry.payload_size() > 0,
-             "invalid log entry");
+      ASSERT(front_entry.lsn() > 0 && front_entry.payload_size() > 0, "invalid log entry");
       entry = std::move(entries_.front());
       ASSERT(entry.payload_size() > 0 && entry.lsn() > 0, "invalid log entry");
       entries_.pop_front();
@@ -82,8 +78,7 @@ RC LogEntryBuffer::flush(LogFileWriter &writer, int &count) {
       lock_guard guard(mutex_);
       entries_.emplace_front(std::move(entry));
       LogEntry &front_entry = entries_.front();
-      ASSERT(front_entry.lsn() > 0 && front_entry.payload_size() > 0,
-             "invalid log entry");
+      ASSERT(front_entry.lsn() > 0 && front_entry.payload_size() > 0, "invalid log entry");
       return rc;
     } else {
       ++count;

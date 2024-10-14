@@ -49,8 +49,7 @@ class Table {
    * @param attribute_count 字段个数
    * @param attributes 字段
    */
-  RC create(Db *db, int32_t table_id, const char *path, const char *name,
-            const char *base_dir, span<const AttrInfoSqlNode> attributes,
+  RC create(Db *db, int32_t table_id, const char *path, const char *name, const char *base_dir, span<const AttrInfoSqlNode> attributes,
             StorageFormat storage_format);
 
   /**
@@ -87,11 +86,9 @@ class Table {
   RC recover_insert_record(Record &record);
 
   // TODO refactor
-  RC create_index(Trx *trx, const FieldMeta *field_meta,
-                  const char *index_name);
+  RC create_index(Trx *trx, const FieldMeta *field_meta, const char *index_name);
 
-  RC get_record_scanner(RecordFileScanner &scanner, Trx *trx,
-                        ReadWriteMode mode);
+  RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, ReadWriteMode mode);
 
   RC get_chunk_scanner(ChunkFileScanner &scanner, Trx *trx, ReadWriteMode mode);
 
@@ -118,10 +115,8 @@ class Table {
 
  private:
   RC insert_entry_of_indexes(const char *record, const RID &rid);
-  RC delete_entry_of_indexes(const char *record, const RID &rid,
-                             bool error_on_not_exists);
-  RC set_value_to_record(char *record_data, const Value &value,
-                         const FieldMeta *field);
+  RC delete_entry_of_indexes(const char *record, const RID &rid, bool error_on_not_exists);
+  RC set_value_to_record(char *record_data, const Value &value, const FieldMeta *field);
 
  private:
   RC init_record_handler(const char *base_dir);
@@ -134,7 +129,7 @@ class Table {
   Db *db_ = nullptr;
   string base_dir_;
   TableMeta table_meta_;
-  DiskBufferPool *data_buffer_pool_ = nullptr;  /// 数据文件关联的buffer pool
+  DiskBufferPool *data_buffer_pool_ = nullptr;   /// 数据文件关联的buffer pool
   RecordFileHandler *record_handler_ = nullptr;  /// 记录操作
   vector<Index *> indexes_;
 };

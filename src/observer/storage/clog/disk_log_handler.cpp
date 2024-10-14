@@ -90,8 +90,7 @@ RC DiskLogHandler::replay(LogReplayer &replayer, LSN start_lsn) {
     return rc;
   }
 
-  LOG_INFO("replay clog files done. start lsn=%ld, max_lsn=%ld", start_lsn,
-           max_lsn);
+  LOG_INFO("replay clog files done. start lsn=%ld, max_lsn=%ld", start_lsn, max_lsn);
   return rc;
 }
 
@@ -107,22 +106,19 @@ RC DiskLogHandler::iterate(function<RC(LogEntry &)> consumer, LSN start_lsn) {
     LogFileReader file_handle;
     rc = file_handle.open(file.c_str());
     if (OB_FAIL(rc)) {
-      LOG_WARN("failed to open clog file. rc=%s, file=%s", strrc(rc),
-               file.c_str());
+      LOG_WARN("failed to open clog file. rc=%s, file=%s", strrc(rc), file.c_str());
       return rc;
     }
 
     rc = file_handle.iterate(consumer, start_lsn);
     if (OB_FAIL(rc)) {
-      LOG_WARN("failed to iterate clog file. rc=%s, file=%s", strrc(rc),
-               file.c_str());
+      LOG_WARN("failed to iterate clog file. rc=%s, file=%s", strrc(rc), file.c_str());
       return rc;
     }
 
     rc = file_handle.close();
     if (OB_FAIL(rc)) {
-      LOG_WARN("failed to close clog file. rc=%s, file=%s", strrc(rc),
-               file.c_str());
+      LOG_WARN("failed to close clog file. rc=%s, file=%s", strrc(rc), file.c_str());
       return rc;
     }
   }
@@ -132,9 +128,7 @@ RC DiskLogHandler::iterate(function<RC(LogEntry &)> consumer, LSN start_lsn) {
 }
 
 RC DiskLogHandler::_append(LSN &lsn, LogModule module, vector<char> &&data) {
-  ASSERT(running_.load(),
-         "log handler is not running. lsn=%ld, module=%s, size=%d", lsn,
-         module.name(), data.size());
+  ASSERT(running_.load(), "log handler is not running. lsn=%ld, module=%s, size=%d", lsn, module.name(), data.size());
 
   RC rc = entry_buffer_.append(lsn, module, std::move(data));
   if (OB_FAIL(rc)) {
@@ -185,8 +179,7 @@ void DiskLogHandler::thread_func() {
         this_thread::sleep_for(chrono::milliseconds(100));
         continue;
       }
-      LOG_INFO("open log file success. file=%s",
-               file_writer.to_string().c_str());
+      LOG_INFO("open log file success. file=%s", file_writer.to_string().c_str());
     }
 
     int flush_count = 0;

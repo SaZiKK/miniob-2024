@@ -41,8 +41,7 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt) {
     return RC::SCHEMA_TABLE_NOT_EXIST;
   }
 
-  FieldMeta *field_meta =
-      (FieldMeta *)table->table_meta().field(update.attribute_name.c_str());
+  FieldMeta *field_meta = (FieldMeta *)table->table_meta().field(update.attribute_name.c_str());
 
   // 参数非法检查
   if (nullptr == db || nullptr == table_name) {
@@ -52,20 +51,16 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt) {
 
   // 修改域检查
   if (nullptr == field_meta) {
-    LOG_WARN("no such field in table. db=%s, table=%s, field name=%s",
-             db->name(), table_name, update.attribute_name.c_str());
+    LOG_WARN("no such field in table. db=%s, table=%s, field name=%s", db->name(), table_name, update.attribute_name.c_str());
     return RC::SCHEMA_FIELD_NOT_EXIST;
   }
 
   // 创建筛选 STMT 对象
   std::unordered_map<std::string, Table *> table_map;
-  table_map.insert(
-      std::pair<std::string, Table *>(std::string(table_name), table));
+  table_map.insert(std::pair<std::string, Table *>(std::string(table_name), table));
 
   FilterStmt *filter_stmt = nullptr;
-  RC rc = FilterStmt::create(db, table, &table_map, update.conditions.data(),
-                             static_cast<int>(update.conditions.size()),
-                             filter_stmt);
+  RC rc = FilterStmt::create(db, table, &table_map, update.conditions.data(), static_cast<int>(update.conditions.size()), filter_stmt);
 
   // 谓词语句合法检查
   if (rc != RC::SUCCESS) {
@@ -82,7 +77,6 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt) {
   }
 
   // 创建 update 的 STMT 对象
-  stmt = new UpdateStmt(db->find_table(update.relation_name.c_str()),
-                        (Value *)&update.value, 1, filter_stmt, field_meta);
+  stmt = new UpdateStmt(db->find_table(update.relation_name.c_str()), (Value *)&update.value, 1, filter_stmt, field_meta);
   return RC::SUCCESS;
 }

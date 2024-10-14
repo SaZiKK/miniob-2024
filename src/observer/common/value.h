@@ -41,10 +41,7 @@ class Value final {
 
   ~Value() { reset(); }
 
-  Value(AttrType attr_type, char *data, int length = 4)
-      : attr_type_(attr_type) {
-    this->set_data(data, length);
-  }
+  Value(AttrType attr_type, char *data, int length = 4) : attr_type_(attr_type) { this->set_data(data, length); }
 
   explicit Value(float val);
   explicit Value(bool val);
@@ -60,39 +57,30 @@ class Value final {
   void reset();
 
   static RC add(const Value &left, const Value &right, Value &result) {
-    return DataType::type_instance(result.attr_type())
-        ->add(left, right, result);
+    return DataType::type_instance(result.attr_type())->add(left, right, result);
   }
 
   static RC subtract(const Value &left, const Value &right, Value &result) {
-    return DataType::type_instance(result.attr_type())
-        ->subtract(left, right, result);
+    return DataType::type_instance(result.attr_type())->subtract(left, right, result);
   }
 
   static RC multiply(const Value &left, const Value &right, Value &result) {
-    return DataType::type_instance(result.attr_type())
-        ->multiply(left, right, result);
+    return DataType::type_instance(result.attr_type())->multiply(left, right, result);
   }
 
   static RC divide(const Value &left, const Value &right, Value &result) {
-    return DataType::type_instance(result.attr_type())
-        ->divide(left, right, result);
+    return DataType::type_instance(result.attr_type())->divide(left, right, result);
   }
 
-  static RC negative(const Value &value, Value &result) {
-    return DataType::type_instance(result.attr_type())->negative(value, result);
-  }
+  static RC negative(const Value &value, Value &result) { return DataType::type_instance(result.attr_type())->negative(value, result); }
 
   static RC cast_to(const Value &value, AttrType to_type, Value &result) {
-    return DataType::type_instance(value.attr_type())
-        ->cast_to(value, to_type, result);
+    return DataType::type_instance(value.attr_type())->cast_to(value, to_type, result);
   }
 
   void set_type(AttrType type) { this->attr_type_ = type; }
   void set_data(char *data, int length);
-  void set_data(const char *data, int length) {
-    this->set_data(const_cast<char *>(data), length);
-  }
+  void set_data(const char *data, int length) { this->set_data(const_cast<char *>(data), length); }
   void set_value(const Value &value);
   void set_boolean(bool val);
 

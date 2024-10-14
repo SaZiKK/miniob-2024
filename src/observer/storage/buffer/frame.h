@@ -39,9 +39,7 @@ class FrameId {
   int buffer_pool_id() const;
   PageNum page_num() const;
 
-  void set_buffer_pool_id(int buffer_pool_id) {
-    buffer_pool_id_ = buffer_pool_id;
-  }
+  void set_buffer_pool_id(int buffer_pool_id) { buffer_pool_id_ = buffer_pool_id; }
   void set_page_num(PageNum page_num) { page_num_ = page_num; }
 
   string to_string() const;

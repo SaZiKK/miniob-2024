@@ -30,12 +30,8 @@ class VacuousLogHandler : public LogHandler {
   RC start() override { return RC::SUCCESS; }
   RC stop() override { return RC::SUCCESS; }
   RC await_termination() override { return RC::SUCCESS; }
-  RC replay(LogReplayer &replayer, LSN start_lsn) override {
-    return RC::SUCCESS;
-  }
-  RC iterate(function<RC(LogEntry &)> consumer, LSN start_lsn) override {
-    return RC::SUCCESS;
-  }
+  RC replay(LogReplayer &replayer, LSN start_lsn) override { return RC::SUCCESS; }
+  RC iterate(function<RC(LogEntry &)> consumer, LSN start_lsn) override { return RC::SUCCESS; }
 
   RC wait_lsn(LSN lsn) override { return RC::SUCCESS; }
 

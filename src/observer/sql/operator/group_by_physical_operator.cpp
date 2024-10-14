@@ -21,32 +21,27 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
-GroupByPhysicalOperator::GroupByPhysicalOperator(
-    vector<Expression *> &&expressions) {
+GroupByPhysicalOperator::GroupByPhysicalOperator(vector<Expression *> &&expressions) {
   aggregate_expressions_ = std::move(expressions);
   value_expressions_.reserve(aggregate_expressions_.size());
   ranges::for_each(aggregate_expressions_, [this](Expression *expr) {
     auto *aggregate_expr = static_cast<AggregateExpr *>(expr);
     Expression *child_expr = aggregate_expr->child().get();
-    ASSERT(child_expr != nullptr,
-           "aggregate expression must have a child expression");
+    ASSERT(child_expr != nullptr, "aggregate expression must have a child expression");
     value_expressions_.emplace_back(child_expr);
   });
 }
 
-void GroupByPhysicalOperator::create_aggregator_list(
-    AggregatorList &aggregator_list) {
+void GroupByPhysicalOperator::create_aggregator_list(AggregatorList &aggregator_list) {
   aggregator_list.clear();
   aggregator_list.reserve(aggregate_expressions_.size());
-  ranges::for_each(
-      aggregate_expressions_, [&aggregator_list](Expression *expr) {
-        auto *aggregate_expr = static_cast<AggregateExpr *>(expr);
-        aggregator_list.emplace_back(aggregate_expr->create_aggregator());
-      });
+  ranges::for_each(aggregate_expressions_, [&aggregator_list](Expression *expr) {
+    auto *aggregate_expr = static_cast<AggregateExpr *>(expr);
+    aggregator_list.emplace_back(aggregate_expr->create_aggregator());
+  });
 }
 
-RC GroupByPhysicalOperator::aggregate(AggregatorList &aggregator_list,
-                                      const Tuple &tuple) {
+RC GroupByPhysicalOperator::aggregate(AggregatorList &aggregator_list, const Tuple &tuple) {
   ASSERT(static_cast<int>(aggregator_list.size()) == tuple.cell_num(),
          "aggregator list size must be equal to tuple size. aggregator num: "
          "%d, tuple num: %d",
@@ -100,8 +95,7 @@ RC GroupByPhysicalOperator::evaluate(GroupValueType &group_value) {
   evaluated_tuple.set_cells(values);
   evaluated_tuple.set_names(aggregator_names);
 
-  composite_value_tuple.add_tuple(
-      make_unique<ValueListTuple>(std::move(evaluated_tuple)));
+  composite_value_tuple.add_tuple(make_unique<ValueListTuple>(std::move(evaluated_tuple)));
 
   return rc;
 }

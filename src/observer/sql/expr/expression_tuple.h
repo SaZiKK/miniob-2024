@@ -23,15 +23,12 @@ See the Mulan PSL v2 for more details. */
 template <typename ExprPointerType>
 class ExpressionTuple : public Tuple {
  public:
-  ExpressionTuple(const std::vector<ExprPointerType> &expressions)
-      : expressions_(expressions) {}
+  ExpressionTuple(const std::vector<ExprPointerType> &expressions) : expressions_(expressions) {}
   virtual ~ExpressionTuple() = default;
 
   void set_tuple(const Tuple *tuple) { child_tuple_ = tuple; }
 
-  int cell_num() const override {
-    return static_cast<int>(expressions_.size());
-  }
+  int cell_num() const override { return static_cast<int>(expressions_.size()); }
 
   RC cell_at(int index, Value &cell) const override {
     if (index < 0 || index >= cell_num()) {

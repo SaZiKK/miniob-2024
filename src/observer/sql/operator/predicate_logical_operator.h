@@ -26,7 +26,5 @@ class PredicateLogicalOperator : public LogicalOperator {
   PredicateLogicalOperator(std::unique_ptr<Expression> expression);
   virtual ~PredicateLogicalOperator() = default;
 
-  LogicalOperatorType type() const override {
-    return LogicalOperatorType::PREDICATE;
-  }
+  LogicalOperatorType type() const override { return LogicalOperatorType::PREDICATE; }
 };

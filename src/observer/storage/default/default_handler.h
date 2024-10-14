@@ -38,8 +38,7 @@ class DefaultHandler {
    * @param trx_kit_name 使用哪种类型的事务模型
    * @param log_handler_name 使用哪种类型的日志处理器
    */
-  RC init(const char *base_dir, const char *trx_kit_name,
-          const char *log_handler_name);
+  RC init(const char *base_dir, const char *trx_kit_name, const char *log_handler_name);
   void destroy();
 
   /**
@@ -75,8 +74,7 @@ class DefaultHandler {
    * @param relation_name 表名
    * @param attributes 属性信息
    */
-  RC create_table(const char *dbname, const char *relation_name,
-                  span<const AttrInfoSqlNode> attributes);
+  RC create_table(const char *dbname, const char *relation_name, span<const AttrInfoSqlNode> attributes);
 
   /**
    * @brief 删除指定数据库下的表

@@ -114,8 +114,7 @@ char *my_readline(const char *prompt) {
    obclient.
 */
 bool is_exit_command(const char *cmd) {
-  return 0 == strncasecmp("exit", cmd, 4) || 0 == strncasecmp("bye", cmd, 3) ||
-         0 == strncasecmp("\\q", cmd, 2) ||
+  return 0 == strncasecmp("exit", cmd, 4) || 0 == strncasecmp("bye", cmd, 3) || 0 == strncasecmp("\\q", cmd, 2) ||
          0 == strncasecmp("interrupted", cmd, 11);
 }
 
@@ -125,8 +124,7 @@ char *read_command() {
   return input_command;
 }
 
-RC CliCommunicator::init(int fd, unique_ptr<Session> session,
-                         const string &addr) {
+RC CliCommunicator::init(int fd, unique_ptr<Session> session, const string &addr) {
   RC rc = PlainCommunicator::init(fd, std::move(session), addr);
   if (OB_FAIL(rc)) {
     LOG_WARN("fail to init communicator", strrc(rc));

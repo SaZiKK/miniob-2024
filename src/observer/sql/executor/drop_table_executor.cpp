@@ -13,9 +13,7 @@ RC DropTableExecutor::execute(SQLStageEvent *sql_event) {
   Session *session = sql_event->session_event()->session();
 
   // 检查 SQL 命令是否为 drop table
-  ASSERT(stmt->type() == StmtType::DROP_TABLE,
-         "drop table executor can not run this command: %d",
-         static_cast<int>(stmt->type()));
+  ASSERT(stmt->type() == StmtType::DROP_TABLE, "drop table executor can not run this command: %d", static_cast<int>(stmt->type()));
 
   // 强制类型转换 (从基类到派生类)
   DropTableStmt *drop_table_stmt = static_cast<DropTableStmt *>(stmt);

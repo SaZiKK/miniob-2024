@@ -15,14 +15,10 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-ProjectVecPhysicalOperator::ProjectVecPhysicalOperator(
-    vector<unique_ptr<Expression>> &&expressions)
-    : expressions_(std::move(expressions)) {
+ProjectVecPhysicalOperator::ProjectVecPhysicalOperator(vector<unique_ptr<Expression>> &&expressions) : expressions_(std::move(expressions)) {
   int expr_pos = 0;
   for (auto &expr : expressions_) {
-    chunk_.add_column(
-        make_unique<Column>(expr->value_type(), expr->value_length()),
-        expr_pos);
+    chunk_.add_column(make_unique<Column>(expr->value_type(), expr->value_length()), expr_pos);
     expr_pos++;
   }
 }

@@ -86,19 +86,13 @@ class FilterStmt {
   virtual ~FilterStmt();
 
  public:
-  const std::vector<FilterUnit *> &filter_units() const {
-    return filter_units_;
-  }
+  const std::vector<FilterUnit *> &filter_units() const { return filter_units_; }
 
  public:
-  static RC create(Db *db, Table *default_table,
-                   std::unordered_map<std::string, Table *> *tables,
-                   const ConditionSqlNode *conditions, int condition_num,
-                   FilterStmt *&stmt);
+  static RC create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const ConditionSqlNode *conditions,
+                   int condition_num, FilterStmt *&stmt);
 
-  static RC create_filter_unit(Db *db, Table *default_table,
-                               std::unordered_map<std::string, Table *> *tables,
-                               const ConditionSqlNode &condition,
+  static RC create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const ConditionSqlNode &condition,
                                FilterUnit *&filter_unit);
 
  private:

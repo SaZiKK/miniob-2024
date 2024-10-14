@@ -68,8 +68,7 @@ bool DateType::check_date(const Value *value) {
   int m = date % 10000 / 100;
   int d = date % 100;
   bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
-  return y > 0 && (m > 0) && (m <= 12) && (d > 0) &&
-         (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
+  return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
 }
 
 bool DateType::check_date(int date) {
@@ -77,6 +76,5 @@ bool DateType::check_date(int date) {
   int m = date % 10000 / 100;
   int d = date % 100;
   bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
-  return y > 0 && (m > 0) && (m <= 12) && (d > 0) &&
-         (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
+  return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
 }

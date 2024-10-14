@@ -61,8 +61,7 @@ RC OptimizeStage::handle_request(SQLStageEvent *sql_event) {
   }
 
   unique_ptr<PhysicalOperator> physical_operator;
-  rc = generate_physical_plan(logical_operator, physical_operator,
-                              sql_event->session_event()->session());
+  rc = generate_physical_plan(logical_operator, physical_operator, sql_event->session_event()->session());
 
   // 查错
   if (rc != RC::SUCCESS) {
@@ -81,17 +80,13 @@ RC OptimizeStage::optimize(unique_ptr<LogicalOperator> &oper) {
   return RC::SUCCESS;
 }
 
-RC OptimizeStage::generate_physical_plan(
-    unique_ptr<LogicalOperator> &logical_operator,
-    unique_ptr<PhysicalOperator> &physical_operator, Session *session) {
+RC OptimizeStage::generate_physical_plan(unique_ptr<LogicalOperator> &logical_operator, unique_ptr<PhysicalOperator> &physical_operator,
+                                         Session *session) {
   RC rc = RC::SUCCESS;
-  if (session->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR &&
-      LogicalOperator::can_generate_vectorized_operator(
-          logical_operator->type())) {
+  if (session->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR && LogicalOperator::can_generate_vectorized_operator(logical_operator->type())) {
     LOG_INFO("use chunk iterator");
     session->set_used_chunk_mode(true);
-    rc = physical_plan_generator_.create_vec(*logical_operator,
-                                             physical_operator);
+    rc = physical_plan_generator_.create_vec(*logical_operator, physical_operator);
   } else {
     LOG_INFO("use tuple iterator");
     session->set_used_chunk_mode(false);
@@ -111,8 +106,7 @@ RC OptimizeStage::rewrite(unique_ptr<LogicalOperator> &logical_operator) {
     change_made = false;
     rc = rewriter_.rewrite(logical_operator, change_made);
     if (rc != RC::SUCCESS) {
-      LOG_WARN("failed to do expression rewrite on logical plan. rc=%s",
-               strrc(rc));
+      LOG_WARN("failed to do expression rewrite on logical plan. rc=%s", strrc(rc));
       return rc;
     }
   } while (change_made);
@@ -120,8 +114,7 @@ RC OptimizeStage::rewrite(unique_ptr<LogicalOperator> &logical_operator) {
   return rc;
 }
 
-RC OptimizeStage::create_logical_plan(
-    SQLStageEvent *sql_event, unique_ptr<LogicalOperator> &logical_operator) {
+RC OptimizeStage::create_logical_plan(SQLStageEvent *sql_event, unique_ptr<LogicalOperator> &logical_operator) {
   Stmt *stmt = sql_event->stmt();
   if (nullptr == stmt) {
     return RC::UNIMPLEMENTED;

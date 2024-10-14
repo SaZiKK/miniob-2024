@@ -83,17 +83,11 @@ class PhysicalOperator {
 
   virtual Tuple *current_tuple() { return nullptr; }
 
-  virtual RC tuple_schema(TupleSchema &schema) const {
-    return RC::UNIMPLEMENTED;
-  }
+  virtual RC tuple_schema(TupleSchema &schema) const { return RC::UNIMPLEMENTED; }
 
-  void add_child(std::unique_ptr<PhysicalOperator> oper) {
-    children_.emplace_back(std::move(oper));
-  }
+  void add_child(std::unique_ptr<PhysicalOperator> oper) { children_.emplace_back(std::move(oper)); }
 
-  std::vector<std::unique_ptr<PhysicalOperator>> &children() {
-    return children_;
-  }
+  std::vector<std::unique_ptr<PhysicalOperator>> &children() { return children_; }
 
  protected:
   std::vector<std::unique_ptr<PhysicalOperator>> children_;

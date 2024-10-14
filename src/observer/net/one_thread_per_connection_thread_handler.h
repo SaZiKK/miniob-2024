@@ -42,8 +42,7 @@ class OneThreadPerConnectionThreadHandler : public ThreadHandler {
 
  private:
   /// 记录一个连接Communicator关联的线程数据
-  unordered_map<Communicator *, Worker *>
-      thread_map_;  // 当前编译器没有支持jthread
+  unordered_map<Communicator *, Worker *> thread_map_;  // 当前编译器没有支持jthread
   /// 保护线程安全的锁
   mutex lock_;
 };

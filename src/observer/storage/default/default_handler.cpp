@@ -32,16 +32,13 @@ DefaultHandler::DefaultHandler() {}
 
 DefaultHandler::~DefaultHandler() noexcept { destroy(); }
 
-RC DefaultHandler::init(const char *base_dir, const char *trx_kit_name,
-                        const char *log_handler_name) {
+RC DefaultHandler::init(const char *base_dir, const char *trx_kit_name, const char *log_handler_name) {
   // 检查目录是否存在，或者创建
   filesystem::path db_dir(base_dir);
   db_dir /= "db";
   error_code ec;
-  if (!filesystem::is_directory(db_dir) &&
-      !filesystem::create_directories(db_dir, ec)) {
-    LOG_ERROR("Cannot access base dir: %s. msg=%d:%s", db_dir.c_str(), errno,
-              strerror(errno));
+  if (!filesystem::is_directory(db_dir) && !filesystem::create_directories(db_dir, ec)) {
+    LOG_ERROR("Cannot access base dir: %s. msg=%d:%s", db_dir.c_str(), errno, strerror(errno));
     return RC::INTERNAL;
   }
 
@@ -121,8 +118,7 @@ RC DefaultHandler::open_db(const char *dbname) {
   // open db
   Db *db = new Db();
   RC ret = RC::SUCCESS;
-  if ((ret = db->init(dbname, dbpath.c_str(), trx_kit_name_.c_str(),
-                      log_handler_name_.c_str())) != RC::SUCCESS) {
+  if ((ret = db->init(dbname, dbpath.c_str(), trx_kit_name_.c_str(), log_handler_name_.c_str())) != RC::SUCCESS) {
     LOG_ERROR("Failed to open db: %s. error=%s", dbname, strrc(ret));
     delete db;
   } else {
@@ -133,8 +129,7 @@ RC DefaultHandler::open_db(const char *dbname) {
 
 RC DefaultHandler::close_db(const char *dbname) { return RC::UNIMPLEMENTED; }
 
-RC DefaultHandler::create_table(const char *dbname, const char *relation_name,
-                                span<const AttrInfoSqlNode> attributes) {
+RC DefaultHandler::create_table(const char *dbname, const char *relation_name, span<const AttrInfoSqlNode> attributes) {
   Db *db = find_db(dbname);
   if (db == nullptr) {
     return RC::SCHEMA_DB_NOT_OPENED;
@@ -142,9 +137,7 @@ RC DefaultHandler::create_table(const char *dbname, const char *relation_name,
   return db->create_table(relation_name, attributes);
 }
 
-RC DefaultHandler::drop_table(const char *dbname, const char *relation_name) {
-  return RC::UNIMPLEMENTED;
-}
+RC DefaultHandler::drop_table(const char *dbname, const char *relation_name) { return RC::UNIMPLEMENTED; }
 
 Db *DefaultHandler::find_db(const char *dbname) const {
   map<string, Db *>::const_iterator iter = opened_dbs_.find(dbname);
@@ -154,8 +147,7 @@ Db *DefaultHandler::find_db(const char *dbname) const {
   return iter->second;
 }
 
-Table *DefaultHandler::find_table(const char *dbname,
-                                  const char *table_name) const {
+Table *DefaultHandler::find_table(const char *dbname, const char *table_name) const {
   if (dbname == nullptr || table_name == nullptr) {
     LOG_WARN("Invalid argument. dbname=%p, table_name=%p", dbname, table_name);
     return nullptr;
@@ -174,8 +166,7 @@ RC DefaultHandler::sync() {
     Db *db = db_pair.second;
     rc = db->sync();
     if (rc != RC::SUCCESS) {
-      LOG_ERROR("Failed to sync db. name=%s, rc=%d:%s", db->name(), rc,
-                strrc(rc));
+      LOG_ERROR("Failed to sync db. name=%s, rc=%d:%s", db->name(), rc, strrc(rc));
       return rc;
     }
   }

@@ -16,21 +16,13 @@ See the Mulan PSL v2 for more details. */
 #include "session/session.h"
 #include "session/thread_data.h"
 
-FrameId::FrameId(int buffer_pool_id, PageNum page_num)
-    : buffer_pool_id_(buffer_pool_id), page_num_(page_num) {}
+FrameId::FrameId(int buffer_pool_id, PageNum page_num) : buffer_pool_id_(buffer_pool_id), page_num_(page_num) {}
 
-bool FrameId::equal_to(const FrameId &other) const {
-  return buffer_pool_id_ == other.buffer_pool_id_ &&
-         page_num_ == other.page_num_;
-}
+bool FrameId::equal_to(const FrameId &other) const { return buffer_pool_id_ == other.buffer_pool_id_ && page_num_ == other.page_num_; }
 
-bool FrameId::operator==(const FrameId &other) const {
-  return this->equal_to(other);
-}
+bool FrameId::operator==(const FrameId &other) const { return this->equal_to(other); }
 
-size_t FrameId::hash() const {
-  return (static_cast<size_t>(buffer_pool_id_) << 32L) | page_num_;
-}
+size_t FrameId::hash() const { return (static_cast<size_t>(buffer_pool_id_) << 32L) | page_num_; }
 
 int FrameId::buffer_pool_id() const { return buffer_pool_id_; }
 PageNum FrameId::page_num() const { return page_num_; }
@@ -85,8 +77,7 @@ void Frame::write_latch(intptr_t xid) {
       "frame write lock success."
       "this=%p, pin=%d, frameId=%s, write locker=%lx(recursive=%d), xid=%lx, "
       "lbt=%s",
-      this, pin_count_.load(), frame_id_.to_string().c_str(), write_locker_,
-      write_recursive_count_, xid, lbt());
+      this, pin_count_.load(), frame_id_.to_string().c_str(), write_locker_, write_recursive_count_, xid, lbt());
 #endif
 }
 
@@ -104,8 +95,7 @@ void Frame::write_unlatch(intptr_t xid) {
   ASSERT(write_locker_ == xid,
          "frame unlock write while not the owner."
          "write_locker=%lx, this=%p, pin=%d, frameId=%s, xid=%lx, lbt=%s",
-         write_locker_, this, pin_count_.load(), frame_id_.to_string().c_str(),
-         xid, lbt());
+         write_locker_, this, pin_count_.load(), frame_id_.to_string().c_str(), xid, lbt());
 
   TRACE(
       "frame write unlock success. this=%p, pin=%d, frameId=%s, xid=%lx, "
@@ -145,8 +135,7 @@ void Frame::read_latch(intptr_t xid) {
     TRACE(
         "frame read lock success."
         "this=%p, pin=%d, frameId=%s, xid=%lx, recursive=%d, lbt=%s",
-        this, pin_count_.load(), frame_id_.to_string().c_str(), xid,
-        read_lockers_[xid], lbt());
+        this, pin_count_.load(), frame_id_.to_string().c_str(), xid, read_lockers_[xid], lbt());
 #endif
   }
 }
@@ -174,8 +163,7 @@ bool Frame::try_read_latch() {
     TRACE(
         "frame read lock success."
         "this=%p, pin=%d, frameId=%s, xid=%lx, recursive=%d, lbt=%s",
-        this, pin_count_.load(), frame_id_.to_string().c_str(), xid,
-        read_lockers_[xid], lbt());
+        this, pin_count_.load(), frame_id_.to_string().c_str(), xid, read_lockers_[xid], lbt());
     debug_lock_.unlock();
 #endif
   }
@@ -195,13 +183,11 @@ void Frame::read_unlatch(intptr_t xid) {
 
 #ifdef DEBUG
     auto read_lock_iter = read_lockers_.find(xid);
-    int recursive_count =
-        read_lock_iter != read_lockers_.end() ? read_lock_iter->second : 0;
+    int recursive_count = read_lock_iter != read_lockers_.end() ? read_lock_iter->second : 0;
     ASSERT(recursive_count > 0,
            "frame unlock while not holding read lock."
            "this=%p, pin=%d, frameId=%s, xid=%lx, recursive=%d, lbt=%s",
-           this, pin_count_.load(), frame_id_.to_string().c_str(), xid,
-           recursive_count, lbt());
+           this, pin_count_.load(), frame_id_.to_string().c_str(), xid, recursive_count, lbt());
 
     if (1 == recursive_count) {
       read_lockers_.erase(xid);
@@ -227,8 +213,7 @@ void Frame::pin() {
       "after frame pin. "
       "this=%p, write locker=%lx, read locker has xid %d? pin=%d, frameId=%s, "
       "xid=%lx, lbt=%s",
-      this, write_locker_, read_lockers_.find(xid) != read_lockers_.end(),
-      pin_count, frame_id_.to_string().c_str(), xid, lbt());
+      this, write_locker_, read_lockers_.find(xid) != read_lockers_.end(), pin_count, frame_id_.to_string().c_str(), xid, lbt());
 }
 
 int Frame::unpin() {
@@ -246,8 +231,7 @@ int Frame::unpin() {
       "after frame unpin. "
       "this=%p, write locker=%lx, read locker has xid? %d, pin=%d, frameId=%s, "
       "xid=%lx, lbt=%s",
-      this, write_locker_, read_lockers_.find(xid) != read_lockers_.end(),
-      pin_count, frame_id_.to_string().c_str(), xid, lbt());
+      this, write_locker_, read_lockers_.find(xid) != read_lockers_.end(), pin_count, frame_id_.to_string().c_str(), xid, lbt());
 
   if (0 == pin_count) {
     ASSERT(write_locker_ == 0,
@@ -272,7 +256,6 @@ void Frame::access() { acc_time_ = current_time(); }
 
 string Frame::to_string() const {
   stringstream ss;
-  ss << "frame id:" << frame_id().to_string() << ", dirty=" << dirty()
-     << ", pin=" << pin_count() << ", lsn=" << lsn();
+  ss << "frame id:" << frame_id().to_string() << ", dirty=" << dirty() << ", pin=" << pin_count() << ", lsn=" << lsn();
   return ss.str();
 }

@@ -12,8 +12,7 @@ See the Mulan PSL v2 for more details. */
 
 // ----------------------------------StandardAggregateHashTable------------------
 
-RC StandardAggregateHashTable::add_chunk(Chunk &groups_chunk,
-                                         Chunk &aggrs_chunk) {
+RC StandardAggregateHashTable::add_chunk(Chunk &groups_chunk, Chunk &aggrs_chunk) {
   // your code here
   exit(-1);
 }
@@ -33,11 +32,9 @@ RC StandardAggregateHashTable::Scanner::next(Chunk &output_chunk) {
     for (int i = 0; i < output_chunk.column_num(); i++) {
       auto col_idx = output_chunk.column_ids(i);
       if (col_idx >= static_cast<int>(group_by_values.size())) {
-        output_chunk.column(i).append_one(
-            (char *)aggrs[col_idx - group_by_values.size()].data());
+        output_chunk.column(i).append_one((char *)aggrs[col_idx - group_by_values.size()].data());
       } else {
-        output_chunk.column(i).append_one(
-            (char *)group_by_values[col_idx].data());
+        output_chunk.column(i).append_one((char *)group_by_values[col_idx].data());
       }
     }
     it_++;
@@ -49,8 +46,7 @@ RC StandardAggregateHashTable::Scanner::next(Chunk &output_chunk) {
   return RC::SUCCESS;
 }
 
-size_t StandardAggregateHashTable::VectorHash::operator()(
-    const vector<Value> &vec) const {
+size_t StandardAggregateHashTable::VectorHash::operator()(const vector<Value> &vec) const {
   size_t hash = 0;
   for (const auto &elem : vec) {
     hash ^= std::hash<string>()(elem.to_string());
@@ -58,8 +54,7 @@ size_t StandardAggregateHashTable::VectorHash::operator()(
   return hash;
 }
 
-bool StandardAggregateHashTable::VectorEqual::operator()(
-    const vector<Value> &lhs, const vector<Value> &rhs) const {
+bool StandardAggregateHashTable::VectorEqual::operator()(const vector<Value> &lhs, const vector<Value> &rhs) const {
   if (lhs.size() != rhs.size()) {
     return false;
   }
@@ -74,8 +69,7 @@ bool StandardAggregateHashTable::VectorEqual::operator()(
 // ----------------------------------LinearProbingAggregateHashTable------------------
 #ifdef USE_SIMD
 template <typename V>
-RC LinearProbingAggregateHashTable<V>::add_chunk(Chunk &group_chunk,
-                                                 Chunk &aggr_chunk) {
+RC LinearProbingAggregateHashTable<V>::add_chunk(Chunk &group_chunk, Chunk &aggr_chunk) {
   if (group_chunk.column_num() != 1 || aggr_chunk.column_num() != 1) {
     LOG_WARN("group_chunk and aggr_chunk size must be 1.");
     return RC::INVALID_ARGUMENT;
@@ -84,15 +78,13 @@ RC LinearProbingAggregateHashTable<V>::add_chunk(Chunk &group_chunk,
     LOG_WARN("group_chunk and aggr _chunk rows must be equal.");
     return RC::INVALID_ARGUMENT;
   }
-  add_batch((int *)group_chunk.column(0).data(),
-            (V *)aggr_chunk.column(0).data(), group_chunk.rows());
+  add_batch((int *)group_chunk.column(0).data(), (V *)aggr_chunk.column(0).data(), group_chunk.rows());
   return RC::SUCCESS;
 }
 
 template <typename V>
 void LinearProbingAggregateHashTable<V>::Scanner::open_scan() {
-  capacity_ =
-      static_cast<LinearProbingAggregateHashTable *>(hash_table_)->capacity();
+  capacity_ = static_cast<LinearProbingAggregateHashTable *>(hash_table_)->capacity();
   size_ = static_cast<LinearProbingAggregateHashTable *>(hash_table_)->size();
   scan_pos_ = 0;
   scan_count_ = 0;
@@ -103,10 +95,8 @@ RC LinearProbingAggregateHashTable<V>::Scanner::next(Chunk &output_chunk) {
   if (scan_pos_ >= capacity_ || scan_count_ >= size_) {
     return RC::RECORD_EOF;
   }
-  auto linear_probing_hash_table =
-      static_cast<LinearProbingAggregateHashTable *>(hash_table_);
-  while (scan_pos_ < capacity_ && scan_count_ < size_ &&
-         output_chunk.rows() <= output_chunk.capacity()) {
+  auto linear_probing_hash_table = static_cast<LinearProbingAggregateHashTable *>(hash_table_);
+  while (scan_pos_ < capacity_ && scan_count_ < size_ && output_chunk.rows() <= output_chunk.capacity()) {
     int key;
     V value;
     RC rc = linear_probing_hash_table->iter_get(scan_pos_, key, value);
@@ -166,8 +156,7 @@ RC LinearProbingAggregateHashTable<V>::iter_get(int pos, int &key, V &value) {
 }
 
 template <typename V>
-void LinearProbingAggregateHashTable<V>::aggregate(V *value,
-                                                   V value_to_aggregate) {
+void LinearProbingAggregateHashTable<V>::aggregate(V *value, V value_to_aggregate) {
   if (aggregate_type_ == AggregateExpr::Type::SUM) {
     *value += value_to_aggregate;
   } else {
@@ -206,8 +195,7 @@ void LinearProbingAggregateHashTable<V>::resize_if_need() {
 }
 
 template <typename V>
-void LinearProbingAggregateHashTable<V>::add_batch(int *input_keys,
-                                                   V *input_values, int len) {
+void LinearProbingAggregateHashTable<V>::add_batch(int *input_keys, V *input_values, int len) {
   // your code here
   exit(-1);
 

@@ -19,15 +19,11 @@ See the Mulan PSL v2 for more details. */
  */
 class GroupByVecPhysicalOperator : public PhysicalOperator {
  public:
-  GroupByVecPhysicalOperator(
-      std::vector<std::unique_ptr<Expression>> &&group_by_exprs,
-      std::vector<Expression *> &&expressions){};
+  GroupByVecPhysicalOperator(std::vector<std::unique_ptr<Expression>> &&group_by_exprs, std::vector<Expression *> &&expressions){};
 
   virtual ~GroupByVecPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::GROUP_BY_VEC;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::GROUP_BY_VEC; }
 
   RC open(Trx *trx) override { return RC::UNIMPLEMENTED; }
   RC next(Chunk &chunk) override { return RC::UNIMPLEMENTED; }

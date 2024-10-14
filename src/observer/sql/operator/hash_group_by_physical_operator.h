@@ -26,15 +26,11 @@ See the Mulan PSL v2 for more details. */
  */
 class HashGroupByPhysicalOperator : public GroupByPhysicalOperator {
  public:
-  HashGroupByPhysicalOperator(
-      std::vector<std::unique_ptr<Expression>> &&group_by_exprs,
-      std::vector<Expression *> &&expressions);
+  HashGroupByPhysicalOperator(std::vector<std::unique_ptr<Expression>> &&group_by_exprs, std::vector<Expression *> &&expressions);
 
   virtual ~HashGroupByPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::HASH_GROUP_BY;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::HASH_GROUP_BY; }
 
   RC open(Trx *trx) override;
   RC next() override;

@@ -20,9 +20,7 @@ See the Mulan PSL v2 for more details. */
 
 SqlResult::SqlResult(Session *session) : session_(session) {}
 
-void SqlResult::set_tuple_schema(const TupleSchema &schema) {
-  tuple_schema_ = schema;
-}
+void SqlResult::set_tuple_schema(const TupleSchema &schema) { tuple_schema_ = schema; }
 
 RC SqlResult::open() {
   if (nullptr == operator_) {
@@ -74,8 +72,7 @@ RC SqlResult::next_chunk(Chunk &chunk) {
 }
 
 void SqlResult::set_operator(std::unique_ptr<PhysicalOperator> oper) {
-  ASSERT(operator_ == nullptr,
-         "current operator is not null. Result is not closed?");
+  ASSERT(operator_ == nullptr, "current operator is not null. Result is not closed?");
   operator_ = std::move(oper);
   operator_->tuple_schema(tuple_schema_);
 }

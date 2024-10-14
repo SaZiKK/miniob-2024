@@ -24,9 +24,7 @@ RC LogHandler::append(LSN &lsn, LogModule::Id module, span<const char> data) {
   return append(lsn, module, std::move(data_vec));
 }
 
-RC LogHandler::append(LSN &lsn, LogModule::Id module, vector<char> &&data) {
-  return _append(lsn, LogModule(module), std::move(data));
-}
+RC LogHandler::append(LSN &lsn, LogModule::Id module, vector<char> &&data) { return _append(lsn, LogModule(module), std::move(data)); }
 
 RC LogHandler::create(const char *name, LogHandler *&log_handler) {
   if (name == nullptr || common::is_blank(name)) {

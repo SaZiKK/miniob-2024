@@ -69,10 +69,10 @@ struct PageHeader {
   int32_t record_num;        ///< 当前页面记录的个数
   int32_t column_num;        ///< 当前页面记录所包含的列数
   int32_t record_real_size;  ///< 每条记录的实际大小
-  int32_t record_size;  ///< 每条记录占用实际空间大小(可能对齐)
-  int32_t record_capacity;  ///< 最大记录个数
-  int32_t col_idx_offset;   ///< 列索引偏移量
-  int32_t data_offset;      ///< 第一条记录的偏移量
+  int32_t record_size;       ///< 每条记录占用实际空间大小(可能对齐)
+  int32_t record_capacity;   ///< 最大记录个数
+  int32_t col_idx_offset;    ///< 列索引偏移量
+  int32_t data_offset;       ///< 第一条记录的偏移量
 
   string to_string() const;
 };
@@ -115,8 +115,7 @@ class RecordPageIterator {
  private:
   RecordPageHandler *record_page_handler_ = nullptr;
   PageNum page_num_ = BP_INVALID_PAGE_NUM;
-  common::Bitmap
-      bitmap_;  ///< bitmap 的相关信息可以参考 RecordPageHandler 的说明
+  common::Bitmap bitmap_;      ///< bitmap 的相关信息可以参考 RecordPageHandler 的说明
   SlotNum next_slot_num_ = 0;  ///< 当前遍历到了哪一个slot
 };
 
@@ -127,8 +126,7 @@ class RecordPageIterator {
 class RecordPageHandler {
  public:
   RecordPageHandler() {}
-  RecordPageHandler(StorageFormat storage_format)
-      : storage_format_(storage_format) {}
+  RecordPageHandler(StorageFormat storage_format) : storage_format_(storage_format) {}
   virtual ~RecordPageHandler();
   static RecordPageHandler *create(StorageFormat format);
 
@@ -139,8 +137,7 @@ class RecordPageHandler {
    * @param page_num    当前处理哪个页面
    * @param mode        是否只读。在访问页面时，需要对页面加锁
    */
-  RC init(DiskBufferPool &buffer_pool, LogHandler &log_handler,
-          PageNum page_num, ReadWriteMode mode);
+  RC init(DiskBufferPool &buffer_pool, LogHandler &log_handler, PageNum page_num, ReadWriteMode mode);
 
   /**
    * @brief
@@ -159,8 +156,7 @@ class RecordPageHandler {
    * @param record_size 每个记录的大小
    * @param table_meta  表的元数据
    */
-  RC init_empty_page(DiskBufferPool &buffer_pool, LogHandler &log_handler,
-                     PageNum page_num, int record_size, TableMeta *table_meta);
+  RC init_empty_page(DiskBufferPool &buffer_pool, LogHandler &log_handler, PageNum page_num, int record_size, TableMeta *table_meta);
 
   /**
    * @brief
@@ -171,9 +167,7 @@ class RecordPageHandler {
    * @param col_num  表中包含的列数
    * @param col_idx_data 列索引数据
    */
-  RC init_empty_page(DiskBufferPool &buffer_pool, LogHandler &log_handler,
-                     PageNum page_num, int record_size, int col_num,
-                     const char *col_idx_data);
+  RC init_empty_page(DiskBufferPool &buffer_pool, LogHandler &log_handler, PageNum page_num, int record_size, int col_num, const char *col_idx_data);
 
   /**
    * @brief 操作结束后做的清理工作，比如释放页面、解锁
@@ -186,9 +180,7 @@ class RecordPageHandler {
    * @param data 要插入的记录
    * @param rid  如果插入成功，通过这个参数返回插入的位置
    */
-  virtual RC insert_record(const char *data, RID *rid) {
-    return RC::UNIMPLEMENTED;
-  }
+  virtual RC insert_record(const char *data, RID *rid) { return RC::UNIMPLEMENTED; }
 
   /**
    * @brief 数据库恢复时，在指定位置插入数据
@@ -196,9 +188,7 @@ class RecordPageHandler {
    * @param data 要插入的数据行
    * @param rid  插入的位置
    */
-  virtual RC recover_insert_record(const char *data, const RID &rid) {
-    return RC::UNIMPLEMENTED;
-  }
+  virtual RC recover_insert_record(const char *data, const RID &rid) { return RC::UNIMPLEMENTED; }
 
   /**
    * @brief 删除指定的记录
@@ -211,9 +201,7 @@ class RecordPageHandler {
    * @brief
    *
    */
-  virtual RC update_record(const RID &rid, const char *data) {
-    return RC::UNIMPLEMENTED;
-  }
+  virtual RC update_record(const RID &rid, const char *data) { return RC::UNIMPLEMENTED; }
 
   RC update_record(Record *rec);
 
@@ -223,9 +211,7 @@ class RecordPageHandler {
    * @param rid 指定的位置
    * @param record 获取到的记录结果
    */
-  virtual RC get_record(const RID &rid, Record &record) {
-    return RC::UNIMPLEMENTED;
-  }
+  virtual RC get_record(const RID &rid, Record &record) { return RC::UNIMPLEMENTED; }
 
   /**
    * @brief 获取整个页面中指定列的所有记录。
@@ -253,9 +239,7 @@ class RecordPageHandler {
    * 所以需要对record_capacity进行修正，保证记录不会溢出
    */
   void fix_record_capacity() {
-    int32_t last_record_offset =
-        page_header_->data_offset +
-        page_header_->record_capacity * page_header_->record_size;
+    int32_t last_record_offset = page_header_->data_offset + page_header_->record_capacity * page_header_->record_size;
     while (last_record_offset > BP_PAGE_DATA_SIZE) {
       page_header_->record_capacity -= 1;
       last_record_offset -= page_header_->record_size;
@@ -267,21 +251,16 @@ class RecordPageHandler {
    *
    * @param 指定的记录槽位
    */
-  char *get_record_data(SlotNum slot_num) {
-    return frame_->data() + page_header_->data_offset +
-           (page_header_->record_size * slot_num);
-  }
+  char *get_record_data(SlotNum slot_num) { return frame_->data() + page_header_->data_offset + (page_header_->record_size * slot_num); }
 
  protected:
-  DiskBufferPool *disk_buffer_pool_ = nullptr;  ///< 当前操作的buffer pool(文件)
-  RecordLogHandler log_handler_;  ///< 当前操作的日志处理器
-  Frame *frame_ =
-      nullptr;  ///< 当前操作页面关联的frame(frame的更多概念可以参考buffer
-                ///< pool和frame)
-  ReadWriteMode rw_mode_ =
-      ReadWriteMode::READ_WRITE;       ///< 当前的操作是否都是只读的
-  PageHeader *page_header_ = nullptr;  ///< 当前页面上页面头
-  char *bitmap_ = nullptr;  ///< 当前页面上record分配状态信息bitmap内存起始位置
+  DiskBufferPool *disk_buffer_pool_ = nullptr;         ///< 当前操作的buffer pool(文件)
+  RecordLogHandler log_handler_;                       ///< 当前操作的日志处理器
+  Frame *frame_ = nullptr;                             ///< 当前操作页面关联的frame(frame的更多概念可以参考buffer
+                                                       ///< pool和frame)
+  ReadWriteMode rw_mode_ = ReadWriteMode::READ_WRITE;  ///< 当前的操作是否都是只读的
+  PageHeader *page_header_ = nullptr;                  ///< 当前页面上页面头
+  char *bitmap_ = nullptr;                             ///< 当前页面上record分配状态信息bitmap内存起始位置
   StorageFormat storage_format_;
 
  protected:
@@ -376,8 +355,7 @@ class PaxRecordPageHandler : public RecordPageHandler {
  */
 class RecordFileHandler {
  public:
-  RecordFileHandler(StorageFormat storage_format)
-      : storage_format_(storage_format){};
+  RecordFileHandler(StorageFormat storage_format) : storage_format_(storage_format){};
   ~RecordFileHandler();
 
   /**
@@ -385,8 +363,7 @@ class RecordFileHandler {
    *
    * @param buffer_pool 当前操作的是哪个文件
    */
-  RC init(DiskBufferPool &buffer_pool, LogHandler &log_handler,
-          TableMeta *table_meta);
+  RC init(DiskBufferPool &buffer_pool, LogHandler &log_handler, TableMeta *table_meta);
 
   /**
    * @brief 关闭，做一些资源清理的工作
@@ -434,8 +411,7 @@ class RecordFileHandler {
   DiskBufferPool *disk_buffer_pool_ = nullptr;
   LogHandler *log_handler_ = nullptr;  ///< 记录日志的处理器
   unordered_set<PageNum> free_pages_;  ///< 没有填充满的页面集合
-  common::Mutex
-      lock_;  ///< 当编译时增加-DCONCURRENCY=ON 选项时，才会真正的支持并发
+  common::Mutex lock_;                 ///< 当编译时增加-DCONCURRENCY=ON 选项时，才会真正的支持并发
   StorageFormat storage_format_;
   TableMeta *table_meta_;
 };
@@ -460,9 +436,7 @@ class RecordFileScanner {
    *                         删除时也需要遍历找到数据，然后删除，这时就需要加写锁
    * @param condition_filter 做一些初步过滤操作
    */
-  RC open_scan(Table *table, DiskBufferPool &buffer_pool, Trx *trx,
-               LogHandler &log_handler, ReadWriteMode mode,
-               ConditionFilter *condition_filter);
+  RC open_scan(Table *table, DiskBufferPool &buffer_pool, Trx *trx, LogHandler &log_handler, ReadWriteMode mode, ConditionFilter *condition_filter);
 
   /**
    * @brief 关闭一个文件扫描，释放相应的资源
@@ -491,20 +465,18 @@ class RecordFileScanner {
 
  private:
   // TODO 对于一个纯粹的record遍历器来说，不应该关心表和事务
-  Table *table_ =
-      nullptr;  ///< 当前遍历的是哪张表。这个字段仅供事务函数使用，如果设计合适，可以去掉
+  Table *table_ = nullptr;  ///< 当前遍历的是哪张表。这个字段仅供事务函数使用，如果设计合适，可以去掉
 
   DiskBufferPool *disk_buffer_pool_ = nullptr;  ///< 当前访问的文件
-  Trx *trx_ = nullptr;  ///< 当前是哪个事务在遍历
+  Trx *trx_ = nullptr;                          ///< 当前是哪个事务在遍历
   LogHandler *log_handler_ = nullptr;
-  ReadWriteMode rw_mode_ =
-      ReadWriteMode::READ_WRITE;  ///< 遍历出来的数据，是否可能对它做修改
+  ReadWriteMode rw_mode_ = ReadWriteMode::READ_WRITE;  ///< 遍历出来的数据，是否可能对它做修改
 
-  BufferPoolIterator bp_iterator_;  ///< 遍历buffer pool的所有页面
-  ConditionFilter *condition_filter_ = nullptr;  ///< 过滤record
+  BufferPoolIterator bp_iterator_;                    ///< 遍历buffer pool的所有页面
+  ConditionFilter *condition_filter_ = nullptr;       ///< 过滤record
   RecordPageHandler *record_page_handler_ = nullptr;  ///< 处理文件某页面的记录
-  RecordPageIterator record_page_iterator_;  ///< 遍历某个页面上的所有record
-  Record next_record_;  ///< 获取的记录放在这里缓存起来
+  RecordPageIterator record_page_iterator_;           ///< 遍历某个页面上的所有record
+  Record next_record_;                                ///< 获取的记录放在这里缓存起来
 };
 
 /**
@@ -518,8 +490,7 @@ class ChunkFileScanner {
   ~ChunkFileScanner();
 
   // TODO: not support filter and transaction
-  RC open_scan_chunk(Table *table, DiskBufferPool &buffer_pool,
-                     LogHandler &log_handler, ReadWriteMode mode);
+  RC open_scan_chunk(Table *table, DiskBufferPool &buffer_pool, LogHandler &log_handler, ReadWriteMode mode);
 
   /**
    * @brief 关闭一个文件扫描，释放相应的资源
@@ -536,9 +507,8 @@ class ChunkFileScanner {
 
   DiskBufferPool *disk_buffer_pool_ = nullptr;  ///< 当前访问的文件
   LogHandler *log_handler_ = nullptr;
-  ReadWriteMode rw_mode_ =
-      ReadWriteMode::READ_WRITE;  ///< 遍历出来的数据，是否可能对它做修改
+  ReadWriteMode rw_mode_ = ReadWriteMode::READ_WRITE;  ///< 遍历出来的数据，是否可能对它做修改
 
-  BufferPoolIterator bp_iterator_;  ///< 遍历buffer pool的所有页面
+  BufferPoolIterator bp_iterator_;                    ///< 遍历buffer pool的所有页面
   RecordPageHandler *record_page_handler_ = nullptr;  ///< 处理文件某页面的记录
 };

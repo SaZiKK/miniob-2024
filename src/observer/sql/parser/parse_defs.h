@@ -71,29 +71,27 @@ typedef class ParsedSqlNode SubSelectSqlNode;
  * 左边和右边理论上都可以是任意的数据，比如是字段（属性，列），也可以是数值常量。
  * 这个结构中记录的仅仅支持字段和值。
  */
-struct ConditionSqlNode {  // todo：支持左子查询以及除了select之外的其他查询
-  int left_is_attr;  ///< TRUE if left-hand side is an attribute
-                     ///< 1时，操作符左边是属性名，0时，是属性值
-  Value left_value;          ///< left-hand side value if left_is_attr = FALSE
-  RelAttrSqlNode left_attr;  ///< left-hand side attribute
-  CompOp comp;               ///< comparison operator
-  int right_is_attr;         ///< TRUE if right-hand side is an attribute
-  bool left_is_sub_query;  ///< 1时，操作符左边是属性名，0时，是属性值  // todo:
-                           ///< not support in yaccccccc yet
-  bool right_is_sub_query;  ///< 1时，操作符右边是属性名，0时，是属性值
-  RelAttrSqlNode right_attr;  ///< 右边的属性
-  Value right_value;  ///< right-hand side value if right_is_attr = FALSE
-  SubSelectSqlNode* left_sub_query;  ///< sub-query if left_is_sub_query = TRUE
-  SubSelectSqlNode*
-      right_sub_query;               ///< sub-query if right_is_sub_query = TRUE
-  SelectStmt* left_sub_query_stmt;   ///< sub-query stmt
-  SelectStmt* right_sub_query_stmt;  ///< sub-query stmt
+struct ConditionSqlNode {             // todo：支持左子查询以及除了select之外的其他查询
+  int left_is_attr;                   ///< TRUE if left-hand side is an attribute
+                                      ///< 1时，操作符左边是属性名，0时，是属性值
+  Value left_value;                   ///< left-hand side value if left_is_attr = FALSE
+  RelAttrSqlNode left_attr;           ///< left-hand side attribute
+  CompOp comp;                        ///< comparison operator
+  int right_is_attr;                  ///< TRUE if right-hand side is an attribute
+  bool left_is_sub_query;             ///< 1时，操作符左边是属性名，0时，是属性值  // todo:
+                                      ///< not support in yaccccccc yet
+  bool right_is_sub_query;            ///< 1时，操作符右边是属性名，0时，是属性值
+  RelAttrSqlNode right_attr;          ///< 右边的属性
+  Value right_value;                  ///< right-hand side value if right_is_attr = FALSE
+  SubSelectSqlNode* left_sub_query;   ///< sub-query if left_is_sub_query = TRUE
+  SubSelectSqlNode* right_sub_query;  ///< sub-query if right_is_sub_query = TRUE
+  SelectStmt* left_sub_query_stmt;    ///< sub-query stmt
+  SelectStmt* right_sub_query_stmt;   ///< sub-query stmt
 };
 
 struct JoinSqlNode {
-  std::string relation;  ///< 查询的表
-  std::vector<ConditionSqlNode>
-      conditions;  ///< 查询条件，使用AND串联起来多个条件
+  std::string relation;                      ///< 查询的表
+  std::vector<ConditionSqlNode> conditions;  ///< 查询条件，使用AND串联起来多个条件
 };
 
 /**
@@ -111,10 +109,9 @@ struct JoinSqlNode {
 struct SelectSqlNode {
   std::vector<std::unique_ptr<Expression>> expressions;  ///< 查询的表达式
   std::vector<std::string> relations;                    ///< 查询的表
-  std::vector<ConditionSqlNode>
-      conditions;  ///< 查询条件，使用AND串联起来多个条件
-  std::vector<JoinSqlNode> join;                      ///< join clause
-  std::vector<std::unique_ptr<Expression>> group_by;  ///< group by clause
+  std::vector<ConditionSqlNode> conditions;              ///< 查询条件，使用AND串联起来多个条件
+  std::vector<JoinSqlNode> join;                         ///< join clause
+  std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
 };
 
 /**
@@ -324,11 +321,8 @@ class ParsedSqlResult {
  public:
   void add_sql_node(std::unique_ptr<ParsedSqlNode> sql_node);
 
-  std::vector<std::unique_ptr<ParsedSqlNode>>& sql_nodes() {
-    return sql_nodes_;
-  }
+  std::vector<std::unique_ptr<ParsedSqlNode>>& sql_nodes() { return sql_nodes_; }
 
  private:
-  std::vector<std::unique_ptr<ParsedSqlNode>>
-      sql_nodes_;  ///< 这里记录SQL命令。虽然看起来支持多个，但是当前仅处理一个
+  std::vector<std::unique_ptr<ParsedSqlNode>> sql_nodes_;  ///< 这里记录SQL命令。虽然看起来支持多个，但是当前仅处理一个
 };

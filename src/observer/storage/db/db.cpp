@@ -45,8 +45,7 @@ Db::~Db() {
   LOG_INFO("Db has been closed: %s", name_.c_str());
 }
 
-RC Db::init(const char *name, const char *dbpath, const char *trx_kit_name,
-            const char *log_handler_name) {
+RC Db::init(const char *name, const char *dbpath, const char *trx_kit_name, const char *log_handler_name) {
   RC rc = RC::SUCCESS;
 
   if (common::is_blank(name)) {
@@ -71,19 +70,16 @@ RC Db::init(const char *name, const char *dbpath, const char *trx_kit_name,
   auto dblwr_buffer = make_unique<DiskDoubleWriteBuffer>(*buffer_pool_manager_);
 
   const char *double_write_buffer_filename = "dblwr.db";
-  filesystem::path double_write_buffer_file_path =
-      filesystem::path(dbpath) / double_write_buffer_filename;
+  filesystem::path double_write_buffer_file_path = filesystem::path(dbpath) / double_write_buffer_filename;
   rc = dblwr_buffer->open_file(double_write_buffer_file_path.c_str());
   if (OB_FAIL(rc)) {
-    LOG_ERROR("Failed to open double write buffer file. file=%s, rc=%s",
-              double_write_buffer_file_path.c_str(), strrc(rc));
+    LOG_ERROR("Failed to open double write buffer file. file=%s, rc=%s", double_write_buffer_file_path.c_str(), strrc(rc));
     return rc;
   }
 
   rc = buffer_pool_manager_->init(std::move(dblwr_buffer));
   if (OB_FAIL(rc)) {
-    LOG_ERROR("Failed to init buffer pool manager. dbpath=%s, rc=%s", dbpath,
-              strrc(rc));
+    LOG_ERROR("Failed to init buffer pool manager. dbpath=%s, rc=%s", dbpath, strrc(rc));
     return rc;
   }
 
@@ -136,9 +132,7 @@ RC Db::init(const char *name, const char *dbpath, const char *trx_kit_name,
   return rc;
 }
 
-RC Db::create_table(const char *table_name,
-                    span<const AttrInfoSqlNode> attributes,
-                    const StorageFormat storage_format) {
+RC Db::create_table(const char *table_name, span<const AttrInfoSqlNode> attributes, const StorageFormat storage_format) {
   RC rc = RC::SUCCESS;
   // check table_name
   if (opened_tables_.count(table_name) != 0) {
@@ -150,8 +144,7 @@ RC Db::create_table(const char *table_name,
   string table_file_path = table_meta_file(path_.c_str(), table_name);
   Table *table = new Table();
   int32_t table_id = next_table_id_++;
-  rc = table->create(this, table_id, table_file_path.c_str(), table_name,
-                     path_.c_str(), attributes, storage_format);
+  rc = table->create(this, table_id, table_file_path.c_str(), table_name, path_.c_str(), attributes, storage_format);
   if (rc != RC::SUCCESS) {
     LOG_ERROR("Failed to create table %s.", table_name);
     delete table;
@@ -159,14 +152,12 @@ RC Db::create_table(const char *table_name,
   }
 
   opened_tables_[table_name] = table;
-  LOG_INFO("Create table success. table name=%s, table_id:%d", table_name,
-           table_id);
+  LOG_INFO("Create table success. table name=%s, table_id:%d", table_name, table_id);
   return RC::SUCCESS;
 }
 
 Table *Db::find_table(const char *table_name) const {
-  unordered_map<string, Table *>::const_iterator iter =
-      opened_tables_.find(table_name);
+  unordered_map<string, Table *>::const_iterator iter = opened_tables_.find(table_name);
   if (iter != opened_tables_.end()) {
     return iter->second;
   }
@@ -202,8 +193,7 @@ RC Db::drop_table(const char *table_name) {
   opened_tables_.erase(table_name);
   delete table;
 
-  LOG_INFO("Table drop successfully, which table_name is %d, table_id = %d",
-           table_name, table_id);
+  LOG_INFO("Table drop successfully, which table_name is %d, table_id = %d", table_name, table_id);
 
   return RC::SUCCESS;
 }
@@ -235,8 +225,7 @@ RC Db::drop_table(int32_t table_id) {
   opened_tables_.erase(table_name);
   delete table;
 
-  LOG_INFO("Table drop successfully, which table_name is %d, table_id = %d",
-           table_name, table_id);
+  LOG_INFO("Table drop successfully, which table_name is %d, table_id = %d", table_name, table_id);
 
   return RC::SUCCESS;
 }
@@ -295,16 +284,13 @@ RC Db::sync() {
     Table *table = table_pair.second;
     rc = table->sync();
     if (rc != RC::SUCCESS) {
-      LOG_ERROR("Failed to flush table. table=%s.%s, rc=%d:%s", name_.c_str(),
-                table->name(), rc, strrc(rc));
+      LOG_ERROR("Failed to flush table. table=%s.%s, rc=%d:%s", name_.c_str(), table->name(), rc, strrc(rc));
       return rc;
     }
-    LOG_INFO("Successfully sync table db:%s, table:%s.", name_.c_str(),
-             table->name());
+    LOG_INFO("Successfully sync table db:%s, table:%s.", name_.c_str(), table->name());
   }
 
-  auto dblwr_buffer = static_cast<DiskDoubleWriteBuffer *>(
-      buffer_pool_manager_->get_dblwr_buffer());
+  auto dblwr_buffer = static_cast<DiskDoubleWriteBuffer *>(buffer_pool_manager_->get_dblwr_buffer());
   rc = dblwr_buffer->flush_page();
   LOG_INFO("double write buffer flush pages ret=%s", strrc(rc));
 
@@ -315,16 +301,14 @@ RC Db::sync() {
   LSN current_lsn = log_handler_->current_lsn();
   rc = log_handler_->wait_lsn(current_lsn);
   if (OB_FAIL(rc)) {
-    LOG_ERROR("Failed to wait lsn. lsn=%ld, rc=%d:%s", current_lsn, rc,
-              strrc(rc));
+    LOG_ERROR("Failed to wait lsn. lsn=%ld, rc=%d:%s", current_lsn, rc, strrc(rc));
     return rc;
   }
 
   check_point_lsn_ = current_lsn;
   rc = flush_meta();
   if (OB_FAIL(rc)) {
-    LOG_ERROR("Failed to flush meta. db=%s, rc=%d:%s", name_.c_str(), rc,
-              strrc(rc));
+    LOG_ERROR("Failed to flush meta. db=%s, rc=%d:%s", name_.c_str(), rc, strrc(rc));
     return rc;
   }
   LOG_INFO("Successfully sync db. db=%s", name_.c_str());
@@ -334,15 +318,13 @@ RC Db::sync() {
 RC Db::recover() {
   LOG_TRACE("db recover begin. check_point_lsn=%d", check_point_lsn_);
 
-  LogReplayer *trx_log_replayer =
-      trx_kit_->create_log_replayer(*this, *log_handler_);
+  LogReplayer *trx_log_replayer = trx_kit_->create_log_replayer(*this, *log_handler_);
   if (trx_log_replayer == nullptr) {
     LOG_ERROR("Failed to create trx log replayer.");
     return RC::INTERNAL;
   }
 
-  IntegratedLogReplayer log_replayer(*buffer_pool_manager_,
-                                     unique_ptr<LogReplayer>(trx_log_replayer));
+  IntegratedLogReplayer log_replayer(*buffer_pool_manager_, unique_ptr<LogReplayer>(trx_log_replayer));
   RC rc = log_handler_->replay(log_replayer, check_point_lsn_ /*start_lsn*/);
   if (OB_FAIL(rc)) {
     LOG_WARN("failed to replay log. rc=%s", strrc(rc));
@@ -361,47 +343,39 @@ RC Db::recover() {
     return rc;
   }
 
-  LOG_INFO("Successfully recover db. db=%s checkpoint_lsn=%d", name_.c_str(),
-           check_point_lsn_);
+  LOG_INFO("Successfully recover db. db=%s checkpoint_lsn=%d", name_.c_str(), check_point_lsn_);
   return rc;
 }
 
 RC Db::init_meta() {
-  filesystem::path db_meta_file_path =
-      db_meta_file(path_.c_str(), name_.c_str());
+  filesystem::path db_meta_file_path = db_meta_file(path_.c_str(), name_.c_str());
   if (!filesystem::exists(db_meta_file_path)) {
     check_point_lsn_ = 0;
-    LOG_INFO("Db meta file not exist. db=%s, file=%s", name_.c_str(),
-             db_meta_file_path.c_str());
+    LOG_INFO("Db meta file not exist. db=%s, file=%s", name_.c_str(), db_meta_file_path.c_str());
     return RC::SUCCESS;
   }
 
   RC rc = RC::SUCCESS;
   int fd = open(db_meta_file_path.c_str(), O_RDONLY);
   if (fd < 0) {
-    LOG_ERROR("Failed to open db meta file. db=%s, file=%s, errno=%s",
-              name_.c_str(), db_meta_file_path.c_str(), strerror(errno));
+    LOG_ERROR("Failed to open db meta file. db=%s, file=%s, errno=%s", name_.c_str(), db_meta_file_path.c_str(), strerror(errno));
     return RC::IOERR_READ;
   }
 
   char buffer[1024];
   int n = read(fd, buffer, sizeof(buffer));
   if (n < 0) {
-    LOG_ERROR("Failed to read db meta file. db=%s, file=%s, errno=%s",
-              name_.c_str(), db_meta_file_path.c_str(), strerror(errno));
+    LOG_ERROR("Failed to read db meta file. db=%s, file=%s, errno=%s", name_.c_str(), db_meta_file_path.c_str(), strerror(errno));
     rc = RC::IOERR_READ;
   } else {
     if (n >= static_cast<int>(sizeof(buffer))) {
-      LOG_WARN("Db meta file is too large. db=%s, file=%s, buffer size=%ld",
-               name_.c_str(), db_meta_file_path.c_str(), sizeof(buffer));
+      LOG_WARN("Db meta file is too large. db=%s, file=%s, buffer size=%ld", name_.c_str(), db_meta_file_path.c_str(), sizeof(buffer));
       return RC::IOERR_TOO_LONG;
     }
 
     buffer[n] = '\0';
     check_point_lsn_ = atoll(buffer);  // 当前元数据就这一个数字
-    LOG_INFO(
-        "Successfully read db meta file. db=%s, file=%s, check_point_lsn=%ld",
-        name_.c_str(), db_meta_file_path.c_str(), check_point_lsn_);
+    LOG_INFO("Successfully read db meta file. db=%s, file=%s, check_point_lsn=%ld", name_.c_str(), db_meta_file_path.c_str(), check_point_lsn_);
   }
   close(fd);
 
@@ -413,25 +387,21 @@ RC Db::flush_meta() {
   // 先创建一个临时文件，将元数据写入临时文件
   // 然后再将临时文件修改为正式文件
 
-  filesystem::path meta_file_path =
-      db_meta_file(path_.c_str(), name_.c_str());         // 正式文件名
-  filesystem::path temp_meta_file_path = meta_file_path;  // 临时文件名
+  filesystem::path meta_file_path = db_meta_file(path_.c_str(), name_.c_str());  // 正式文件名
+  filesystem::path temp_meta_file_path = meta_file_path;                         // 临时文件名
   temp_meta_file_path += ".tmp";
 
   RC rc = RC::SUCCESS;
-  int fd =
-      open(temp_meta_file_path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
+  int fd = open(temp_meta_file_path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
   if (fd < 0) {
-    LOG_ERROR("Failed to open db meta file. db=%s, file=%s, errno=%s",
-              name_.c_str(), temp_meta_file_path.c_str(), strerror(errno));
+    LOG_ERROR("Failed to open db meta file. db=%s, file=%s, errno=%s", name_.c_str(), temp_meta_file_path.c_str(), strerror(errno));
     return RC::IOERR_WRITE;
   }
 
   string buffer = std::to_string(check_point_lsn_);
   int n = write(fd, buffer.c_str(), buffer.size());
   if (n < 0) {
-    LOG_ERROR("Failed to write db meta file. db=%s, file=%s, errno=%s",
-              name_.c_str(), temp_meta_file_path.c_str(), strerror(errno));
+    LOG_ERROR("Failed to write db meta file. db=%s, file=%s, errno=%s", name_.c_str(), temp_meta_file_path.c_str(), strerror(errno));
     rc = RC::IOERR_WRITE;
   } else if (n != static_cast<int>(buffer.size())) {
     LOG_ERROR(
@@ -443,9 +413,7 @@ RC Db::flush_meta() {
     error_code ec;
     filesystem::rename(temp_meta_file_path, meta_file_path, ec);
     if (ec) {
-      LOG_ERROR("Failed to rename db meta file. db=%s, file=%s, errno=%s",
-                name_.c_str(), temp_meta_file_path.c_str(),
-                ec.message().c_str());
+      LOG_ERROR("Failed to rename db meta file. db=%s, file=%s, errno=%s", name_.c_str(), temp_meta_file_path.c_str(), ec.message().c_str());
       rc = RC::IOERR_WRITE;
     } else {
       LOG_INFO(
@@ -459,8 +427,7 @@ RC Db::flush_meta() {
 }
 
 RC Db::init_dblwr_buffer() {
-  auto dblwr_buffer = static_cast<DiskDoubleWriteBuffer *>(
-      buffer_pool_manager_->get_dblwr_buffer());
+  auto dblwr_buffer = static_cast<DiskDoubleWriteBuffer *>(buffer_pool_manager_->get_dblwr_buffer());
   RC rc = dblwr_buffer->recover();
   if (OB_FAIL(rc)) {
     LOG_ERROR("fail to recover in dblwr buffer");

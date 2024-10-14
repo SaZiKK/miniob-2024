@@ -248,8 +248,7 @@ struct InternalIndexNode : public IndexNode {
  */
 class IndexNodeHandler {
  public:
-  IndexNodeHandler(BplusTreeMiniTransaction &mtr, const IndexFileHeader &header,
-                   Frame *frame);
+  IndexNodeHandler(BplusTreeMiniTransaction &mtr, const IndexFileHeader &header, Frame *frame);
   virtual ~IndexNodeHandler() = default;
 
   /// @brief 初始化一个新的页面
@@ -318,8 +317,7 @@ class IndexNodeHandler {
  */
 class LeafIndexNodeHandler final : public IndexNodeHandler {
  public:
-  LeafIndexNodeHandler(BplusTreeMiniTransaction &mtr,
-                       const IndexFileHeader &header, Frame *frame);
+  LeafIndexNodeHandler(BplusTreeMiniTransaction &mtr, const IndexFileHeader &header, Frame *frame);
   virtual ~LeafIndexNodeHandler() = default;
 
   RC init_empty();
@@ -333,8 +331,7 @@ class LeafIndexNodeHandler final : public IndexNodeHandler {
    * 查找指定key的插入位置(注意不是key本身)
    * 如果key已经存在，会设置found的值。
    */
-  int lookup(const KeyComparator &comparator, const char *key,
-             bool *found = nullptr) const;
+  int lookup(const KeyComparator &comparator, const char *key, bool *found = nullptr) const;
 
   RC insert(int index, const char *key, const char *value);
   RC remove(int index);
@@ -349,8 +346,7 @@ class LeafIndexNodeHandler final : public IndexNodeHandler {
 
   bool validate(const KeyComparator &comparator, DiskBufferPool *bp) const;
 
-  friend string to_string(const LeafIndexNodeHandler &handler,
-                          const KeyPrinter &printer);
+  friend string to_string(const LeafIndexNodeHandler &handler, const KeyPrinter &printer);
 
  protected:
   char *__item_at(int index) const override;
@@ -369,8 +365,7 @@ class LeafIndexNodeHandler final : public IndexNodeHandler {
  */
 class InternalIndexNodeHandler final : public IndexNodeHandler {
  public:
-  InternalIndexNodeHandler(BplusTreeMiniTransaction &mtr,
-                           const IndexFileHeader &header, Frame *frame);
+  InternalIndexNodeHandler(BplusTreeMiniTransaction &mtr, const IndexFileHeader &header, Frame *frame);
   virtual ~InternalIndexNodeHandler() = default;
 
   RC init_empty();
@@ -395,8 +390,7 @@ class InternalIndexNodeHandler final : public IndexNodeHandler {
    * @param[out] found 如果是有效指针，将会返回当前是否存在指定的键值
    * @param[out] insert_position 如果是有效指针，将会返回可以插入指定键值的位置
    */
-  int lookup(const KeyComparator &comparator, const char *key,
-             bool *found = nullptr, int *insert_position = nullptr) const;
+  int lookup(const KeyComparator &comparator, const char *key, bool *found = nullptr, int *insert_position = nullptr) const;
 
   /**
    * @brief 把当前节点的所有数据都迁移到另一个节点上
@@ -410,8 +404,7 @@ class InternalIndexNodeHandler final : public IndexNodeHandler {
 
   bool validate(const KeyComparator &comparator, DiskBufferPool *bp) const;
 
-  friend string to_string(const InternalIndexNodeHandler &handler,
-                          const KeyPrinter &printer);
+  friend string to_string(const InternalIndexNodeHandler &handler, const KeyPrinter &printer);
 
  private:
   RC insert_items(int index, const char *items, int num);
@@ -445,11 +438,9 @@ class BplusTreeHandler {
    * @param internal_max_size 内部节点最大大小
    * @param leaf_max_size 叶子节点最大大小
    */
-  RC create(LogHandler &log_handler, BufferPoolManager &bpm,
-            const char *file_name, AttrType attr_type, int attr_length,
-            int internal_max_size = -1, int leaf_max_size = -1);
-  RC create(LogHandler &log_handler, DiskBufferPool &buffer_pool,
-            AttrType attr_type, int attr_length, int internal_max_size = -1,
+  RC create(LogHandler &log_handler, BufferPoolManager &bpm, const char *file_name, AttrType attr_type, int attr_length, int internal_max_size = -1,
+            int leaf_max_size = -1);
+  RC create(LogHandler &log_handler, DiskBufferPool &buffer_pool, AttrType attr_type, int attr_length, int internal_max_size = -1,
             int leaf_max_size = -1);
 
   /**
@@ -458,8 +449,7 @@ class BplusTreeHandler {
    * @param bpm 缓冲池管理器
    * @param file_name 文件名
    */
-  RC open(LogHandler &log_handler, BufferPoolManager &bpm,
-          const char *file_name);
+  RC open(LogHandler &log_handler, BufferPoolManager &bpm, const char *file_name);
   RC open(LogHandler &log_handler, DiskBufferPool &buffer_pool);
 
   /**
@@ -511,14 +501,12 @@ class BplusTreeHandler {
    * @brief 恢复更新ROOT页面
    * @details 重做日志时调用的接口
    */
-  RC recover_update_root_page(BplusTreeMiniTransaction &mtr,
-                              PageNum root_page_num);
+  RC recover_update_root_page(BplusTreeMiniTransaction &mtr, PageNum root_page_num);
   /**
    * @brief 恢复初始化头页面
    * @details 重做日志时调用的接口
    */
-  RC recover_init_header_page(BplusTreeMiniTransaction &mtr, Frame *frame,
-                              const IndexFileHeader &header);
+  RC recover_init_header_page(BplusTreeMiniTransaction &mtr, Frame *frame, const IndexFileHeader &header);
 
  public:
   /**
@@ -544,8 +532,7 @@ class BplusTreeHandler {
    * @param key 查找的键值
    * @param[out] frame 返回找到的叶子节点
    */
-  RC find_leaf(BplusTreeMiniTransaction &mtr, BplusTreeOperationType op,
-               const char *key, Frame *&frame);
+  RC find_leaf(BplusTreeMiniTransaction &mtr, BplusTreeOperationType op, const char *key, Frame *&frame);
 
   /**
    * @brief 找到最左边的叶子节点
@@ -558,23 +545,18 @@ class BplusTreeHandler {
    * @param child_page_getter 用于获取子节点的函数
    * @param[out] frame 返回找到的叶子节点
    */
-  RC find_leaf_internal(
-      BplusTreeMiniTransaction &mtr, BplusTreeOperationType op,
-      const function<PageNum(InternalIndexNodeHandler &)> &child_page_getter,
-      Frame *&frame);
+  RC find_leaf_internal(BplusTreeMiniTransaction &mtr, BplusTreeOperationType op,
+                        const function<PageNum(InternalIndexNodeHandler &)> &child_page_getter, Frame *&frame);
 
   /**
    * @brief 使用crabing protocol 获取页面
    */
-  RC crabing_protocal_fetch_page(BplusTreeMiniTransaction &mtr,
-                                 BplusTreeOperationType op, PageNum page_num,
-                                 bool is_root_page, Frame *&frame);
+  RC crabing_protocal_fetch_page(BplusTreeMiniTransaction &mtr, BplusTreeOperationType op, PageNum page_num, bool is_root_page, Frame *&frame);
 
   /**
    * @brief 从叶子节点中删除指定的键值对
    */
-  RC delete_entry_internal(BplusTreeMiniTransaction &mtr, Frame *leaf_frame,
-                           const char *key);
+  RC delete_entry_internal(BplusTreeMiniTransaction &mtr, Frame *leaf_frame, const char *key);
 
   /**
    * @brief 拆分节点
@@ -596,8 +578,7 @@ class BplusTreeHandler {
    * 当节点中的键值对小于最小值并且相邻两个节点总和不超过最大节点个数时，需要合并两个相邻节点
    */
   template <typename IndexNodeHandlerType>
-  RC coalesce(BplusTreeMiniTransaction &mtr, Frame *neighbor_frame,
-              Frame *frame, Frame *parent_frame, int index);
+  RC coalesce(BplusTreeMiniTransaction &mtr, Frame *neighbor_frame, Frame *frame, Frame *parent_frame, int index);
 
   /**
    * @brief 重新分配两个相邻节点
@@ -605,32 +586,27 @@ class BplusTreeHandler {
    * 删除某个元素后，对应节点的元素个数比较少，并且与相邻节点不能合并，就将邻居节点的元素移动一些过来
    */
   template <typename IndexNodeHandlerType>
-  RC redistribute(BplusTreeMiniTransaction &mtr, Frame *neighbor_frame,
-                  Frame *frame, Frame *parent_frame, int index);
+  RC redistribute(BplusTreeMiniTransaction &mtr, Frame *neighbor_frame, Frame *frame, Frame *parent_frame, int index);
 
   /**
    * @brief 在父节点插入一个元素
    */
-  RC insert_entry_into_parent(BplusTreeMiniTransaction &mtr, Frame *frame,
-                              Frame *new_frame, const char *key);
+  RC insert_entry_into_parent(BplusTreeMiniTransaction &mtr, Frame *frame, Frame *new_frame, const char *key);
 
   /**
    * @brief 在叶子节点插入一个元素
    */
-  RC insert_entry_into_leaf_node(BplusTreeMiniTransaction &mtr, Frame *frame,
-                                 const char *pkey, const RID *rid);
+  RC insert_entry_into_leaf_node(BplusTreeMiniTransaction &mtr, Frame *frame, const char *pkey, const RID *rid);
 
   /**
    * @brief 创建一个新的B+树
    */
-  RC create_new_tree(BplusTreeMiniTransaction &mtr, const char *key,
-                     const RID *rid);
+  RC create_new_tree(BplusTreeMiniTransaction &mtr, const char *key, const RID *rid);
 
   /**
    * @brief 更新根节点的页号
    */
-  void update_root_page_num_locked(BplusTreeMiniTransaction &mtr,
-                                   PageNum root_page_num);
+  void update_root_page_num_locked(BplusTreeMiniTransaction &mtr, PageNum root_page_num);
 
   /**
    * @brief 调整根节点
@@ -638,8 +614,7 @@ class BplusTreeHandler {
   RC adjust_root(BplusTreeMiniTransaction &mtr, Frame *root_frame);
 
  private:
-  common::MemPoolItem::item_unique_ptr make_key(const char *user_key,
-                                                const RID &rid);
+  common::MemPoolItem::item_unique_ptr make_key(const char *user_key, const RID &rid);
 
  protected:
   LogHandler *log_handler_ = nullptr;           /// 日志处理器
@@ -680,8 +655,7 @@ class BplusTreeScanner {
    * @param right_inclusive 右边界的值是否包含在内
    * TODO 重构参数表示方法
    */
-  RC open(const char *left_user_key, int left_len, bool left_inclusive,
-          const char *right_user_key, int right_len, bool right_inclusive);
+  RC open(const char *left_user_key, int left_len, bool left_inclusive, const char *right_user_key, int right_len, bool right_inclusive);
 
   /**
    * @brief 获取下一条记录
@@ -704,8 +678,7 @@ class BplusTreeScanner {
   /**
    * 如果key的类型是CHARS, 扩展或缩减user_key的大小刚好是schema中定义的大小
    */
-  RC fix_user_key(const char *user_key, int key_len, bool want_greater,
-                  char **fixed_key, bool *should_inclusive);
+  RC fix_user_key(const char *user_key, int key_len, bool want_greater, char **fixed_key, bool *should_inclusive);
 
   void fetch_item(RID &rid);
 

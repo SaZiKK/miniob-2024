@@ -43,8 +43,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
   std::reverse(join.begin(), join.end());
   for (auto it : join) {
     select_sql.relations.emplace_back(it.relation);
-    for (auto condition : it.conditions)
-      select_sql.conditions.emplace_back(condition);
+    for (auto condition : it.conditions) select_sql.conditions.emplace_back(condition);
   }
 
   // 检测并递归生成右子查询stmt  //
@@ -59,8 +58,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
       }
 
       Stmt *right_sub_query_stmt = nullptr;
-      RC rc = SelectStmt::create(db, right_sub_query->selection,
-                                 right_sub_query_stmt);
+      RC rc = SelectStmt::create(db, right_sub_query->selection, right_sub_query_stmt);
       if (rc != RC::SUCCESS) {
         LOG_WARN("failed to create right sub query stmt. index=%d", i);
         return rc;
@@ -79,8 +77,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
       }
 
       Stmt *left_sub_query_stmt = nullptr;
-      RC rc = SelectStmt::create(db, left_sub_query->selection,
-                                 left_sub_query_stmt);
+      RC rc = SelectStmt::create(db, left_sub_query->selection, left_sub_query_stmt);
       if (rc != RC::SUCCESS) {
         LOG_WARN("failed to create right sub query stmt. index=%d", i);
         return rc;
@@ -144,9 +141,8 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
 
   // 创建筛选对应的 STMT 对象
   FilterStmt *filter_stmt = nullptr;
-  RC rc = FilterStmt::create(
-      db, default_table, &table_map, select_sql.conditions.data(),
-      static_cast<int>(select_sql.conditions.size()), filter_stmt);
+  RC rc =
+      FilterStmt::create(db, default_table, &table_map, select_sql.conditions.data(), static_cast<int>(select_sql.conditions.size()), filter_stmt);
   if (rc != RC::SUCCESS) {
     LOG_WARN("cannot construct filter stmt");
     return rc;

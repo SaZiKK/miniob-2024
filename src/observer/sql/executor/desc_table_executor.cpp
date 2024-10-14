@@ -32,9 +32,7 @@ RC DescTableExecutor::execute(SQLStageEvent *sql_event) {
   Stmt *stmt = sql_event->stmt();
   SessionEvent *session_event = sql_event->session_event();
   Session *session = session_event->session();
-  ASSERT(stmt->type() == StmtType::DESC_TABLE,
-         "desc table executor can not run this command: %d",
-         static_cast<int>(stmt->type()));
+  ASSERT(stmt->type() == StmtType::DESC_TABLE, "desc table executor can not run this command: %d", static_cast<int>(stmt->type()));
 
   DescTableStmt *desc_table_stmt = static_cast<DescTableStmt *>(stmt);
   SqlResult *sql_result = session_event->sql_result();
@@ -54,8 +52,7 @@ RC DescTableExecutor::execute(SQLStageEvent *sql_event) {
     const TableMeta &table_meta = table->table_meta();
     for (int i = table_meta.sys_field_num(); i < table_meta.field_num(); i++) {
       const FieldMeta *field_meta = table_meta.field(i);
-      oper->append({field_meta->name(), attr_type_to_string(field_meta->type()),
-                    std::to_string(field_meta->len())});
+      oper->append({field_meta->name(), attr_type_to_string(field_meta->type()), std::to_string(field_meta->len())});
     }
 
     sql_result->set_operator(unique_ptr<PhysicalOperator>(oper));

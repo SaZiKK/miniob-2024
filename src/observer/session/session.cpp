@@ -53,13 +53,9 @@ void Session::set_current_db(const string &dbname) {
   db_ = db;
 }
 
-void Session::set_trx_multi_operation_mode(bool multi_operation_mode) {
-  trx_multi_operation_mode_ = multi_operation_mode;
-}
+void Session::set_trx_multi_operation_mode(bool multi_operation_mode) { trx_multi_operation_mode_ = multi_operation_mode; }
 
-bool Session::is_trx_multi_operation_mode() const {
-  return trx_multi_operation_mode_;
-}
+bool Session::is_trx_multi_operation_mode() const { return trx_multi_operation_mode_; }
 
 Trx *Session::current_trx() {
   /*
@@ -74,14 +70,10 @@ Trx *Session::current_trx() {
 
 thread_local Session *thread_session = nullptr;
 
-void Session::set_current_session(Session *session) {
-  thread_session = session;
-}
+void Session::set_current_session(Session *session) { thread_session = session; }
 
 Session *Session::current_session() { return thread_session; }
 
-void Session::set_current_request(SessionEvent *request) {
-  current_request_ = request;
-}
+void Session::set_current_request(SessionEvent *request) { current_request_ = request; }
 
 SessionEvent *Session::current_request() const { return current_request_; }

@@ -84,9 +84,7 @@ class Session {
 
   bool used_chunk_mode() { return used_chunk_mode_; }
 
-  void set_used_chunk_mode(bool used_chunk_mode) {
-    used_chunk_mode_ = used_chunk_mode;
-  }
+  void set_used_chunk_mode(bool used_chunk_mode) { used_chunk_mode_ = used_chunk_mode; }
 
   /**
    * @brief 将指定会话设置到线程变量中
@@ -106,8 +104,7 @@ class Session {
   Trx *trx_ = nullptr;
   SessionEvent *current_request_ = nullptr;  ///< 当前正在处理的请求
 
-  bool trx_multi_operation_mode_ =
-      false;  ///< 当前事务的模式，是否多语句模式. 单语句模式自动提交
+  bool trx_multi_operation_mode_ = false;  ///< 当前事务的模式，是否多语句模式. 单语句模式自动提交
 
   bool sql_debug_ = false;  ///< 是否输出SQL调试信息
 

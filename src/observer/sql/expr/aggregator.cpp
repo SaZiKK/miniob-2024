@@ -23,9 +23,7 @@ RC SumAggregator::accumulate(const Value &value) {
     return RC::SUCCESS;
   }
 
-  ASSERT(value.attr_type() == value_.attr_type(),
-         "type mismatch. value type: %s, value_.type: %s",
-         attr_type_to_string(value.attr_type()),
+  ASSERT(value.attr_type() == value_.attr_type(), "type mismatch. value type: %s, value_.type: %s", attr_type_to_string(value.attr_type()),
          attr_type_to_string(value_.attr_type()));
 
   Value::add(value, value_, value_);
@@ -45,9 +43,7 @@ RC MaxAggregator::accumulate(const Value &value) {
     return RC::SUCCESS;
   }
 
-  ASSERT(value.attr_type() == value_.attr_type(),
-         "type mismatch. value type: %s, value_.type: %s",
-         attr_type_to_string(value.attr_type()),
+  ASSERT(value.attr_type() == value_.attr_type(), "type mismatch. value type: %s, value_.type: %s", attr_type_to_string(value.attr_type()),
          attr_type_to_string(value_.attr_type()));
 
   // 需要更新
@@ -68,9 +64,7 @@ RC MinAggregator::accumulate(const Value &value) {
     return RC::SUCCESS;
   }
 
-  ASSERT(value.attr_type() == value_.attr_type(),
-         "type mismatch. value type: %s, value_.type: %s",
-         attr_type_to_string(value.attr_type()),
+  ASSERT(value.attr_type() == value_.attr_type(), "type mismatch. value type: %s, value_.type: %s", attr_type_to_string(value.attr_type()),
          attr_type_to_string(value_.attr_type()));
 
   // 需要更新

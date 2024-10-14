@@ -50,8 +50,7 @@ class MvccTrxKit : public TrxKit {
   int32_t max_trx_id() const;
 
  private:
-  vector<FieldMeta>
-      fields_;  // 存储事务数据需要用到的字段元数据，所有表结构都需要带的
+  vector<FieldMeta> fields_;  // 存储事务数据需要用到的字段元数据，所有表结构都需要带的
 
   atomic<int32_t> current_trx_id_{0};
 
@@ -79,8 +78,7 @@ class MvccTrx : public Trx {
 
   RC insert_record(Table *table, Record &record) override;
   RC delete_record(Table *table, Record &record) override;
-  RC update_record(Table *table, Record &record, const char *attr_name,
-                   Value *value) override;
+  RC update_record(Table *table, Record &record, const char *attr_name, Value *value) override;
 
   /**
    * @brief 当访问到某条数据时，使用此函数来判断是否可见，或者是否有访问冲突
@@ -104,8 +102,7 @@ class MvccTrx : public Trx {
 
  private:
   RC commit_with_trx_id(int32_t commit_id);
-  void trx_fields(Table *table, Field &begin_xid_field,
-                  Field &end_xid_field) const;
+  void trx_fields(Table *table, Field &begin_xid_field, Field &end_xid_field) const;
 
  private:
   static const int32_t MAX_TRX_ID = numeric_limits<int32_t>::max();

@@ -25,9 +25,7 @@ class ExplainPhysicalOperator : public PhysicalOperator {
   ExplainPhysicalOperator() = default;
   virtual ~ExplainPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::EXPLAIN;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::EXPLAIN; }
 
   RC open(Trx *trx) override;
   RC next() override;
@@ -41,8 +39,7 @@ class ExplainPhysicalOperator : public PhysicalOperator {
   }
 
  private:
-  void to_string(std::ostream &os, PhysicalOperator *oper, int level,
-                 bool last_child, std::vector<bool> &ends);
+  void to_string(std::ostream &os, PhysicalOperator *oper, int level, bool last_child, std::vector<bool> &ends);
 
   void generate_physical_plan();
 

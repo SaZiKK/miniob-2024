@@ -22,13 +22,9 @@ struct Equal {
     return left == right;
   }
 #if defined(USE_SIMD)
-  static inline __m256 operation(const __m256 &left, const __m256 &right) {
-    return _mm256_cmp_ps(left, right, _CMP_EQ_OS);
-  }
+  static inline __m256 operation(const __m256 &left, const __m256 &right) { return _mm256_cmp_ps(left, right, _CMP_EQ_OS); }
 
-  static inline __m256i operation(const __m256i &left, const __m256i &right) {
-    return _mm256_cmpeq_epi32(left, right);
-  }
+  static inline __m256i operation(const __m256i &left, const __m256i &right) { return _mm256_cmpeq_epi32(left, right); }
 #endif
 };
 struct NotEqual {
@@ -37,13 +33,10 @@ struct NotEqual {
     return left != right;
   }
 #if defined(USE_SIMD)
-  static inline __m256 operation(const __m256 &left, const __m256 &right) {
-    return _mm256_cmp_ps(left, right, _CMP_NEQ_OS);
-  }
+  static inline __m256 operation(const __m256 &left, const __m256 &right) { return _mm256_cmp_ps(left, right, _CMP_NEQ_OS); }
 
   static inline __m256i operation(const __m256i &left, const __m256i &right) {
-    return _mm256_xor_si256(_mm256_set1_epi32(-1),
-                            _mm256_cmpeq_epi32(left, right));
+    return _mm256_xor_si256(_mm256_set1_epi32(-1), _mm256_cmpeq_epi32(left, right));
   }
 #endif
 };
@@ -54,13 +47,9 @@ struct GreatThan {
     return left > right;
   }
 #if defined(USE_SIMD)
-  static inline __m256 operation(const __m256 &left, const __m256 &right) {
-    return _mm256_cmp_ps(left, right, _CMP_GT_OS);
-  }
+  static inline __m256 operation(const __m256 &left, const __m256 &right) { return _mm256_cmp_ps(left, right, _CMP_GT_OS); }
 
-  static inline __m256i operation(const __m256i &left, const __m256i &right) {
-    return _mm256_cmpgt_epi32(left, right);
-  }
+  static inline __m256i operation(const __m256i &left, const __m256i &right) { return _mm256_cmpgt_epi32(left, right); }
 #endif
 };
 
@@ -71,9 +60,7 @@ struct GreatEqual {
   }
 
 #if defined(USE_SIMD)
-  static inline __m256 operation(const __m256 &left, const __m256 &right) {
-    return _mm256_cmp_ps(left, right, _CMP_GE_OS);
-  }
+  static inline __m256 operation(const __m256 &left, const __m256 &right) { return _mm256_cmp_ps(left, right, _CMP_GE_OS); }
 
   static inline __m256i operation(const __m256i &left, const __m256i &right) {
     return _mm256_cmpgt_epi32(left, right) | _mm256_cmpeq_epi32(left, right);
@@ -87,13 +74,9 @@ struct LessThan {
     return left < right;
   }
 #if defined(USE_SIMD)
-  static inline __m256 operation(const __m256 &left, const __m256 &right) {
-    return _mm256_cmp_ps(left, right, _CMP_LT_OS);
-  }
+  static inline __m256 operation(const __m256 &left, const __m256 &right) { return _mm256_cmp_ps(left, right, _CMP_LT_OS); }
 
-  static inline __m256i operation(const __m256i &left, const __m256i &right) {
-    return _mm256_cmpgt_epi32(right, left);
-  }
+  static inline __m256i operation(const __m256i &left, const __m256i &right) { return _mm256_cmpgt_epi32(right, left); }
 #endif
 };
 
@@ -103,13 +86,10 @@ struct LessEqual {
     return left <= right;
   }
 #if defined(USE_SIMD)
-  static inline __m256 operation(const __m256 &left, const __m256 &right) {
-    return _mm256_cmp_ps(left, right, _CMP_LE_OS);
-  }
+  static inline __m256 operation(const __m256 &left, const __m256 &right) { return _mm256_cmp_ps(left, right, _CMP_LE_OS); }
 
   static inline __m256i operation(const __m256i &left, const __m256i &right) {
-    return _mm256_or_si256(_mm256_cmpgt_epi32(right, left),
-                           _mm256_cmpeq_epi32(left, right));
+    return _mm256_or_si256(_mm256_cmpgt_epi32(right, left), _mm256_cmpeq_epi32(left, right));
   }
 #endif
 };
@@ -121,13 +101,9 @@ struct AddOperator {
   }
 
 #if defined(USE_SIMD)
-  static inline __m256 operation(__m256 left, __m256 right) {
-    return _mm256_add_ps(left, right);
-  }
+  static inline __m256 operation(__m256 left, __m256 right) { return _mm256_add_ps(left, right); }
 
-  static inline __m256i operation(__m256i left, __m256i right) {
-    return _mm256_add_epi32(left, right);
-  }
+  static inline __m256i operation(__m256i left, __m256i right) { return _mm256_add_epi32(left, right); }
 #endif
 };
 
@@ -165,9 +141,7 @@ struct DivideOperator {
   }
 
 #if defined(USE_SIMD)
-  static inline __m256 operation(__m256 left, __m256 right) {
-    return _mm256_div_ps(left, right);
-  }
+  static inline __m256 operation(__m256 left, __m256 right) { return _mm256_div_ps(left, right); }
   static inline __m256i operation(__m256i left, __m256i right) {
     __m256 left_float = _mm256_cvtepi32_ps(left);
     __m256 right_float = _mm256_cvtepi32_ps(right);
@@ -320,37 +294,30 @@ void unary_operator(T *input, T *result_data, int size) {
 
 // TODO: optimized with simd
 template <typename T, bool LEFT_CONSTANT, bool RIGHT_CONSTANT>
-void compare_result(T *left, T *right, int n, std::vector<uint8_t> &result,
-                    CompOp op) {
+void compare_result(T *left, T *right, int n, std::vector<uint8_t> &result, CompOp op) {
   switch (op) {
     case CompOp::EQUAL_TO: {
-      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, Equal>(left, right, n,
-                                                                 result);
+      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, Equal>(left, right, n, result);
       break;
     }
     case CompOp::NOT_EQUAL: {
-      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, NotEqual>(left, right,
-                                                                    n, result);
+      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, NotEqual>(left, right, n, result);
       break;
     }
     case CompOp::GREAT_EQUAL: {
-      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, GreatEqual>(
-          left, right, n, result);
+      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, GreatEqual>(left, right, n, result);
       break;
     }
     case CompOp::GREAT_THAN: {
-      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, GreatThan>(
-          left, right, n, result);
+      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, GreatThan>(left, right, n, result);
       break;
     }
     case CompOp::LESS_EQUAL: {
-      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, LessEqual>(
-          left, right, n, result);
+      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, LessEqual>(left, right, n, result);
       break;
     }
     case CompOp::LESS_THAN: {
-      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, LessThan>(left, right,
-                                                                    n, result);
+      compare_operation<T, LEFT_CONSTANT, RIGHT_CONSTANT, LessThan>(left, right, n, result);
       break;
     }
     default:

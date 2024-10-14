@@ -84,9 +84,7 @@ class RingBuffer {
   int32_t size() const { return data_size_; }
 
  private:
-  int32_t read_pos() const {
-    return (write_pos_ - this->size() + capacity()) % capacity();
-  }
+  int32_t read_pos() const { return (write_pos_ - this->size() + capacity()) % capacity(); }
 
  private:
   vector<char> buffer_;    ///< 缓存使用的内存，使用vector方便管理

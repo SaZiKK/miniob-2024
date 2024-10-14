@@ -26,8 +26,7 @@ class ExpressionRewriter : public RewriteRule {
   ExpressionRewriter();
   virtual ~ExpressionRewriter() = default;
 
-  RC rewrite(std::unique_ptr<LogicalOperator> &oper,
-             bool &change_made) override;
+  RC rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made) override;
 
  private:
   RC rewrite_expression(std::unique_ptr<Expression> &expr, bool &change_made);

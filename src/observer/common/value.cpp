@@ -210,8 +210,7 @@ void Value::set_string_from_other(const Value &other) {
   ASSERT(attr_type_ == AttrType::CHARS, "attr type is not CHARS");
   if (own_data_ && other.value_.pointer_value_ != nullptr && length_ != 0) {
     this->value_.pointer_value_ = new char[this->length_ + 1];
-    memcpy(this->value_.pointer_value_, other.value_.pointer_value_,
-           this->length_);
+    memcpy(this->value_.pointer_value_, other.value_.pointer_value_, this->length_);
     this->value_.pointer_value_[this->length_] = '\0';
   }
 }
@@ -231,16 +230,13 @@ string Value::to_string() const {
   string res;
   RC rc = DataType::type_instance(this->attr_type_)->to_string(*this, res);
   if (OB_FAIL(rc)) {
-    LOG_WARN("failed to convert value to string. type=%s",
-             attr_type_to_string(this->attr_type_));
+    LOG_WARN("failed to convert value to string. type=%s", attr_type_to_string(this->attr_type_));
     return "";
   }
   return res;
 }
 
-int Value::compare(const Value &other) const {
-  return DataType::type_instance(this->attr_type_)->compare(*this, other);
-}
+int Value::compare(const Value &other) const { return DataType::type_instance(this->attr_type_)->compare(*this, other); }
 
 int Value::get_int() const {
   switch (attr_type_) {
@@ -248,8 +244,7 @@ int Value::get_int() const {
       try {
         return (int)(std::stol(value_.pointer_value_));
       } catch (exception const &ex) {
-        LOG_TRACE("failed to convert string to number. s=%s, ex=%s",
-                  value_.pointer_value_, ex.what());
+        LOG_TRACE("failed to convert string to number. s=%s, ex=%s", value_.pointer_value_, ex.what());
         return 0;
       }
     }
@@ -279,8 +274,7 @@ float Value::get_float() const {
       try {
         return std::stof(value_.pointer_value_);
       } catch (exception const &ex) {
-        LOG_TRACE("failed to convert string to float. s=%s, ex=%s",
-                  value_.pointer_value_, ex.what());
+        LOG_TRACE("failed to convert string to float. s=%s, ex=%s", value_.pointer_value_, ex.what());
         return 0.0;
       }
     } break;
@@ -322,8 +316,7 @@ bool Value::get_boolean() const {
 
         return value_.pointer_value_ != nullptr;
       } catch (exception const &ex) {
-        LOG_TRACE("failed to convert string to float or integer. s=%s, ex=%s",
-                  value_.pointer_value_, ex.what());
+        LOG_TRACE("failed to convert string to float or integer. s=%s, ex=%s", value_.pointer_value_, ex.what());
         return value_.pointer_value_ != nullptr;
       }
     } break;

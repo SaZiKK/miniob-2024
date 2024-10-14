@@ -33,8 +33,7 @@ RC ExecuteStage::handle_request(SQLStageEvent *sql_event) {
   RC rc = RC::SUCCESS;
 
   // 根据物理算子决定执行的两条路径
-  const unique_ptr<PhysicalOperator> &physical_operator =
-      sql_event->physical_operator();
+  const unique_ptr<PhysicalOperator> &physical_operator = sql_event->physical_operator();
 
   // 如果存在物理算子
   if (physical_operator != nullptr) {
@@ -60,13 +59,11 @@ RC ExecuteStage::handle_request(SQLStageEvent *sql_event) {
   return rc;
 }
 
-RC ExecuteStage::handle_request_with_physical_operator(
-    SQLStageEvent *sql_event) {
+RC ExecuteStage::handle_request_with_physical_operator(SQLStageEvent *sql_event) {
   RC rc = RC::SUCCESS;
 
   // 拿出物理算子
-  unique_ptr<PhysicalOperator> &physical_operator =
-      sql_event->physical_operator();
+  unique_ptr<PhysicalOperator> &physical_operator = sql_event->physical_operator();
   ASSERT(physical_operator != nullptr, "physical operator should not be null");
 
   SqlResult *sql_result = sql_event->session_event()->sql_result();

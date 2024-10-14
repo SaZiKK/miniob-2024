@@ -23,8 +23,7 @@ class AggregateHashTable {
  public:
   class Scanner {
    public:
-    explicit Scanner(AggregateHashTable *hash_table)
-        : hash_table_(hash_table) {}
+    explicit Scanner(AggregateHashTable *hash_table) : hash_table_(hash_table) {}
     virtual ~Scanner() = default;
 
     virtual void open_scan() = 0;
@@ -56,18 +55,14 @@ class StandardAggregateHashTable : public AggregateHashTable {
   };
 
   struct VectorEqual {
-    bool operator()(const std::vector<Value> &lhs,
-                    const std::vector<Value> &rhs) const;
+    bool operator()(const std::vector<Value> &lhs, const std::vector<Value> &rhs) const;
   };
 
  public:
-  using StandardHashTable =
-      std::unordered_map<std::vector<Value>, std::vector<Value>, VectorHash,
-                         VectorEqual>;
+  using StandardHashTable = std::unordered_map<std::vector<Value>, std::vector<Value>, VectorHash, VectorEqual>;
   class Scanner : public AggregateHashTable::Scanner {
    public:
-    explicit Scanner(AggregateHashTable *hash_table)
-        : AggregateHashTable::Scanner(hash_table) {}
+    explicit Scanner(AggregateHashTable *hash_table) : AggregateHashTable::Scanner(hash_table) {}
     ~Scanner() = default;
 
     void open_scan() override;
@@ -80,8 +75,7 @@ class StandardAggregateHashTable : public AggregateHashTable {
   };
   StandardAggregateHashTable(const std::vector<Expression *> aggregations) {
     for (auto &expr : aggregations) {
-      ASSERT(expr->type() == ExprType::AGGREGATION,
-             "expect aggregate expression");
+      ASSERT(expr->type() == ExprType::AGGREGATION, "expect aggregate expression");
       auto *aggregation_expr = static_cast<AggregateExpr *>(expr);
       aggr_types_.push_back(aggregation_expr->aggregate_type());
     }
@@ -110,8 +104,7 @@ class LinearProbingAggregateHashTable : public AggregateHashTable {
  public:
   class Scanner : public AggregateHashTable::Scanner {
    public:
-    explicit Scanner(AggregateHashTable *hash_table)
-        : AggregateHashTable::Scanner(hash_table) {}
+    explicit Scanner(AggregateHashTable *hash_table) : AggregateHashTable::Scanner(hash_table) {}
     ~Scanner() = default;
 
     void open_scan() override;
@@ -127,12 +120,8 @@ class LinearProbingAggregateHashTable : public AggregateHashTable {
     int scan_count_ = 0;
   };
 
-  LinearProbingAggregateHashTable(AggregateExpr::Type aggregate_type,
-                                  int capacity = DEFAULT_CAPACITY)
-      : keys_(capacity, EMPTY_KEY),
-        values_(capacity, 0),
-        capacity_(capacity),
-        aggregate_type_(aggregate_type) {}
+  LinearProbingAggregateHashTable(AggregateExpr::Type aggregate_type, int capacity = DEFAULT_CAPACITY)
+      : keys_(capacity, EMPTY_KEY), values_(capacity, 0), capacity_(capacity), aggregate_type_(aggregate_type) {}
   virtual ~LinearProbingAggregateHashTable() {}
 
   RC get(int key, V &value);

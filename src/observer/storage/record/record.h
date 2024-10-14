@@ -36,8 +36,7 @@ struct RID {
   SlotNum slot_num;  // record's slot number
 
   RID() = default;
-  RID(const PageNum _page_num, const SlotNum _slot_num)
-      : page_num(_page_num), slot_num(_slot_num) {}
+  RID(const PageNum _page_num, const SlotNum _slot_num) : page_num(_page_num), slot_num(_slot_num) {}
 
   const string to_string() const {
     stringstream ss;
@@ -45,9 +44,7 @@ struct RID {
     return ss.str();
   }
 
-  bool operator==(const RID &other) const {
-    return page_num == other.page_num && slot_num == other.slot_num;
-  }
+  bool operator==(const RID &other) const { return page_num == other.page_num && slot_num == other.slot_num; }
 
   bool operator!=(const RID &other) const { return !(*this == other); }
 
@@ -76,17 +73,13 @@ struct RID {
    * 我们假设page num和slot num都不会使用对应数值类型的最大值
    */
   static RID *max() {
-    static RID rid{numeric_limits<PageNum>::max(),
-                   numeric_limits<SlotNum>::max()};
+    static RID rid{numeric_limits<PageNum>::max(), numeric_limits<SlotNum>::max()};
     return &rid;
   }
 };
 
 struct RIDHash {
-  size_t operator()(const RID &rid) const noexcept {
-    return std::hash<PageNum>()(rid.page_num) ^
-           std::hash<SlotNum>()(rid.slot_num);
-  }
+  size_t operator()(const RID &rid) const noexcept { return std::hash<PageNum>()(rid.page_num) ^ std::hash<SlotNum>()(rid.slot_num); }
 };
 
 /**
@@ -207,9 +200,7 @@ class Record {
       return RC::INTERNAL;
     }
     if (field_offset + field_len > len_) {
-      LOG_ERROR(
-          "invalid offset or length. offset=%d, length=%d, total length=%d",
-          field_offset, field_len, len_);
+      LOG_ERROR("invalid offset or length. offset=%d, length=%d, total length=%d", field_offset, field_len, len_);
       return RC::INVALID_ARGUMENT;
     }
 
@@ -233,6 +224,6 @@ class Record {
   RID rid_;
 
   char *data_ = nullptr;
-  int len_ = 0;  /// 如果不是record自己来管理内存，这个字段可能是无效的
+  int len_ = 0;         /// 如果不是record自己来管理内存，这个字段可能是无效的
   bool owner_ = false;  /// 表示当前是否由record来管理内存
 };

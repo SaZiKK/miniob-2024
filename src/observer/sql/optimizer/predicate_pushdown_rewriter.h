@@ -27,12 +27,9 @@ class PredicatePushdownRewriter : public RewriteRule {
   PredicatePushdownRewriter() = default;
   virtual ~PredicatePushdownRewriter() = default;
 
-  RC rewrite(std::unique_ptr<LogicalOperator> &oper,
-             bool &change_made) override;
+  RC rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made) override;
 
  private:
-  RC get_exprs_can_pushdown(
-      std::unique_ptr<Expression> &expr,
-      std::vector<std::unique_ptr<Expression>> &pushdown_exprs);
+  RC get_exprs_can_pushdown(std::unique_ptr<Expression> &expr, std::vector<std::unique_ptr<Expression>> &pushdown_exprs);
   bool is_empty_predicate(std::unique_ptr<Expression> &expr);
 };

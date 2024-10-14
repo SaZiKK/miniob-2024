@@ -27,9 +27,7 @@ class NestedLoopJoinPhysicalOperator : public PhysicalOperator {
   NestedLoopJoinPhysicalOperator();
   virtual ~NestedLoopJoinPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::NESTED_LOOP_JOIN;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::NESTED_LOOP_JOIN; }
 
   RC open(Trx *trx) override;
   RC next() override;

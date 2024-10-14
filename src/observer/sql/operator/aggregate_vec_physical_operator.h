@@ -22,9 +22,7 @@ class AggregateVecPhysicalOperator : public PhysicalOperator {
 
   virtual ~AggregateVecPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::AGGREGATE_VEC;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::AGGREGATE_VEC; }
 
   RC open(Trx *trx) override;
   RC next(Chunk &chunk) override;

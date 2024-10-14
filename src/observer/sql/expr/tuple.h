@@ -51,9 +51,7 @@ class Table;
 class TupleSchema {
  public:
   void append_cell(const TupleCellSpec &cell) { cells_.push_back(cell); }
-  void append_cell(const char *table, const char *field) {
-    append_cell(TupleCellSpec(table, field));
-  }
+  void append_cell(const char *table, const char *field) { append_cell(TupleCellSpec(table, field)); }
   void append_cell(const char *alias) { append_cell(TupleCellSpec(alias)); }
   int cell_num() const { return static_cast<int>(cells_.size()); }
 
@@ -191,8 +189,7 @@ class RowTuple : public Tuple {
     FieldExpr *field_expr = speces_[index];
     const FieldMeta *field_meta = field_expr->field().meta();
     cell.set_type(field_meta->type());
-    cell.set_data(this->record_->data() + field_meta->offset(),
-                  field_meta->len());
+    cell.set_data(this->record_->data() + field_meta->offset(), field_meta->len());
     return RC::SUCCESS;
   }
 
@@ -252,20 +249,13 @@ class ProjectTuple : public Tuple {
   ProjectTuple() = default;
   virtual ~ProjectTuple() = default;
 
-  void set_expressions(std::vector<std::unique_ptr<Expression>> &&expressions) {
-    expressions_ = std::move(expressions);
-  }
+  void set_expressions(std::vector<std::unique_ptr<Expression>> &&expressions) { expressions_ = std::move(expressions); }
 
-  auto get_expressions() const
-      -> const std::vector<std::unique_ptr<Expression>> & {
-    return expressions_;
-  }
+  auto get_expressions() const -> const std::vector<std::unique_ptr<Expression>> & { return expressions_; }
 
   void set_tuple(Tuple *tuple) { this->tuple_ = tuple; }
 
-  int cell_num() const override {
-    return static_cast<int>(expressions_.size());
-  }
+  int cell_num() const override { return static_cast<int>(expressions_.size()); }
 
   RC cell_at(int index, Value &cell) const override {
     if (index < 0 || index >= cell_num()) {
@@ -284,9 +274,7 @@ class ProjectTuple : public Tuple {
     return RC::SUCCESS;
   }
 
-  RC find_cell(const TupleCellSpec &spec, Value &cell) const override {
-    return tuple_->find_cell(spec, cell);
-  }
+  RC find_cell(const TupleCellSpec &spec, Value &cell) const override { return tuple_->find_cell(spec, cell); }
 
 #if 0
   RC cell_spec_at(int index, const TupleCellSpec *&spec) const override
@@ -316,9 +304,7 @@ class ValueListTuple : public Tuple {
   void set_names(const std::vector<TupleCellSpec> &specs) { specs_ = specs; }
   void set_cells(const std::vector<Value> &cells) { cells_ = cells; }
 
-  virtual int cell_num() const override {
-    return static_cast<int>(cells_.size());
-  }
+  virtual int cell_num() const override { return static_cast<int>(cells_.size()); }
 
   virtual RC cell_at(int index, Value &cell) const override {
     if (index < 0 || index >= cell_num()) {
@@ -339,8 +325,7 @@ class ValueListTuple : public Tuple {
   }
 
   virtual RC find_cell(const TupleCellSpec &spec, Value &cell) const override {
-    ASSERT(cells_.size() == specs_.size(), "cells_.size()=%d, specs_.size()=%d",
-           cells_.size(), specs_.size());
+    ASSERT(cells_.size() == specs_.size(), "cells_.size()=%d, specs_.size()=%d", cells_.size(), specs_.size());
 
     const int size = static_cast<int>(specs_.size());
     for (int i = 0; i < size; i++) {
@@ -392,9 +377,7 @@ class JoinedTuple : public Tuple {
   void set_left(Tuple *left) { left_ = left; }
   void set_right(Tuple *right) { right_ = right; }
 
-  int cell_num() const override {
-    return left_->cell_num() + right_->cell_num();
-  }
+  int cell_num() const override { return left_->cell_num() + right_->cell_num(); }
 
   RC cell_at(int index, Value &value) const override {
     const int left_cell_num = left_->cell_num();

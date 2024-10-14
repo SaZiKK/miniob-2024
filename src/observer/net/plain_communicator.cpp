@@ -96,12 +96,10 @@ RC PlainCommunicator::write_state(SessionEvent *event, bool &need_disconnect) {
   char *buf = new char[buf_size];
   const string &state_string = sql_result->state_string();
   if (state_string.empty()) {
-    const char *result =
-        RC::SUCCESS == sql_result->return_code() ? "SUCCESS" : "FAILURE";
+    const char *result = RC::SUCCESS == sql_result->return_code() ? "SUCCESS" : "FAILURE";
     snprintf(buf, buf_size, "%s\n", result);
   } else {
-    snprintf(buf, buf_size, "%s > %s\n", strrc(sql_result->return_code()),
-             state_string.c_str());
+    snprintf(buf, buf_size, "%s > %s\n", strrc(sql_result->return_code()), state_string.c_str());
   }
 
   RC rc = writer_->writen(buf, strlen(buf));
@@ -118,8 +116,7 @@ RC PlainCommunicator::write_state(SessionEvent *event, bool &need_disconnect) {
   return RC::SUCCESS;
 }
 
-RC PlainCommunicator::write_debug(SessionEvent *request,
-                                  bool &need_disconnect) {
+RC PlainCommunicator::write_debug(SessionEvent *request, bool &need_disconnect) {
   if (!session_->sql_debug_on()) {
     return RC::SUCCESS;
   }
@@ -128,8 +125,7 @@ RC PlainCommunicator::write_debug(SessionEvent *request,
 
   const list<string> &debug_infos = sql_debug.get_debug_infos();
   for (auto &debug_info : debug_infos) {
-    RC rc = writer_->writen(debug_message_prefix_.data(),
-                            debug_message_prefix_.size());
+    RC rc = writer_->writen(debug_message_prefix_.data(), debug_message_prefix_.size());
     if (OB_FAIL(rc)) {
       LOG_WARN("failed to send data to client. err=%s", strerror(errno));
       need_disconnect = true;
@@ -162,16 +158,13 @@ RC PlainCommunicator::write_result(SessionEvent *event, bool &need_disconnect) {
   if (!need_disconnect) {
     RC rc1 = write_debug(event, need_disconnect);
     if (OB_FAIL(rc1)) {
-      LOG_WARN("failed to send debug info to client. rc=%s, err=%s", strrc(rc),
-               strerror(errno));
+      LOG_WARN("failed to send debug info to client. rc=%s, err=%s", strrc(rc), strerror(errno));
     }
   }
   if (!need_disconnect) {
-    rc = writer_->writen(send_message_delimiter_.data(),
-                         send_message_delimiter_.size());
+    rc = writer_->writen(send_message_delimiter_.data(), send_message_delimiter_.size());
     if (OB_FAIL(rc)) {
-      LOG_ERROR("Failed to send data back to client. ret=%s, error=%s",
-                strrc(rc), strerror(errno));
+      LOG_ERROR("Failed to send data back to client. ret=%s, error=%s", strrc(rc), strerror(errno));
       need_disconnect = true;
       return rc;
     }
@@ -180,8 +173,7 @@ RC PlainCommunicator::write_result(SessionEvent *event, bool &need_disconnect) {
   return rc;
 }
 
-RC PlainCommunicator::write_result_internal(SessionEvent *event,
-                                            bool &need_disconnect) {
+RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disconnect) {
   RC rc = RC::SUCCESS;
 
   need_disconnect = true;
@@ -239,8 +231,7 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event,
   }
 
   rc = RC::SUCCESS;
-  if (event->session()->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR &&
-      event->session()->used_chunk_mode()) {
+  if (event->session()->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR && event->session()->used_chunk_mode()) {
     rc = write_chunk_result(sql_result);
   } else {
     rc = write_tuple_result(sql_result);

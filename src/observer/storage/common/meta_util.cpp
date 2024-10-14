@@ -22,16 +22,10 @@ string db_meta_file(const char *base_dir, const char *db_name) {
   return db_dir / (string(db_name) + DB_META_SUFFIX);
 }
 
-string table_meta_file(const char *base_dir, const char *table_name) {
-  return filesystem::path(base_dir) / (string(table_name) + TABLE_META_SUFFIX);
-}
+string table_meta_file(const char *base_dir, const char *table_name) { return filesystem::path(base_dir) / (string(table_name) + TABLE_META_SUFFIX); }
 
-string table_data_file(const char *base_dir, const char *table_name) {
-  return filesystem::path(base_dir) / (string(table_name) + TABLE_DATA_SUFFIX);
-}
+string table_data_file(const char *base_dir, const char *table_name) { return filesystem::path(base_dir) / (string(table_name) + TABLE_DATA_SUFFIX); }
 
-string table_index_file(const char *base_dir, const char *table_name,
-                        const char *index_name) {
-  return filesystem::path(base_dir) /
-         (string(table_name) + "-" + index_name + TABLE_INDEX_SUFFIX);
+string table_index_file(const char *base_dir, const char *table_name, const char *index_name) {
+  return filesystem::path(base_dir) / (string(table_name) + "-" + index_name + TABLE_INDEX_SUFFIX);
 }

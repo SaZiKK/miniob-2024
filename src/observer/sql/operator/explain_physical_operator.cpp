@@ -37,8 +37,7 @@ void ExplainPhysicalOperator::generate_physical_plan() {
     to_string(ss, children_[i].get(), level, false /*last_child*/, ends);
   }
   if (children_size > 0) {
-    to_string(ss, children_[children_size - 1].get(), level,
-              true /*last_child*/, ends);
+    to_string(ss, children_[children_size - 1].get(), level, true /*last_child*/, ends);
   }
 
   physical_plan_ = ss.str();
@@ -81,10 +80,7 @@ Tuple *ExplainPhysicalOperator::current_tuple() { return &tuple_; }
  * @param ends
  * 表示当前某个层级上的算子，是否已经没有其它的节点，以判断使用什么打印符号
  */
-void ExplainPhysicalOperator::to_string(std::ostream &os,
-                                        PhysicalOperator *oper, int level,
-                                        bool last_child,
-                                        std::vector<bool> &ends) {
+void ExplainPhysicalOperator::to_string(std::ostream &os, PhysicalOperator *oper, int level, bool last_child, std::vector<bool> &ends) {
   for (int i = 0; i < level - 1; i++) {
     if (ends[i]) {
       os << "  ";
@@ -119,7 +115,6 @@ void ExplainPhysicalOperator::to_string(std::ostream &os,
     to_string(os, children[i].get(), level + 1, false /*last_child*/, ends);
   }
   if (size > 0) {
-    to_string(os, children[size - 1].get(), level + 1, true /*last_child*/,
-              ends);
+    to_string(os, children[size - 1].get(), level + 1, true /*last_child*/, ends);
   }
 }

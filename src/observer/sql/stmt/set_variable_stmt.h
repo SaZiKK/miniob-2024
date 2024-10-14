@@ -27,8 +27,7 @@ See the Mulan PSL v2 for more details. */
  */
 class SetVariableStmt : public Stmt {
  public:
-  SetVariableStmt(const SetVariableSqlNode &set_variable)
-      : set_variable_(set_variable) {}
+  SetVariableStmt(const SetVariableSqlNode &set_variable) : set_variable_(set_variable) {}
   virtual ~SetVariableStmt() = default;
 
   StmtType type() const override { return StmtType::SET_VARIABLE; }

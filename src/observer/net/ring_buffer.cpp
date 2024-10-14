@@ -88,9 +88,7 @@ RC RingBuffer::write(const char *data, int32_t size, int32_t &write_size) {
   write_size = 0;
   while (OB_SUCC(rc) && write_size<size &&this->remain()> 0) {
     const int32_t read_pos = this->read_pos();
-    const int32_t tmp_buf_size = (read_pos <= write_pos_)
-                                     ? (capacity() - write_pos_)
-                                     : (read_pos - write_pos_);
+    const int32_t tmp_buf_size = (read_pos <= write_pos_) ? (capacity() - write_pos_) : (read_pos - write_pos_);
 
     const int32_t copy_size = min(size - write_size, tmp_buf_size);
     memcpy(buffer_.data() + write_pos_, data + write_size, copy_size);

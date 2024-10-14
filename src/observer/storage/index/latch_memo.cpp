@@ -51,16 +51,13 @@ RC LatchMemo::allocate_page(Frame *&frame) {
   RC rc = buffer_pool_->allocate_page(&frame);
   if (rc == RC::SUCCESS) {
     items_.emplace_back(LatchMemoType::PIN, frame);
-    ASSERT(frame->pin_count() == 1, "allocate a new frame. frame=%s",
-           frame->to_string().c_str());
+    ASSERT(frame->pin_count() == 1, "allocate a new frame. frame=%s", frame->to_string().c_str());
   }
 
   return rc;
 }
 
-void LatchMemo::dispose_page(PageNum page_num) {
-  disposed_pages_.emplace_back(page_num);
-}
+void LatchMemo::dispose_page(PageNum page_num) { disposed_pages_.emplace_back(page_num); }
 
 void LatchMemo::latch(Frame *frame, LatchMemoType type) {
   switch (type) {
@@ -78,13 +75,9 @@ void LatchMemo::latch(Frame *frame, LatchMemoType type) {
   items_.emplace_back(type, frame);
 }
 
-void LatchMemo::xlatch(Frame *frame) {
-  this->latch(frame, LatchMemoType::EXCLUSIVE);
-}
+void LatchMemo::xlatch(Frame *frame) { this->latch(frame, LatchMemoType::EXCLUSIVE); }
 
-void LatchMemo::slatch(Frame *frame) {
-  this->latch(frame, LatchMemoType::SHARED);
-}
+void LatchMemo::slatch(Frame *frame) { this->latch(frame, LatchMemoType::SHARED); }
 
 bool LatchMemo::try_slatch(Frame *frame) {
   bool ret = frame->try_read_latch();
@@ -143,8 +136,7 @@ void LatchMemo::release() {
 }
 
 void LatchMemo::release_to(int point) {
-  ASSERT(point >= 0 && point <= static_cast<int>(items_.size()),
-         "invalid memo point. point=%d, items size=%d", point,
+  ASSERT(point >= 0 && point <= static_cast<int>(items_.size()), "invalid memo point. point=%d, items size=%d", point,
          static_cast<int>(items_.size()));
 
   auto iter = items_.begin();

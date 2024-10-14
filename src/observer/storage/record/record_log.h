@@ -79,8 +79,7 @@ class RecordLogHandler final {
   RecordLogHandler() = default;
   ~RecordLogHandler() = default;
 
-  RC init(LogHandler &log_handler, int32_t buffer_pool_id, int32_t record_size,
-          StorageFormat storage_format);
+  RC init(LogHandler &log_handler, int32_t buffer_pool_id, int32_t record_size, StorageFormat storage_format);
 
   /**
    * @brief 初始化一个新的页面
@@ -141,14 +140,10 @@ class RecordLogReplayer final : public LogReplayer {
   virtual RC replay(const LogEntry &entry) override;
 
  private:
-  RC replay_init_page(DiskBufferPool &buffer_pool,
-                      const RecordLogHeader &log_header);
-  RC replay_insert(DiskBufferPool &buffer_pool,
-                   const RecordLogHeader &log_header);
-  RC replay_delete(DiskBufferPool &buffer_pool,
-                   const RecordLogHeader &log_header);
-  RC replay_update(DiskBufferPool &buffer_pool,
-                   const RecordLogHeader &log_header);
+  RC replay_init_page(DiskBufferPool &buffer_pool, const RecordLogHeader &log_header);
+  RC replay_insert(DiskBufferPool &buffer_pool, const RecordLogHeader &log_header);
+  RC replay_delete(DiskBufferPool &buffer_pool, const RecordLogHeader &log_header);
+  RC replay_update(DiskBufferPool &buffer_pool, const RecordLogHeader &log_header);
 
  private:
   BufferPoolManager &bpm_;

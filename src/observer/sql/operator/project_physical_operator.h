@@ -23,14 +23,11 @@ See the Mulan PSL v2 for more details. */
  */
 class ProjectPhysicalOperator : public PhysicalOperator {
  public:
-  ProjectPhysicalOperator(
-      std::vector<std::unique_ptr<Expression>> &&expressions);
+  ProjectPhysicalOperator(std::vector<std::unique_ptr<Expression>> &&expressions);
 
   virtual ~ProjectPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::PROJECT;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::PROJECT; }
 
   RC open(Trx *trx) override;
   RC next() override;

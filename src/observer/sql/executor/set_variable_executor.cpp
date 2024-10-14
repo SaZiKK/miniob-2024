@@ -40,8 +40,7 @@ RC SetVariableExecutor::execute(SQLStageEvent *sql_event) {
   return rc;
 }
 
-RC SetVariableExecutor::var_value_to_boolean(const Value &var_value,
-                                             bool &bool_value) const {
+RC SetVariableExecutor::var_value_to_boolean(const Value &var_value, bool &bool_value) const {
   RC rc = RC::SUCCESS;
 
   if (var_value.attr_type() == AttrType::BOOLEANS) {
@@ -55,19 +54,15 @@ RC SetVariableExecutor::var_value_to_boolean(const Value &var_value,
 
     std::string false_strings[] = {"false", "off", "no", "f", "0"};
 
-    for (size_t i = 0; i < sizeof(true_strings) / sizeof(true_strings[0]);
-         i++) {
-      if (strcasecmp(var_value.get_string().c_str(), true_strings[i].c_str()) ==
-          0) {
+    for (size_t i = 0; i < sizeof(true_strings) / sizeof(true_strings[0]); i++) {
+      if (strcasecmp(var_value.get_string().c_str(), true_strings[i].c_str()) == 0) {
         bool_value = true;
         return rc;
       }
     }
 
-    for (size_t i = 0; i < sizeof(false_strings) / sizeof(false_strings[0]);
-         i++) {
-      if (strcasecmp(var_value.get_string().c_str(),
-                     false_strings[i].c_str()) == 0) {
+    for (size_t i = 0; i < sizeof(false_strings) / sizeof(false_strings[0]); i++) {
+      if (strcasecmp(var_value.get_string().c_str(), false_strings[i].c_str()) == 0) {
         bool_value = false;
         return rc;
       }
@@ -78,15 +73,13 @@ RC SetVariableExecutor::var_value_to_boolean(const Value &var_value,
   return rc;
 }
 
-RC SetVariableExecutor::get_execution_mode(
-    const Value &var_value, ExecutionMode &execution_mode) const {
+RC SetVariableExecutor::get_execution_mode(const Value &var_value, ExecutionMode &execution_mode) const {
   RC rc = RC::SUCCESS;
 
   if (var_value.attr_type() == AttrType::CHARS) {
     if (strcasecmp(var_value.get_string().c_str(), "TUPLE_ITERATOR") == 0) {
       execution_mode = ExecutionMode::TUPLE_ITERATOR;
-    } else if (strcasecmp(var_value.get_string().c_str(), "CHUNK_ITERATOR") ==
-               0) {
+    } else if (strcasecmp(var_value.get_string().c_str(), "CHUNK_ITERATOR") == 0) {
       execution_mode = ExecutionMode::CHUNK_ITERATOR;
     } else {
       execution_mode = ExecutionMode::UNKNOWN_MODE;

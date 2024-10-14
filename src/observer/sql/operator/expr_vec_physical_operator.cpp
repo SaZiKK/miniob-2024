@@ -16,15 +16,10 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
-ExprVecPhysicalOperator::ExprVecPhysicalOperator(
-    std::vector<Expression *> &&expressions) {
-  expressions_ = std::move(expressions);
-}
+ExprVecPhysicalOperator::ExprVecPhysicalOperator(std::vector<Expression *> &&expressions) { expressions_ = std::move(expressions); }
 
 RC ExprVecPhysicalOperator::open(Trx *trx) {
-  ASSERT(children_.size() == 1,
-         "group by operator only support one child, but got %d",
-         children_.size());
+  ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
 
   PhysicalOperator &child = *children_[0];
   RC rc = child.open(trx);
@@ -37,9 +32,7 @@ RC ExprVecPhysicalOperator::open(Trx *trx) {
 
 RC ExprVecPhysicalOperator::next(Chunk &chunk) {
   RC rc = RC::SUCCESS;
-  ASSERT(children_.size() == 1,
-         "group by operator only support one child, but got %d",
-         children_.size());
+  ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
 
   PhysicalOperator &child = *children_[0];
   chunk.reset();

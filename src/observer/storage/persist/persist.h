@@ -45,8 +45,7 @@ class PersistHandler {
   RC write_file(int size, const char *data, int64_t *out_size = nullptr);
 
   /** 在指定位置写入一段数据，并返回实际写入的数据大小out_size */
-  RC write_at(uint64_t offset, int size, const char *data,
-              int64_t *out_size = nullptr);
+  RC write_at(uint64_t offset, int size, const char *data, int64_t *out_size = nullptr);
 
   /** 在文件末尾写入一段数据，并返回实际写入的数据大小out_size */
   RC append(int size, const char *data, int64_t *out_size = nullptr);
@@ -55,8 +54,7 @@ class PersistHandler {
   RC read_file(int size, char *data, int64_t *out_size = nullptr);
 
   /** 在指定位置读取一段数据，并返回实际读取的数据大小out_size */
-  RC read_at(uint64_t offset, int size, char *data,
-             int64_t *out_size = nullptr);
+  RC read_at(uint64_t offset, int size, char *data, int64_t *out_size = nullptr);
 
   /** 将文件描述符移动到指定位置 */
   RC seek(uint64_t offset);

@@ -18,11 +18,8 @@ See the Mulan PSL v2 for more details. */
 #include "storage/field/field.h"
 #include "storage/record/record.h"
 
-PredicatePhysicalOperator::PredicatePhysicalOperator(
-    std::unique_ptr<Expression> expr)
-    : expression_(std::move(expr)) {
-  ASSERT(expression_->value_type() == AttrType::BOOLEANS,
-         "predicate's expression should be BOOLEAN type");
+PredicatePhysicalOperator::PredicatePhysicalOperator(std::unique_ptr<Expression> expr) : expression_(std::move(expr)) {
+  ASSERT(expression_->value_type() == AttrType::BOOLEANS, "predicate's expression should be BOOLEAN type");
 }
 
 RC PredicatePhysicalOperator::open(Trx *trx) {
@@ -64,10 +61,6 @@ RC PredicatePhysicalOperator::close() {
   return RC::SUCCESS;
 }
 
-Tuple *PredicatePhysicalOperator::current_tuple() {
-  return children_[0]->current_tuple();
-}
+Tuple *PredicatePhysicalOperator::current_tuple() { return children_[0]->current_tuple(); }
 
-RC PredicatePhysicalOperator::tuple_schema(TupleSchema &schema) const {
-  return children_[0]->tuple_schema(schema);
-}
+RC PredicatePhysicalOperator::tuple_schema(TupleSchema &schema) const { return children_[0]->tuple_schema(schema); }

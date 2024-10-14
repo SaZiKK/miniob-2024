@@ -27,20 +27,17 @@ int IntegerType::compare(const Value &left, const Value &right) const {
   return common::compare_float((void *)&left_val, (void *)&right_val);
 }
 
-RC IntegerType::add(const Value &left, const Value &right,
-                    Value &result) const {
+RC IntegerType::add(const Value &left, const Value &right, Value &result) const {
   result.set_int(left.get_int() + right.get_int());
   return RC::SUCCESS;
 }
 
-RC IntegerType::subtract(const Value &left, const Value &right,
-                         Value &result) const {
+RC IntegerType::subtract(const Value &left, const Value &right, Value &result) const {
   result.set_int(left.get_int() - right.get_int());
   return RC::SUCCESS;
 }
 
-RC IntegerType::multiply(const Value &left, const Value &right,
-                         Value &result) const {
+RC IntegerType::multiply(const Value &left, const Value &right, Value &result) const {
   result.set_int(left.get_int() * right.get_int());
   return RC::SUCCESS;
 }

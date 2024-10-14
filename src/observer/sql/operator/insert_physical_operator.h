@@ -30,9 +30,7 @@ class InsertPhysicalOperator : public PhysicalOperator {
 
   virtual ~InsertPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::INSERT;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::INSERT; }
 
   RC open(Trx *trx) override;
   RC next() override;

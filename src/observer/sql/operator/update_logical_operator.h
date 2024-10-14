@@ -14,9 +14,7 @@ class UpdateLogicalOperator : public LogicalOperator {
   UpdateLogicalOperator(Table *table, Value *values, FieldMeta *fields);
   virtual ~UpdateLogicalOperator() = default;
 
-  LogicalOperatorType type() const override {
-    return LogicalOperatorType::UPDATE;
-  }
+  LogicalOperatorType type() const override { return LogicalOperatorType::UPDATE; }
 
  public:
   Table *table() const { return table_; }

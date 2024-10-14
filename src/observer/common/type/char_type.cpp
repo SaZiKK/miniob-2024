@@ -23,9 +23,7 @@ int CharType::compare(const Value &left, const Value &right) const {
     Value::cast_to(right, AttrType::CHARS, real_value);
   }
 
-  return common::compare_string(
-      (void *)left.value_.pointer_value_, left.length_,
-      (void *)real_value.value_.pointer_value_, real_value.length_);
+  return common::compare_string((void *)left.value_.pointer_value_, left.length_, (void *)real_value.value_.pointer_value_, real_value.length_);
 }
 
 RC CharType::set_value_from_str(Value &val, const string &data) const {

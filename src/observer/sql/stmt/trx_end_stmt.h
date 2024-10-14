@@ -31,8 +31,7 @@ class TrxEndStmt : public Stmt {
   StmtType type() const override { return type_; }
 
   static RC create(SqlCommandFlag flag, Stmt *&stmt) {
-    StmtType type = flag == SqlCommandFlag::SCF_COMMIT ? StmtType::COMMIT
-                                                       : StmtType::ROLLBACK;
+    StmtType type = flag == SqlCommandFlag::SCF_COMMIT ? StmtType::COMMIT : StmtType::ROLLBACK;
     stmt = new TrxEndStmt(type);
     return RC::SUCCESS;
   }

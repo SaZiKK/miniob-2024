@@ -28,8 +28,7 @@ class ThreadHandler;
  */
 class Server {
  public:
-  Server(const ServerParam &input_server_param)
-      : server_param_(input_server_param) {}
+  Server(const ServerParam &input_server_param) : server_param_(input_server_param) {}
   virtual ~Server() {}
 
   virtual int serve() = 0;
@@ -82,8 +81,7 @@ class NetServer : public Server {
 
   int server_socket_ = -1;  ///< 监听套接字，是一个描述符
 
-  CommunicatorFactory
-      communicator_factory_;  ///< 通过这个对象创建新的Communicator对象
+  CommunicatorFactory communicator_factory_;  ///< 通过这个对象创建新的Communicator对象
   ThreadHandler *thread_handler_ = nullptr;
 };
 

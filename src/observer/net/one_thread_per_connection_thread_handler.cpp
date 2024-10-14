@@ -27,8 +27,7 @@ using namespace common;
 
 class Worker {
  public:
-  Worker(ThreadHandler &host, Communicator *communicator)
-      : host_(host), communicator_(communicator) {}
+  Worker(ThreadHandler &host, Communicator *communicator) : host_(host), communicator_(communicator) {}
   ~Worker() {
     if (thread_ != nullptr) {
       stop();
@@ -74,8 +73,7 @@ class Worker {
     while (running_) {
       int ret = poll(&poll_fd, 1, 500);
       if (ret < 0) {
-        LOG_WARN("poll error. fd = %d, ret = %d, error=%s", poll_fd.fd, ret,
-                 strerror(errno));
+        LOG_WARN("poll error. fd = %d, ret = %d, error=%s", poll_fd.fd, ret, strerror(errno));
         break;
       } else if (0 == ret) {
         // LOG_TRACE("poll timeout. fd = %d", poll_fd.fd);
@@ -83,8 +81,7 @@ class Worker {
       }
 
       if (poll_fd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
-        LOG_WARN("poll error. fd = %d, revents = %d", poll_fd.fd,
-                 poll_fd.revents);
+        LOG_WARN("poll error. fd = %d, revents = %d", poll_fd.fd, poll_fd.revents);
         break;
       }
 
@@ -112,8 +109,7 @@ OneThreadPerConnectionThreadHandler::~OneThreadPerConnectionThreadHandler() {
   await_stop();
 }
 
-RC OneThreadPerConnectionThreadHandler::new_connection(
-    Communicator *communicator) {
+RC OneThreadPerConnectionThreadHandler::new_connection(Communicator *communicator) {
   lock_guard guard(lock_);
 
   auto iter = thread_map_.find(communicator);
@@ -127,8 +123,7 @@ RC OneThreadPerConnectionThreadHandler::new_connection(
   return worker->start();
 }
 
-RC OneThreadPerConnectionThreadHandler::close_connection(
-    Communicator *communicator) {
+RC OneThreadPerConnectionThreadHandler::close_connection(Communicator *communicator) {
   lock_.lock();
   auto iter = thread_map_.find(communicator);
   if (iter == thread_map_.end()) {

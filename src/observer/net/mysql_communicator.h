@@ -37,8 +37,7 @@ class MysqlCommunicator : public Communicator {
    * 参考MySQL或MariaDB的手册，服务端要首先向客户端发送一个握手包，等客户端回复后，
    * 再回复一个OkPacket或ErrPacket
    */
-  virtual RC init(int fd, unique_ptr<Session> session,
-                  const string &addr) override;
+  virtual RC init(int fd, unique_ptr<Session> session, const string &addr) override;
 
   /**
    * @brief 有新的消息到达时，接收消息
@@ -87,8 +86,7 @@ class MysqlCommunicator : public Communicator {
    * @param[out] need_disconnect 是否需要断开连接
    * @return RC
    */
-  RC send_result_rows(SessionEvent *event, SqlResult *sql_result,
-                      bool no_column_def, bool &need_disconnect);
+  RC send_result_rows(SessionEvent *event, SqlResult *sql_result, bool no_column_def, bool &need_disconnect);
 
   /**
    * @brief 根据实际测试，客户端在连接上来时，会发起一个 version_comment的查询
@@ -96,10 +94,8 @@ class MysqlCommunicator : public Communicator {
    */
   RC handle_version_comment(bool &need_disconnect);
 
-  RC write_tuple_result(SqlResult *sql_result, vector<char> &packet,
-                        int &affected_rows, bool &need_disconnect);
-  RC write_chunk_result(SqlResult *sql_result, vector<char> &packet,
-                        int &affected_rows, bool &need_disconnect);
+  RC write_tuple_result(SqlResult *sql_result, vector<char> &packet, int &affected_rows, bool &need_disconnect);
+  RC write_chunk_result(SqlResult *sql_result, vector<char> &packet, int &affected_rows, bool &need_disconnect);
 
  private:
   //! 握手阶段(鉴权)，需要做一些特殊处理，所以加个字段单独标记

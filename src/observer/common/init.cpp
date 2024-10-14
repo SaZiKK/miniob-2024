@@ -57,9 +57,7 @@ int init_log(ProcessParam *process_cfg, Ini &properties) {
       return 0;
     }
 
-    auto log_context_getter = []() {
-      return reinterpret_cast<intptr_t>(Session::current_session());
-    };
+    auto log_context_getter = []() { return reinterpret_cast<intptr_t>(Session::current_session()); };
 
     const string log_section_name = "LOG";
     map<string, string> log_section = properties.get(log_section_name);
@@ -112,8 +110,7 @@ int init_log(ProcessParam *process_cfg, Ini &properties) {
 
     return 0;
   } catch (exception &e) {
-    cerr << "Failed to init log for " << proc_name << SYS_OUTPUT_FILE_POS
-         << SYS_OUTPUT_ERROR << endl;
+    cerr << "Failed to init log for " << proc_name << SYS_OUTPUT_FILE_POS << SYS_OUTPUT_ERROR << endl;
     return errno;
   }
 
@@ -134,8 +131,7 @@ int init_global_objects(ProcessParam *process_param, Ini &properties) {
 
   int ret = 0;
 
-  RC rc = GCTX.handler_->init("miniob", process_param->trx_kit_name().c_str(),
-                              process_param->durability_mode().c_str());
+  RC rc = GCTX.handler_->init("miniob", process_param->trx_kit_name().c_str(), process_param->durability_mode().c_str());
   if (OB_FAIL(rc)) {
     LOG_ERROR("failed to init handler. rc=%s", strrc(rc));
     return -1;
@@ -160,8 +156,7 @@ int init(ProcessParam *process_param) {
   // Run as daemon if daemonization requested
   int rc = STATUS_SUCCESS;
   if (process_param->is_demon()) {
-    rc = daemonize_service(process_param->get_std_out().c_str(),
-                           process_param->get_std_err().c_str());
+    rc = daemonize_service(process_param->get_std_out().c_str(), process_param->get_std_err().c_str());
     if (rc != 0) {
       cerr << "Shutdown due to failed to daemon current process!" << endl;
       return rc;

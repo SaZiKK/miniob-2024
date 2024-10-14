@@ -92,7 +92,7 @@ class LogFileWriter {
   string filename_;   /// 日志文件名
   int fd_ = -1;       /// 日志文件描述符
   int last_lsn_ = 0;  /// 写入的最后一条日志LSN
-  int end_lsn_ = 0;  /// 当前日志文件中允许写入的最大的LSN，包括这条日志
+  int end_lsn_ = 0;   /// 当前日志文件中允许写入的最大的LSN，包括这条日志
 };
 
 /**
@@ -148,7 +148,7 @@ class LogFileManager {
   static constexpr const char *file_prefix_ = "clog_";
   static constexpr const char *file_suffix_ = ".log";
 
-  filesystem::path directory_;  /// 日志文件存放的目录
+  filesystem::path directory_;     /// 日志文件存放的目录
   int max_entry_number_per_file_;  /// 一个文件最大允许存放多少条日志
 
   map<LSN, filesystem::path> log_files_;  /// 日志文件名和第一个LSN的映射

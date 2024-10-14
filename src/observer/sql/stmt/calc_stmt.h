@@ -43,9 +43,7 @@ class CalcStmt : public Stmt {
   }
 
  public:
-  std::vector<std::unique_ptr<Expression>> &expressions() {
-    return expressions_;
-  }
+  std::vector<std::unique_ptr<Expression>> &expressions() { return expressions_; }
 
  private:
   std::vector<std::unique_ptr<Expression>> expressions_;

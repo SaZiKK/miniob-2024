@@ -28,12 +28,8 @@ class Db;
  */
 class CreateTableStmt : public Stmt {
  public:
-  CreateTableStmt(const std::string &table_name,
-                  const std::vector<AttrInfoSqlNode> &attr_infos,
-                  StorageFormat storage_format)
-      : table_name_(table_name),
-        attr_infos_(attr_infos),
-        storage_format_(storage_format) {}
+  CreateTableStmt(const std::string &table_name, const std::vector<AttrInfoSqlNode> &attr_infos, StorageFormat storage_format)
+      : table_name_(table_name), attr_infos_(attr_infos), storage_format_(storage_format) {}
   virtual ~CreateTableStmt() = default;
 
   StmtType type() const override { return StmtType::CREATE_TABLE; }

@@ -99,8 +99,7 @@ void parse_parameter(int argc, char **argv) {
         exit(0);
         return;
       default:
-        cout << "Unknown option: " << static_cast<char>(opt) << ", ignored"
-             << endl;
+        cout << "Unknown option: " << static_cast<char>(opt) << ", ignored" << endl;
         break;
     }
   }
@@ -151,8 +150,7 @@ Server *init_server() {
     server_param.protocol = CommunicateProtocol::PLAIN;
   }
 
-  if (process_param->get_unix_socket_path().size() > 0 &&
-      !server_param.use_std_io) {
+  if (process_param->get_unix_socket_path().size() > 0 && !server_param.use_std_io) {
     server_param.use_unix_socket = true;
     server_param.unix_socket_path = process_param->get_unix_socket_path();
   }

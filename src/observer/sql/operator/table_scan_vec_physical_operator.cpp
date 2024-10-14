@@ -22,11 +22,8 @@ RC TableScanVecPhysicalOperator::open(Trx *trx) {
   }
   // TODO: don't need to fetch all columns from record manager
   for (int i = 0; i < table_->table_meta().field_num(); ++i) {
-    all_columns_.add_column(make_unique<Column>(*table_->table_meta().field(i)),
-                            table_->table_meta().field(i)->field_id());
-    filterd_columns_.add_column(
-        make_unique<Column>(*table_->table_meta().field(i)),
-        table_->table_meta().field(i)->field_id());
+    all_columns_.add_column(make_unique<Column>(*table_->table_meta().field(i)), table_->table_meta().field(i)->field_id());
+    filterd_columns_.add_column(make_unique<Column>(*table_->table_meta().field(i)), table_->table_meta().field(i)->field_id());
   }
   return rc;
 }
@@ -52,10 +49,7 @@ RC TableScanVecPhysicalOperator::next(Chunk &chunk) {
           continue;
         }
         for (int j = 0; j < all_columns_.column_num(); j++) {
-          filterd_columns_.column(j).append_one(
-              (char *)all_columns_.column(filterd_columns_.column_ids(j))
-                  .get_value(i)
-                  .data());
+          filterd_columns_.column(j).append_one((char *)all_columns_.column(filterd_columns_.column_ids(j)).get_value(i).data());
         }
       }
       chunk.reference(filterd_columns_);
@@ -68,10 +62,7 @@ RC TableScanVecPhysicalOperator::close() { return chunk_scanner_.close_scan(); }
 
 string TableScanVecPhysicalOperator::param() const { return table_->name(); }
 
-void TableScanVecPhysicalOperator::set_predicates(
-    vector<unique_ptr<Expression>> &&exprs) {
-  predicates_ = std::move(exprs);
-}
+void TableScanVecPhysicalOperator::set_predicates(vector<unique_ptr<Expression>> &&exprs) { predicates_ = std::move(exprs); }
 
 RC TableScanVecPhysicalOperator::filter(Chunk &chunk) {
   RC rc = RC::SUCCESS;

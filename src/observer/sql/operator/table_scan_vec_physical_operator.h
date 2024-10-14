@@ -23,16 +23,13 @@ class Table;
  */
 class TableScanVecPhysicalOperator : public PhysicalOperator {
  public:
-  TableScanVecPhysicalOperator(Table *table, ReadWriteMode mode)
-      : table_(table), mode_(mode) {}
+  TableScanVecPhysicalOperator(Table *table, ReadWriteMode mode) : table_(table), mode_(mode) {}
 
   virtual ~TableScanVecPhysicalOperator() = default;
 
   std::string param() const override;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::TABLE_SCAN_VEC;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::TABLE_SCAN_VEC; }
 
   RC open(Trx *trx) override;
   RC next(Chunk &chunk) override;

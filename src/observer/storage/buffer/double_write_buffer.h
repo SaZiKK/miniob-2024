@@ -53,16 +53,11 @@ struct DoubleWritePageKey {
   int32_t buffer_pool_id;
   PageNum page_num;
 
-  bool operator==(const DoubleWritePageKey &other) const {
-    return buffer_pool_id == other.buffer_pool_id && page_num == other.page_num;
-  }
+  bool operator==(const DoubleWritePageKey &other) const { return buffer_pool_id == other.buffer_pool_id && page_num == other.page_num; }
 };
 
 struct DoubleWritePageKeyHash {
-  size_t operator()(const DoubleWritePageKey &key) const {
-    return std::hash<int32_t>()(key.buffer_pool_id) ^
-           std::hash<PageNum>()(key.page_num);
-  }
+  size_t operator()(const DoubleWritePageKey &key) const { return std::hash<int32_t>()(key.buffer_pool_id) ^ std::hash<PageNum>()(key.page_num); }
 };
 
 /**
@@ -144,8 +139,7 @@ class DiskDoubleWriteBuffer : public DoubleWriteBuffer {
   BufferPoolManager &bp_manager_;
   DoubleWriteBufferHeader header_;
 
-  unordered_map<DoubleWritePageKey, DoubleWritePage *, DoubleWritePageKeyHash>
-      dblwr_pages_;
+  unordered_map<DoubleWritePageKey, DoubleWritePage *, DoubleWritePageKeyHash> dblwr_pages_;
 };
 
 class VacuousDoubleWriteBuffer : public DoubleWriteBuffer {
@@ -157,9 +151,7 @@ class VacuousDoubleWriteBuffer : public DoubleWriteBuffer {
    */
   RC add_page(DiskBufferPool *bp, PageNum page_num, Page &page) override;
 
-  RC read_page(DiskBufferPool *bp, PageNum page_num, Page &page) override {
-    return RC::BUFFERPOOL_INVALID_PAGE_NUM;
-  }
+  RC read_page(DiskBufferPool *bp, PageNum page_num, Page &page) override { return RC::BUFFERPOOL_INVALID_PAGE_NUM; }
 
   /**
    * @brief 清空所有与指定buffer pool关联的页面

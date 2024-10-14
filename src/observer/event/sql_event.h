@@ -36,23 +36,17 @@ class SQLStageEvent {
   const unique_ptr<ParsedSqlNode> &sql_node() const { return sql_node_; }
   Stmt *stmt() const { return stmt_; }
   unique_ptr<PhysicalOperator> &physical_operator() { return operator_; }
-  const unique_ptr<PhysicalOperator> &physical_operator() const {
-    return operator_;
-  }
+  const unique_ptr<PhysicalOperator> &physical_operator() const { return operator_; }
 
   void set_sql(const char *sql) { sql_ = sql; }
-  void set_sql_node(unique_ptr<ParsedSqlNode> sql_node) {
-    sql_node_ = std::move(sql_node);
-  }
+  void set_sql_node(unique_ptr<ParsedSqlNode> sql_node) { sql_node_ = std::move(sql_node); }
   void set_stmt(Stmt *stmt) { stmt_ = stmt; }
-  void set_operator(unique_ptr<PhysicalOperator> oper) {
-    operator_ = std::move(oper);
-  }
+  void set_operator(unique_ptr<PhysicalOperator> oper) { operator_ = std::move(oper); }
 
  private:
   SessionEvent *session_event_ = nullptr;
-  string sql_;                          ///< 处理的SQL语句
-  unique_ptr<ParsedSqlNode> sql_node_;  ///< 语法解析后的SQL命令
-  Stmt *stmt_ = nullptr;                ///< Resolver之后生成的数据结构
+  string sql_;                             ///< 处理的SQL语句
+  unique_ptr<ParsedSqlNode> sql_node_;     ///< 语法解析后的SQL命令
+  Stmt *stmt_ = nullptr;                   ///< Resolver之后生成的数据结构
   unique_ptr<PhysicalOperator> operator_;  ///< 生成的执行计划，也可能没有
 };

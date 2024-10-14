@@ -50,8 +50,7 @@ ServerParam::ServerParam() {
   port = PORT_DEFAULT;
 }
 
-NetServer::NetServer(const ServerParam &input_server_param)
-    : Server(input_server_param) {}
+NetServer::NetServer(const ServerParam &input_server_param) : Server(input_server_param) {}
 
 NetServer::~NetServer() {
   if (started_) {
@@ -98,8 +97,7 @@ void NetServer::accept(int fd) {
 
   ret = set_non_block(client_fd);
   if (ret < 0) {
-    LOG_ERROR("Failed to set socket of %s as non blocking, %s",
-              addr_str.c_str(), strerror(errno));
+    LOG_ERROR("Failed to set socket of %s as non blocking, %s", addr_str.c_str(), strerror(errno));
     ::close(client_fd);
     return;
   }
@@ -109,18 +107,15 @@ void NetServer::accept(int fd) {
     int yes = 1;
     ret = setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
     if (ret < 0) {
-      LOG_ERROR("Failed to set socket of %s option as : TCP_NODELAY %s\n",
-                addr_str.c_str(), strerror(errno));
+      LOG_ERROR("Failed to set socket of %s option as : TCP_NODELAY %s\n", addr_str.c_str(), strerror(errno));
       ::close(client_fd);
       return;
     }
   }
 
-  Communicator *communicator =
-      communicator_factory_.create(server_param_.protocol);
+  Communicator *communicator = communicator_factory_.create(server_param_.protocol);
 
-  RC rc = communicator->init(
-      client_fd, make_unique<Session>(Session::default_session()), addr_str);
+  RC rc = communicator->init(client_fd, make_unique<Session>(Session::default_session()), addr_str);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to init communicator. rc=%s", strrc(rc));
     delete communicator;
@@ -160,8 +155,7 @@ int NetServer::start_tcp_server() {
   int yes = 1;
   ret = setsockopt(server_socket_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
   if (ret < 0) {
-    LOG_ERROR("Failed to set socket option of reuse address: %s.",
-              strerror(errno));
+    LOG_ERROR("Failed to set socket option of reuse address: %s.", strerror(errno));
     ::close(server_socket_);
     return -1;
   }
@@ -213,19 +207,16 @@ int NetServer::start_unix_socket_server() {
     return -1;
   }
 
-  unlink(server_param_.unix_socket_path
-             .c_str());  /// 如果不删除源文件，可能会导致bind失败
+  unlink(server_param_.unix_socket_path.c_str());  /// 如果不删除源文件，可能会导致bind失败
 
   struct sockaddr_un sockaddr;
   memset(&sockaddr, 0, sizeof(sockaddr));
   sockaddr.sun_family = PF_UNIX;
-  snprintf(sockaddr.sun_path, sizeof(sockaddr.sun_path), "%s",
-           server_param_.unix_socket_path.c_str());
+  snprintf(sockaddr.sun_path, sizeof(sockaddr.sun_path), "%s", server_param_.unix_socket_path.c_str());
 
   ret = ::bind(server_socket_, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
   if (ret < 0) {
-    LOG_ERROR("bind(): can not bind server socket(path=%s), %s",
-              sockaddr.sun_path, strerror(errno));
+    LOG_ERROR("bind(): can not bind server socket(path=%s), %s", sockaddr.sun_path, strerror(errno));
     ::close(server_socket_);
     return -1;
   }
@@ -244,11 +235,9 @@ int NetServer::start_unix_socket_server() {
 }
 
 int NetServer::serve() {
-  thread_handler_ =
-      ThreadHandler::create(server_param_.thread_handling.c_str());
+  thread_handler_ = ThreadHandler::create(server_param_.thread_handling.c_str());
   if (thread_handler_ == nullptr) {
-    LOG_ERROR("Failed to create thread handler: %s",
-              server_param_.thread_handling.c_str());
+    LOG_ERROR("Failed to create thread handler: %s", server_param_.thread_handling.c_str());
     return -1;
   }
 
@@ -273,8 +262,7 @@ int NetServer::serve() {
     while (started_) {
       int ret = poll(&poll_fd, 1, 500);
       if (ret < 0) {
-        LOG_WARN("[listen socket] poll error. fd = %d, ret = %d, error=%s",
-                 poll_fd.fd, ret, strerror(errno));
+        LOG_WARN("[listen socket] poll error. fd = %d, ret = %d, error=%s", poll_fd.fd, ret, strerror(errno));
         break;
       } else if (0 == ret) {
         // LOG_TRACE("poll timeout. fd = %d", poll_fd.fd);
@@ -282,8 +270,7 @@ int NetServer::serve() {
       }
 
       if (poll_fd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
-        LOG_ERROR("poll error. fd = %d, revents = %d", poll_fd.fd,
-                  poll_fd.revents);
+        LOG_ERROR("poll error. fd = %d, revents = %d", poll_fd.fd, poll_fd.revents);
         break;
       }
 
@@ -310,8 +297,7 @@ void NetServer::shutdown() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-CliServer::CliServer(const ServerParam &input_server_param)
-    : Server(input_server_param) {}
+CliServer::CliServer(const ServerParam &input_server_param) : Server(input_server_param) {}
 
 CliServer::~CliServer() {
   if (started_) {
@@ -322,8 +308,7 @@ CliServer::~CliServer() {
 int CliServer::serve() {
   CliCommunicator communicator;
 
-  RC rc = communicator.init(
-      STDIN_FILENO, make_unique<Session>(Session::default_session()), "stdin");
+  RC rc = communicator.init(STDIN_FILENO, make_unique<Session>(Session::default_session()), "stdin");
   if (OB_FAIL(rc)) {
     LOG_WARN("failed to init cli communicator. rc=%s", strrc(rc));
     return -1;

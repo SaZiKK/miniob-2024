@@ -23,8 +23,7 @@ const int32_t LogHeader::SIZE = sizeof(LogHeader);
 
 string LogHeader::to_string() const {
   stringstream ss;
-  ss << "lsn=" << lsn << ", size=" << size << ", module_id=" << module_id << ":"
-     << LogModule(module_id).name();
+  ss << "lsn=" << lsn << ", size=" << size << ", module_id=" << module_id << ":" << LogModule(module_id).name();
 
   return ss.str();
 }
@@ -58,14 +57,11 @@ LogEntry &LogEntry::operator=(LogEntry &&other) {
   return *this;
 }
 
-RC LogEntry::init(LSN lsn, LogModule::Id module_id, vector<char> &&data) {
-  return init(lsn, LogModule(module_id), std::move(data));
-}
+RC LogEntry::init(LSN lsn, LogModule::Id module_id, vector<char> &&data) { return init(lsn, LogModule(module_id), std::move(data)); }
 
 RC LogEntry::init(LSN lsn, LogModule module, vector<char> &&data) {
   if (static_cast<int32_t>(data.size()) > max_payload_size()) {
-    LOG_DEBUG("log entry size is too large. size=%d, max_payload_size=%d",
-              data.size(), max_payload_size());
+    LOG_DEBUG("log entry size is too large. size=%d, max_payload_size=%d", data.size(), max_payload_size());
     return RC::INVALID_ARGUMENT;
   }
 

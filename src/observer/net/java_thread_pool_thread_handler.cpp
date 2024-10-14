@@ -68,8 +68,7 @@ RC JavaThreadPoolThreadHandler::start() {
   // libevent 的监测消息循环主体，要放在一个线程中执行
   // event_loop_thread 是运行libevent
   // 消息监测循环的函数，会长期运行，并且会放到线程池中占据一个线程
-  auto event_worker =
-      std::bind(&JavaThreadPoolThreadHandler::event_loop_thread, this);
+  auto event_worker = std::bind(&JavaThreadPoolThreadHandler::event_loop_thread, this);
   ret = executor_.execute(event_worker);
   if (0 != ret) {
     LOG_ERROR("failed to execute event worker");
@@ -111,8 +110,7 @@ void JavaThreadPoolThreadHandler::handle_event(EventCallbackAg *ag) {
 
   // sql_handler 是一个回调函数
   auto sql_handler = [this, ag]() {
-    RC rc = sql_task_handler_.handle_event(
-        ag->communicator);  // 这里会有接收消息、处理请求然后返回结果一条龙服务
+    RC rc = sql_task_handler_.handle_event(ag->communicator);  // 这里会有接收消息、处理请求然后返回结果一条龙服务
     if (RC::SUCCESS != rc) {
       LOG_WARN("failed to handle sql task. rc=%s", strrc(rc));
       this->close_connection(ag->communicator);
@@ -121,8 +119,7 @@ void JavaThreadPoolThreadHandler::handle_event(EventCallbackAg *ag) {
       // flag，所以我们每次都要处理完成后再把事件加回到event_base中。
       // 当然我们也不能使用 EV_PERSIST
       // flag，否则我们在处理请求过程中，可能还会收到客户端的消息，这样就会导致并发问题。
-      LOG_ERROR("failed to add event. fd=%d, communicator=%p",
-                event_get_fd(ag->ev), this);
+      LOG_ERROR("failed to add event. fd=%d, communicator=%p", event_get_fd(ag->ev), this);
       this->close_connection(ag->communicator);
     } else {
       // 添加event后就不应该再访问communicator了，因为可能会有另一个线程处理当前communicator
@@ -173,8 +170,7 @@ RC JavaThreadPoolThreadHandler::new_connection(Communicator *communicator) {
 
   int ret = event_add(ev, nullptr);
   if (0 != ret) {
-    LOG_ERROR("failed to add event. fd=%d, communicator=%p, ret=%d", fd,
-              communicator, ret);
+    LOG_ERROR("failed to add event. fd=%d, communicator=%p, ret=%d", fd, communicator, ret);
     event_free(ev);
     return RC::INTERNAL;
   }

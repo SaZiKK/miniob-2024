@@ -24,15 +24,12 @@ See the Mulan PSL v2 for more details. */
  */
 class IndexScanPhysicalOperator : public PhysicalOperator {
  public:
-  IndexScanPhysicalOperator(Table *table, Index *index, ReadWriteMode mode,
-                            const Value *left_value, bool left_inclusive,
-                            const Value *right_value, bool right_inclusive);
+  IndexScanPhysicalOperator(Table *table, Index *index, ReadWriteMode mode, const Value *left_value, bool left_inclusive, const Value *right_value,
+                            bool right_inclusive);
 
   virtual ~IndexScanPhysicalOperator() = default;
 
-  PhysicalOperatorType type() const override {
-    return PhysicalOperatorType::INDEX_SCAN;
-  }
+  PhysicalOperatorType type() const override { return PhysicalOperatorType::INDEX_SCAN; }
 
   std::string param() const override;
 
