@@ -2,9 +2,13 @@ BUILD_DIR:= build_debug
 SRC_DIR := src
 
 
-all: fmt
+all: fmt gen
 	@echo "Building..."
 	@bash build.sh --make -j20
+
+gen:
+	@echo "Generating..."
+	@cd src/observer/sql/parser/ && ./gen_parser.sh
 
 run: all
 	@echo "Running..."
