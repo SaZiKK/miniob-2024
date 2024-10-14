@@ -180,10 +180,12 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
 
   SqlResult *sql_result = event->sql_result();
 
+  // 语句只需要打印 SUCCESS OR FAILURE
   if (RC::SUCCESS != sql_result->return_code() || !sql_result->has_operator()) {
     return write_state(event, need_disconnect);
   }
 
+  // 调用物理算子的 open 函数进行初始化，物理算子会递归调用自己的全部子算子来进行初始化
   rc = sql_result->open();
   if (OB_FAIL(rc)) {
     sql_result->close();
@@ -191,9 +193,11 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
     return write_state(event, need_disconnect);
   }
 
+  // 打印表头信息
   const TupleSchema &schema = sql_result->tuple_schema();
   const int cell_num = schema.cell_num();
 
+  // 循环打印属性名称和分隔符 '|'
   for (int i = 0; i < cell_num; i++) {
     const TupleCellSpec &spec = schema.cell_at(i);
     const char *alias = spec.alias();
@@ -230,10 +234,12 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
     }
   }
 
+  // 判断当前数据库处于哪种模式：CHUNK OR TUPLE
   rc = RC::SUCCESS;
   if (event->session()->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR && event->session()->used_chunk_mode()) {
     rc = write_chunk_result(sql_result);
   } else {
+    // 默认为 TUPLE 模式
     rc = write_tuple_result(sql_result);
   }
 
@@ -266,6 +272,7 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
 RC PlainCommunicator::write_tuple_result(SqlResult *sql_result) {
   RC rc = RC::SUCCESS;
   Tuple *tuple = nullptr;
+  // 不断获取"下一个"元组然后打印输出
   while (RC::SUCCESS == (rc = sql_result->next_tuple(tuple))) {
     assert(tuple != nullptr);
 

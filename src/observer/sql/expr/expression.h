@@ -252,7 +252,7 @@ class SubQueryExpr : public Expression {
   ExprType type() const override { return ExprType::SUBQUERY; }
   AttrType value_type() const override { return AttrType::SUB_QUERY; }
 
-  RC get_value(const Tuple &tuple, Value &value) const override;
+  RC get_value(const Tuple &tuple, Value &value) const { return RC::SUCCESS; }
   SelectStmt *sub_query() { return sub_query_; }
 
  private:

@@ -138,6 +138,8 @@ RC ExpressionBinder::bind_unbound_field_expression(unique_ptr<Expression> &expr,
   const char *field_name = unbound_field_expr->field_name();
 
   Table *table = nullptr;
+  // 如果属性列表不是 table_name.attr_name
+  // 的形式，table_name 为空，此时如果目标表格为多个则返回错误结果
   if (is_blank(table_name)) {
     if (context_.query_tables().size() != 1) {
       LOG_INFO("cannot determine table for field: %s", field_name);
@@ -145,7 +147,10 @@ RC ExpressionBinder::bind_unbound_field_expression(unique_ptr<Expression> &expr,
     }
 
     table = context_.query_tables()[0];
-  } else {
+  }
+  // 如果属性列表是 table_name.attr_name 的形式，table_name
+  // 不为空，此时如果目标表格中不存在 table_name 则返回错误结果
+  else {
     table = context_.find_table(table_name);
     if (nullptr == table) {
       LOG_INFO("no such table in from list: %s", table_name);
@@ -153,15 +158,18 @@ RC ExpressionBinder::bind_unbound_field_expression(unique_ptr<Expression> &expr,
     }
   }
 
+  // 如果属性列表是通配符，则遍历表格的全部属性
   if (0 == strcmp(field_name, "*")) {
     wildcard_fields(table, bound_expressions);
   } else {
+    // 根据 Field 的名称找到对应的 FieldMeta 对象
     const FieldMeta *field_meta = table->table_meta().field(field_name);
     if (nullptr == field_meta) {
       LOG_INFO("no such field in table: %s.%s", table_name, field_name);
       return RC::SCHEMA_FIELD_MISSING;
     }
 
+    // 通过表格和 FieldMeta 对象创建 Field 对象，进而创建 FieldExpr 表达式
     Field field(table, field_meta);
     FieldExpr *field_expr = new FieldExpr(field);
     field_expr->set_name(field_name);

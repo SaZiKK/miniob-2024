@@ -56,7 +56,9 @@ RC SqlResult::close() {
   return rc;
 }
 
+// 获取"下一个"元组
 RC SqlResult::next_tuple(Tuple *&tuple) {
+  // 每想获取一个元组，都调用当前物理算子的 next 函数，然后当前物理算子的元组就会变成"下一个"元组
   RC rc = operator_->next();
   if (rc != RC::SUCCESS) {
     return rc;

@@ -39,6 +39,8 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/stmt.h"
 
 #include "sql/expr/expression_iterator.h"
+#include "src/observer/event/sql_debug.h"
+#include "src/observer/event/sql_debug.h"
 
 using namespace std;
 using namespace common;
@@ -158,6 +160,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   }
 
   logical_operator = std::move(project_oper);
+
   return RC::SUCCESS;
 }
 

@@ -105,6 +105,7 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
                                   FilterUnit *&filter_unit) {
   RC rc = RC::SUCCESS;
 
+  // 拿到比较符并且判断其合法性
   CompOp comp = condition.comp;
   if (comp < EQUAL_TO || comp >= NO_OP) {
     LOG_WARN("invalid compare operator : %d", comp);
@@ -113,8 +114,9 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
 
   filter_unit = new FilterUnit;
 
-  // 如果左/右边是属性，那么获取属性的信息，写入到 filter_unit 中
+  // 左值为属性
   if (condition.left_is_attr) {
+    // 找到目标表格和属性域
     Table *table = nullptr;
     const FieldMeta *field = nullptr;
     // 获取表格和字段
@@ -123,21 +125,22 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
       LOG_WARN("cannot find attr");
       return rc;
     }
+
+    // 创建属性类 FilterObj
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
     filter_unit->set_left(filter_obj);
-  } else if (condition.left_is_sub_query) {
-    // 如果左边是子查询，那么初始化filterObj左边为子查询
-    FilterObj filter_obj;
-    filter_obj.init_sub_query(condition.left_sub_query_stmt);
-    filter_unit->set_left(filter_obj);
-  } else {
+  }
+  // 创建变量类 FilterObj
+  else {
     FilterObj filter_obj;
     filter_obj.init_value(condition.left_value);
     filter_unit->set_left(filter_obj);
   }
 
+  // 右值是属性
   if (condition.right_is_attr) {
+    // 找到目标表格和属性域
     Table *table = nullptr;
     const FieldMeta *field = nullptr;
     // 获取表格和字段
@@ -146,22 +149,29 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
       LOG_WARN("cannot find attr");
       return rc;
     }
+
+    // 创建属性类 FilterObj
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
     filter_unit->set_right(filter_obj);
-  } else if (condition.right_is_sub_query) {
-    // 如果右边是子查询，那么初始化filterObj右边为子查询
-    FilterObj filter_obj;
-    filter_obj.init_sub_query(condition.right_sub_query_stmt);
-    filter_unit->set_right(filter_obj);
-  } else {
+  }
+  // 创建变量类 FilterObj
+  else {
     FilterObj filter_obj;
     filter_obj.init_value(condition.right_value);
     filter_unit->set_right(filter_obj);
   }
 
+  // 设置比较符
   filter_unit->set_comp(comp);
 
   // 检查两个类型是否能够比较
+  // AttrType left_type = filter_unit->left().is_attr
+  //                          ? filter_unit->left().field.attr_type()
+  //                          : filter_unit->left().value.attr_type();
+  // AttrType right_type = filter_unit->right().is_attr
+  //                           ? filter_unit->right().field.attr_type()
+  //                           : filter_unit->right().value.attr_type();
+  // 目前先不实现该功能
   return rc;
 }
