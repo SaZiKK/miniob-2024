@@ -8,6 +8,7 @@
 #include <sstream>
 
 static int mon[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+static string monEng[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
 int DateType::compare(const Value &left, const Value &right) const {
   int left_val = left.get_date();
@@ -78,3 +79,8 @@ bool DateType::check_date(int date) {
   bool leap = (y % 400 == 0 || (y % 100 && y % 4 == 0));
   return y > 0 && (m > 0) && (m <= 12) && (d > 0) && (d <= ((m == 2 && leap) ? 1 : 0) + mon[m]);
 }
+
+string DateType::get_year(string date) { return date.substr(0, 4); }
+string DateType::get_month(string date) { return date.substr(4, 2); }
+string DateType::get_day(string date) { return date.substr(6, 2); }
+string DateType::get_month_inEnglish(string date) { return monEng[std::stoi(get_month(date))]; }

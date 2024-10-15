@@ -24,6 +24,8 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/select_stmt.h"
 #include "sql/stmt/stmt.h"
 #include "storage/trx/trx.h"
+#include "common/type/date_type.h"
+#include <cmath>
 
 using namespace std;
 
@@ -747,6 +749,175 @@ RC AggregateExpr::type_from_string(const char *type_str, AggregateExpr::Type &ty
     type = Type::MIN;
   } else {
     rc = RC::INVALID_ARGUMENT;
+  }
+  return rc;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+FuncExpr::FuncExpr(FuncType type, unique_ptr<Expression> target_num, unique_ptr<Expression> target_format, std::unique_ptr<Expression> child)
+    : type_(type), child_(std::move(child)) {
+  RC rc = RC::INVALID_ARGUMENT;
+
+  Value round_value;
+  if (target_num != nullptr) rc = target_num->try_get_value(round_value);
+  if (rc != RC::SUCCESS) round_value = Value((float)-1);
+
+  rc = RC::INVALID_ARGUMENT;
+  Value format_value;
+  if (target_format != nullptr) rc = target_format->try_get_value(format_value);
+  if (rc != RC::SUCCESS) format_value = Value("");
+
+  target_num_ = round_value.get_float();
+  target_format_ = format_value.get_string();
+};
+
+FuncExpr::FuncExpr(FuncType type, Expression *target_num, Expression *target_format, Expression *child) : type_(type), child_(child) {
+  RC rc = RC::INVALID_ARGUMENT;
+
+  Value round_value;
+  if (target_num != nullptr) rc = target_num->try_get_value(round_value);
+  if (rc != RC::SUCCESS) round_value = Value((float)-1);
+
+  rc = RC::INVALID_ARGUMENT;
+  Value format_value;
+  if (target_format != nullptr) rc = target_format->try_get_value(format_value);
+  if (rc != RC::SUCCESS) format_value = Value("");
+
+  target_num_ = round_value.get_float();
+  target_format_ = format_value.get_string();
+};
+
+AttrType FuncExpr::value_type() const {
+  switch (type_) {
+    case FuncType::LENGTH:
+      return AttrType::INTS;
+    case FuncType::ROUND:
+      return AttrType::FLOATS;
+    case FuncType::DATE_FORMAT:
+      return AttrType::CHARS;
+    default:
+      return AttrType::UNDEFINED;
+  }
+  return AttrType::UNDEFINED;
+}
+
+RC FuncExpr::get_value(const Tuple &tuple, Value &value) const {
+  // 获取子表达式的值
+  Value child_value;
+  if (child_ == nullptr) return RC::INVALID_ARGUMENT;
+  RC rc = child_->try_get_value(child_value);
+  if (rc != RC::SUCCESS) return rc;
+
+  // 根据不同的函数类型处理子表达式的值
+  switch (type_) {
+    case FuncType::LENGTH:
+      rc = FuncExpr::func_length(child_value, value);
+      break;
+    case FuncType::ROUND:
+      rc = FuncExpr::func_round(child_value, target_num_, value);
+      break;
+    case FuncType::DATE_FORMAT:
+      rc = FuncExpr::func_date_format(child_value, target_format_, value);
+      break;
+    default:
+      rc = RC::INVALID_ARGUMENT;
+      break;
+  }
+  return rc;
+}
+
+// 处理函数 LENGTH 的计算
+RC FuncExpr::func_length(const Value value, Value &result) {
+  // 强制转换成 CHARS 类型
+  Value real_val;
+  RC rc = Value::cast_to(value, AttrType::CHARS, real_val);
+  if (rc != RC::SUCCESS) {
+    return rc;
+  }
+
+  // 计算结果
+  int length = real_val.get_string().length();
+  result = Value(length);
+  return RC::SUCCESS;
+}
+
+// 处理函数 ROUND 的计算
+RC FuncExpr::func_round(const Value value, int target_num, Value &result) {
+  // 参数合法性
+  if (target_num < 0) return RC::INVALID_ARGUMENT;
+
+  // 强制转换成 FLOATS 类型
+  Value real_val;
+  RC rc = Value::cast_to(value, AttrType::FLOATS, real_val);
+  if (rc != RC::SUCCESS) {
+    return rc;
+  }
+
+  // 计算结果
+  // 计算 10 的 target_num 次方
+  float factor = std::pow(10.0f, target_num);
+  // 先乘以因子再四舍五入，然后再除以因子
+  float answer = std::round(real_val.get_float() * factor) / factor;
+  result = Value(answer);
+  return RC::SUCCESS;
+}
+
+// 处理函数 DATE_FORMAT 的计算
+RC FuncExpr::func_date_format(const Value value, string target_format, Value &result) {
+  if (value.attr_type() != AttrType::DATE) {
+    return RC::INVALID_ARGUMENT;
+  }
+  string date = to_string(value.get_int());
+  int idx = target_format.find("%Y");  // 四位数年份
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_year(date));
+  }
+  idx = target_format.find("%y");  // 两位数年份
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_year(date).substr(2, 2));
+  }
+  idx = target_format.find("%M");  // 月份英文
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_month_inEnglish(date));
+  }
+  idx = target_format.find("%m");  // 月份
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_month(date));
+  }
+  // idx = target_format.find("%D");  // 日期英文
+  // if (idx >= 0) {
+  //   target_format.replace(idx, 2, DateType::get_day_inEnglish(date));
+  // }
+  idx = target_format.find("%d");  // 日期
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_day(date));
+  }
+
+  result = Value(target_format.c_str());
+  return RC::SUCCESS;
+}
+
+RC FuncExpr::try_get_value(Value &value) const {
+  // 获取子表达式的值
+  Value child_value;
+  if (child_ == nullptr) return RC::INVALID_ARGUMENT;
+  RC rc = child_->try_get_value(child_value);
+  if (rc != RC::SUCCESS) return rc;
+
+  // 根据不同的函数类型处理子表达式的值
+  switch (type_) {
+    case FuncType::LENGTH:
+      rc = FuncExpr::func_length(child_value, value);
+      break;
+    case FuncType::ROUND:
+      rc = FuncExpr::func_round(child_value, target_num_, value);
+      break;
+    case FuncType::DATE_FORMAT:
+      rc = FuncExpr::func_date_format(child_value, target_format_, value);
+      break;
+    default:
+      rc = RC::INVALID_ARGUMENT;
+      break;
   }
   return rc;
 }

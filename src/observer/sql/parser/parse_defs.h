@@ -71,22 +71,20 @@ typedef class ParsedSqlNode SubSelectSqlNode;
  * 左边和右边理论上都可以是任意的数据，比如是字段（属性，列），也可以是数值常量。
  * 这个结构中记录的仅仅支持字段和值。
  */
-struct ConditionSqlNode {             // todo：支持左子查询以及除了select之外的其他查询
-  int left_is_attr;                   ///< TRUE if left-hand side is an attribute
-                                      ///< 1时，操作符左边是属性名，0时，是属性值
-  Value left_value;                   ///< left-hand side value if left_is_attr = FALSE
-  RelAttrSqlNode left_attr;           ///< left-hand side attribute
-  CompOp comp;                        ///< comparison operator
-  int right_is_attr;                  ///< TRUE if right-hand side is an attribute
-  bool left_is_sub_query;             ///< 1时，操作符左边是属性名，0时，是属性值  // todo:
-                                      ///< not support in yaccccccc yet
-  bool right_is_sub_query;            ///< 1时，操作符右边是属性名，0时，是属性值
-  RelAttrSqlNode right_attr;          ///< 右边的属性
-  Value right_value;                  ///< right-hand side value if right_is_attr = FALSE
-  SubSelectSqlNode* left_sub_query;   ///< sub-query if left_is_sub_query = TRUE
-  SubSelectSqlNode* right_sub_query;  ///< sub-query if right_is_sub_query = TRUE
-  SelectStmt* left_sub_query_stmt;    ///< sub-query stmt
-  SelectStmt* right_sub_query_stmt;   ///< sub-query stmt
+struct ConditionSqlNode {
+  bool left_is_sub_query;
+  Expression* left_expression;
+
+  CompOp comp;
+
+  bool right_is_sub_query;
+  Expression* right_expression;
+
+  // SELECT 子句
+  SubSelectSqlNode* left_sub_query;
+  SubSelectSqlNode* right_sub_query;
+  SelectStmt* left_sub_query_stmt;
+  SelectStmt* right_sub_query_stmt;
 };
 
 struct JoinSqlNode {

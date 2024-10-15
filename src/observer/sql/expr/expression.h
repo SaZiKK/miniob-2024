@@ -52,7 +52,8 @@ enum class ExprType {
   CONJUNCTION,  ///< 多个表达式使用同一种关系(AND或OR)来联结
   ARITHMETIC,   ///< 算术运算
   AGGREGATION,  ///< 聚合运算
-  SUBQUERY      ///< 子查询
+  SUBQUERY,     ///< 子查询
+  FUNC          ///< 函数运算
 };
 
 /**
@@ -240,6 +241,7 @@ class ValueExpr : public Expression {
 
   void get_value(Value &value) const { value = value_; }
   const Value &get_value() const { return value_; }
+  Value value() { return value_; }
 
  private:
   Value value_;
@@ -498,5 +500,39 @@ class AggregateExpr : public Expression {
 
  private:
   Type aggregate_type_;
+  std::unique_ptr<Expression> child_;
+};
+
+/**
+ * @brief 函数表达式
+ * @ingroup Expression
+ */
+class FuncExpr : public Expression {
+ public:
+  enum class FuncType { LENGTH, ROUND, DATE_FORMAT, UNDEFINED };
+
+  FuncExpr(FuncType type, std::unique_ptr<Expression> target_num, std::unique_ptr<Expression> target_format, std::unique_ptr<Expression> child);
+  FuncExpr(FuncType type, Expression *target_num, Expression *target_format, Expression *child);
+  virtual ~FuncExpr() = default;
+
+  ExprType type() const override { return ExprType::FUNC; }
+
+  AttrType value_type() const override;
+
+  RC get_value(const Tuple &tuple, Value &value) const override;
+  RC try_get_value(Value &value) const override;
+
+  RC static func_length(const Value value, Value &result);
+  RC static func_round(const Value value, int target_num, Value &result);
+  RC static func_date_format(const Value value, string target_format, Value &result);
+
+  FuncType func_type() const { return type_; }
+
+  std::unique_ptr<Expression> &child() { return child_; }
+
+ private:
+  FuncType type_;
+  int target_num_;
+  string target_format_;
   std::unique_ptr<Expression> child_;
 };
