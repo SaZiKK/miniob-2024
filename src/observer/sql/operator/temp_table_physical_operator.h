@@ -13,7 +13,8 @@ class Table;
  */
 class TempTablePhysicalOperator : public PhysicalOperator {
  public:
-  TempTablePhysicalOperator(std::vector<std::string> attr_names, std::vector<Value> values) : attr_names_(attr_names), values_(values) {}
+  TempTablePhysicalOperator(std::vector<std::string> attr_names, std::vector<Value> values)
+      : tuple_(values), attr_names_(attr_names), values_(values) {}
 
   virtual ~TempTablePhysicalOperator() = default;
 
@@ -28,6 +29,7 @@ class TempTablePhysicalOperator : public PhysicalOperator {
 
  private:
   int num;
+  FakeTuple tuple_;
   std::vector<std::string> attr_names_;
   std::vector<Value> values_;
 };

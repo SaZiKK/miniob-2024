@@ -39,4 +39,4 @@ RC TempTablePhysicalOperator::tuple_schema(TupleSchema &schema) const {
   return RC::SUCCESS;
 }
 
-Tuple *TempTablePhysicalOperator::current_tuple() { return new FakeTuple(values_); }
+Tuple *TempTablePhysicalOperator::current_tuple() { return &tuple_; }
