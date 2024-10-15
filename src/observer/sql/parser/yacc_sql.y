@@ -200,6 +200,9 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
 
+%precedence HIGHER_THAN_EXPRESSION
+
+
 %left '+' '-'
 %left '*' '/'
 %nonassoc UMINUS
@@ -783,7 +786,7 @@ condition:
       $$->comp = $1;
       $$->left_expression = new ValueExpr(Value(114514));
     }
-    | expression comp_op LBRACE value value_list RBRACE
+    | expression comp_op LBRACE value value_list RBRACE %prec HIGHER_THAN_EXPRESSION
     {
       $$ = new ConditionSqlNode;
       $$->left_is_sub_query = false;

@@ -122,7 +122,8 @@ extern int yydebug;
     ID = 323,                      /* ID  */
     DATE_STR = 324,                /* DATE_STR  */
     SSS = 325,                     /* SSS  */
-    UMINUS = 326                   /* UMINUS  */
+    HIGHER_THAN_EXPRESSION = 326,  /* HIGHER_THAN_EXPRESSION  */
+    UMINUS = 327                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -151,7 +152,7 @@ union YYSTYPE
   int                                        number;
   float                                      floats;
 
-#line 155 "yacc_sql.hpp"
+#line 156 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

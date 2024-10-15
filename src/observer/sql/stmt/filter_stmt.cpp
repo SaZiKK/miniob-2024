@@ -105,7 +105,7 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   Expression *right_expr = condition.right_expression;
 
   Value left_value, right_value;
-  bool left_is_value, right_is_value;
+  bool left_is_value = false, right_is_value = false;
 
   ///////////////////////////////////////////////////////////////////
   // left_expr 为 UnboundFieldExpr 时，代表该表达式为属性
