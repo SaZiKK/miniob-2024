@@ -93,6 +93,10 @@ RC ExpressionBinder::bind_expression(unique_ptr<Expression> &expr, vector<unique
       return bind_func_expression(expr, bound_expressions);
     } break;
 
+    case ExprType::TEMPTABLE: {
+      return bind_temp_table_expression(expr, bound_expressions);
+    } break;
+
     default: {
       LOG_WARN("unknown expression type: %d", static_cast<int>(expr->type()));
       return RC::INTERNAL;
@@ -470,4 +474,9 @@ RC ExpressionBinder::bind_func_expression(unique_ptr<Expression> &expr, vector<u
   value_expr.get()->set_name(target.to_string());
 
   return bind_value_expression(value_expr, bound_expressions);
+}
+
+RC ExpressionBinder::bind_temp_table_expression(unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions) {
+  bound_expressions.emplace_back(std::move(expr));
+  return RC::SUCCESS;
 }

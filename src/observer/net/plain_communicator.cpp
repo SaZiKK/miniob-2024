@@ -272,6 +272,7 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
 RC PlainCommunicator::write_tuple_result(SqlResult *sql_result) {
   RC rc = RC::SUCCESS;
   Tuple *tuple = nullptr;
+
   // 不断获取"下一个"元组然后打印输出
   while (RC::SUCCESS == (rc = sql_result->next_tuple(tuple))) {
     assert(tuple != nullptr);

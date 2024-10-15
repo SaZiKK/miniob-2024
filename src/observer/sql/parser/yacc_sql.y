@@ -665,8 +665,16 @@ expression:
       $$ = new FuncExpr(FuncExpr::FuncType::DATE_FORMAT, nullptr, $5, $3);
       $$->set_name(token_name(sql_string, &@$));
     }
-    | expression rel_attr{
-      $$ = $1;
+    | LENGTH LBRACE expression RBRACE ID {
+      $$ = new TempTableExpr($5, new FuncExpr(FuncExpr::FuncType::LENGTH, nullptr, nullptr, $3));
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | ROUND LBRACE expression COMMA expression RBRACE ID {
+      $$ = new TempTableExpr($7, new FuncExpr(FuncExpr::FuncType::ROUND, $5, nullptr, $3));
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | DATE_FORMAT LBRACE expression COMMA expression RBRACE ID {
+      $$ = new TempTableExpr($7, new FuncExpr(FuncExpr::FuncType::DATE_FORMAT, nullptr, $5, $3));
       $$->set_name(token_name(sql_string, &@$));
     }
     ;

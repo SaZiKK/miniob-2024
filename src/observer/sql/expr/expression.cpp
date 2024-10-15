@@ -921,3 +921,21 @@ RC FuncExpr::try_get_value(Value &value) const {
   }
   return rc;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+TempTableExpr::TempTableExpr(string attr_name, unique_ptr<Expression> child) : attr_name_(attr_name), child_(std::move(child)) {}
+TempTableExpr::TempTableExpr(string attr_name, Expression *child) : attr_name_(attr_name), child_(child) {}
+
+AttrType TempTableExpr::value_type() const {
+  if (child_ == nullptr) return AttrType::UNDEFINED;
+  return child_->value_type();
+}
+
+RC TempTableExpr::get_value(const Tuple &tuple, Value &value) const {
+  if (child_ == nullptr) return RC::INVALID_ARGUMENT;
+  return child_->get_value(tuple, value);
+}
+RC TempTableExpr::try_get_value(Value &value) const {
+  if (child_ == nullptr) return RC::INVALID_ARGUMENT;
+  return child_->try_get_value(value);
+}

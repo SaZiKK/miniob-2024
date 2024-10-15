@@ -239,6 +239,26 @@ class RowTuple : public Tuple {
   std::vector<FieldExpr *> speces_;
 };
 
+class FakeTuple : public Tuple {
+ public:
+  FakeTuple(std::vector<Value> values) : values_(values) {}
+  virtual ~FakeTuple() = default;
+  int cell_num() const override { return values_.size(); }
+
+  RC cell_at(int index, Value &cell) const override {
+    if (index < 0 && index >= (int)values_.size()) return RC::INVALID_ARGUMENT;
+    cell = values_[index];
+    return RC::SUCCESS;
+  }
+
+  RC spec_at(int index, TupleCellSpec &spec) const { return RC::INTERNAL; };
+
+  RC find_cell(const TupleCellSpec &spec, Value &cell) const { return RC::INTERNAL; };
+
+ private:
+  std::vector<Value> values_;
+};
+
 /**
  * @brief 从一行数据中，选择部分字段组成的元组，也就是投影操作
  * @ingroup Tuple

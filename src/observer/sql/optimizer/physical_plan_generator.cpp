@@ -45,6 +45,8 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/scalar_group_by_physical_operator.h"
 #include "sql/operator/table_scan_vec_physical_operator.h"
 #include "sql/optimizer/physical_plan_generator.h"
+#include "sql/operator/temp_table_physical_operator.h"
+#include "sql/operator/temp_table_logical_operator.h"
 
 using namespace std;
 
@@ -90,6 +92,10 @@ RC PhysicalPlanGenerator::create(LogicalOperator &logical_operator, unique_ptr<P
 
     case LogicalOperatorType::GROUP_BY: {
       return create_plan(static_cast<GroupByLogicalOperator &>(logical_operator), oper);
+    } break;
+
+    case LogicalOperatorType::TEMP_TABLE: {
+      return create_plan(static_cast<TempTableLogicalOperator &>(logical_operator), oper);
     } break;
 
     default: {
@@ -381,6 +387,15 @@ RC PhysicalPlanGenerator::create_plan(GroupByLogicalOperator &logical_oper, std:
 
   oper = std::move(group_by_oper);
   return rc;
+}
+
+RC PhysicalPlanGenerator::create_plan(TempTableLogicalOperator &explain_oper, unique_ptr<PhysicalOperator> &oper) {
+  std::vector<std::string> attr_names = explain_oper.attr_names();
+  std::vector<Value> values = explain_oper.values();
+
+  unique_ptr<TempTablePhysicalOperator> temp_table_oper(new TempTablePhysicalOperator(attr_names, values));
+  oper = std::move(temp_table_oper);
+  return RC::SUCCESS;
 }
 
 RC PhysicalPlanGenerator::create_vec_plan(TableGetLogicalOperator &table_get_oper, unique_ptr<PhysicalOperator> &oper) {

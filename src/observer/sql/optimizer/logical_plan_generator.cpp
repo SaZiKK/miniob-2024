@@ -30,6 +30,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/project_logical_operator.h"
 #include "sql/operator/table_get_logical_operator.h"
 #include "sql/operator/group_by_logical_operator.h"
+#include "sql/operator/temp_table_logical_operator.h"
 
 #include "sql/optimizer/physical_plan_generator.h"
 #include "sql/stmt/calc_stmt.h"
@@ -121,6 +122,28 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
     }
   }
 
+  // 如果表格为空，说明需要创建临时表格逻辑算子
+  if (tables.size() == 0) {
+    unique_ptr<LogicalOperator> temp_table_oper;
+
+    RC rc = create_temp_table_plan(select_stmt, temp_table_oper);
+    if (OB_FAIL(rc)) {
+      LOG_WARN("failed to create temp table logical plan. rc=%s", strrc(rc));
+      return rc;
+    }
+
+    if (temp_table_oper) {
+      if (*last_oper) {
+        temp_table_oper->add_child(std::move(*last_oper));
+      }
+
+      last_oper = &temp_table_oper;
+    }
+
+    logical_operator = std::move(temp_table_oper);
+    return RC::SUCCESS;
+  }
+
   // 创建 Predicate 逻辑算子
   unique_ptr<LogicalOperator> predicate_oper;
 
@@ -161,6 +184,23 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   }
 
   logical_operator = std::move(project_oper);
+  return RC::SUCCESS;
+}
+
+RC LogicalPlanGenerator::create_temp_table_plan(SelectStmt *select_stmt, unique_ptr<LogicalOperator> &logical_operator) {
+  std::vector<unique_ptr<Expression>> temp_table_expr(std::move(select_stmt->query_expressions()));
+  std::vector<std::string> attr_names;
+  std::vector<Value> values;
+  for (auto &expr : temp_table_expr) {
+    TempTableExpr *temp = static_cast<TempTableExpr *>(expr.get());
+    attr_names.push_back(temp->attr_name());
+    Value value;
+    RC rc = temp->try_get_value(value);
+    if (rc != RC::SUCCESS) return rc;
+    values.push_back(value);
+  }
+  unique_ptr<TempTableLogicalOperator> temp_table_operator(new TempTableLogicalOperator(attr_names, values));
+  logical_operator = std::move(temp_table_operator);
   return RC::SUCCESS;
 }
 

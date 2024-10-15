@@ -66,6 +66,12 @@ RC ExpressionIterator::iterate_child_expr(Expression &expr, function<RC(unique_p
       break;
     }
 
+    case ExprType::TEMPTABLE: {
+      auto &temp_table_expr = static_cast<TempTableExpr &>(expr);
+      rc = callback(temp_table_expr.child());
+      break;
+    }
+
     case ExprType::NONE:
     case ExprType::STAR:
     case ExprType::UNBOUND_FIELD:

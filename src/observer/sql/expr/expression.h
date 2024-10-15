@@ -53,7 +53,8 @@ enum class ExprType {
   ARITHMETIC,   ///< 算术运算
   AGGREGATION,  ///< 聚合运算
   SUBQUERY,     ///< 子查询
-  FUNC          ///< 函数运算
+  FUNC,         ///< 函数运算
+  TEMPTABLE     ///< 临时表格
 };
 
 /**
@@ -534,5 +535,31 @@ class FuncExpr : public Expression {
   FuncType type_;
   int target_num_;
   string target_format_;
+  std::unique_ptr<Expression> child_;
+};
+
+/**
+ * @brief 临时表格表达式
+ * @ingroup Expression
+ */
+class TempTableExpr : public Expression {
+ public:
+  TempTableExpr(string attr_name, unique_ptr<Expression> child);
+  TempTableExpr(string attr_name, Expression *child);
+  virtual ~TempTableExpr() = default;
+
+  ExprType type() const override { return ExprType::TEMPTABLE; }
+
+  AttrType value_type() const override;
+
+  RC get_value(const Tuple &tuple, Value &value) const override;
+  RC try_get_value(Value &value) const override;
+
+  string attr_name() { return attr_name_; }
+
+  std::unique_ptr<Expression> &child() { return child_; }
+
+ private:
+  string attr_name_;
   std::unique_ptr<Expression> child_;
 };
