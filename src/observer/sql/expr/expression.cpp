@@ -15,6 +15,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/expr/expression.h"
 #include "sql/expr/tuple.h"
 #include "sql/expr/arithmetic_operator.hpp"
+#include "common/type/date_type.h"
 #include <cmath>
 
 using namespace std;
@@ -710,7 +711,39 @@ RC FuncExpr::func_round(const Value value, int target_num, Value &result) {
 }
 
 // 处理函数 DATE_FORMAT 的计算
-RC FuncExpr::func_date_format(const Value value, string target_format, Value &result) { return RC::INVALID_ARGUMENT; }
+RC FuncExpr::func_date_format(const Value value, string target_format, Value &result) {
+  if (value.attr_type() != AttrType::DATE) {
+    return RC::INVALID_ARGUMENT;
+  }
+  string date = to_string(value.get_int());
+  int idx = target_format.find("%Y");  // 四位数年份
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_year(date));
+  }
+  idx = target_format.find("%y");  // 两位数年份
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_year(date).substr(2, 2));
+  }
+  idx = target_format.find("%M");  // 月份英文
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_month_inEnglish(date));
+  }
+  idx = target_format.find("%m");  // 月份
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_month(date));
+  }
+  // idx = target_format.find("%D");  // 日期英文
+  // if (idx >= 0) {
+  //   target_format.replace(idx, 2, DateType::get_day_inEnglish(date));
+  // }
+  idx = target_format.find("%d");  // 日期
+  if (idx >= 0) {
+    target_format.replace(idx, 2, DateType::get_day(date));
+  }
+
+  result = Value(target_format.c_str());
+  return RC::SUCCESS;
+}
 
 RC FuncExpr::try_get_value(Value &value) const {
   // 获取子表达式的值

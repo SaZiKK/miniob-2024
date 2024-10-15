@@ -19,4 +19,10 @@ class DateType : public DataType {
 
   static bool check_date(const Value *value);
   static bool check_date(int date);
+
+  static string get_year(string date);
+  static string get_month(string date);
+  static string get_day(string date);
+
+  static string get_month_inEnglish(string date);
 };

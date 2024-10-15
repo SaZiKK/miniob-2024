@@ -38,9 +38,6 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
   for (int i = 0; i < condition_num; i++) {
     FilterUnit *filter_unit = nullptr;
 
-    // 重写 ConditionSqlNode
-    if (rc != RC::SUCCESS) return rc;
-
     // 创建单个筛选条件
     rc = create_filter_unit(db, default_table, tables, conditions[i], filter_unit);
 

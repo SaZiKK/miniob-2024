@@ -89,6 +89,10 @@ RC ExpressionBinder::bind_expression(unique_ptr<Expression> &expr, vector<unique
       ASSERT(false, "shouldn't be here");
     } break;
 
+    case ExprType::FUNC: {
+      return bind_func_expression(expr, bound_expressions);
+    } break;
+
     default: {
       LOG_WARN("unknown expression type: %d", static_cast<int>(expr->type()));
       return RC::INTERNAL;
@@ -453,4 +457,17 @@ RC ExpressionBinder::bind_aggregate_expression(unique_ptr<Expression> &expr, vec
   // 将聚合表达式添加到输出参数
   bound_expressions.emplace_back(std::move(aggregate_expr));
   return RC::SUCCESS;
+}
+
+RC ExpressionBinder::bind_func_expression(unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions) {
+  // 将 FUNC 表达式计算出来，生成 Value 表达式
+  FuncExpr *func_expr = static_cast<FuncExpr *>(expr.get());
+  Value target;
+  RC rc = func_expr->try_get_value(target);
+  if (rc != RC::SUCCESS) return rc;
+
+  unique_ptr<Expression> value_expr(new ValueExpr(target));
+  value_expr.get()->set_name(target.to_string());
+
+  return bind_value_expression(value_expr, bound_expressions);
 }
