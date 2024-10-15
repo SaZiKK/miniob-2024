@@ -806,6 +806,16 @@ condition:
 
       delete $1;
     }
+    | comp_op sub_select_stmt
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 0;
+      $$->right_is_attr = 0;
+      $$->left_is_sub_query = false;
+      $$->right_is_sub_query = true;
+      $$->right_sub_query = $2;
+      $$->comp = $1;
+    }
     ;
 
 comp_op:
