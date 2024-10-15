@@ -665,6 +665,10 @@ expression:
       $$ = new FuncExpr(FuncExpr::FuncType::DATE_FORMAT, nullptr, $5, $3);
       $$->set_name(token_name(sql_string, &@$));
     }
+    | expression rel_attr{
+      $$ = $1;
+      $$->set_name(token_name(sql_string, &@$));
+    }
     ;
 
 rel_attr:
