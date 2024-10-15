@@ -47,6 +47,7 @@ enum class ExprType {
 
   FIELD,        ///< 字段。在实际执行时，根据行数据内容提取对应字段的值
   VALUE,        ///< 常量值
+  VALUELIST,    ///< 常量值列表
   CAST,         ///< 需要做类型转换的表达式
   COMPARISON,   ///< 需要做比较的表达式
   CONJUNCTION,  ///< 多个表达式使用同一种关系(AND或OR)来联结
@@ -280,6 +281,30 @@ class SubQueryExpr : public Expression {
   SelectStmt *sub_query_;
   std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> logical_operator;
   std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> physical_operator;
+};
+
+class ValueListExpr : public Expression {
+ public:
+  ValueListExpr() = default;
+  explicit ValueListExpr(const std::vector<Value> &values) : values_(values) {}
+  explicit ValueListExpr(std::vector<Value> &values) : values_(values) {}
+
+  virtual ~ValueListExpr() = default;
+
+  ExprType type() const override { return ExprType::VALUELIST; }
+  AttrType value_type() const override { return values_.front().attr_type(); }
+
+  RC get_value(const Tuple &tuple, Value &value) const override { return RC::INTERNAL; }
+
+  RC get_value_list(std::vector<Value> &value) override {
+    value = values_;
+    return RC::SUCCESS;
+  }
+
+  const std::vector<Value> &values() const { return values_; }
+
+ private:
+  std::vector<Value> values_;
 };
 
 /**

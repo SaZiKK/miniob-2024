@@ -172,16 +172,19 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
     const FilterObj &filter_obj_left = filter_unit->left();
     const FilterObj &filter_obj_right = filter_unit->right();
 
-    unique_ptr<Expression> left(filter_obj_left.is_attr    ? static_cast<Expression *>(new FieldExpr(filter_obj_left.field))
-                                : filter_obj_left.is_value ? static_cast<Expression *>(new ValueExpr(filter_obj_left.value))
-                                                           : static_cast<Expression *>(new SubQueryExpr(filter_obj_left.sub_query)));
+    unique_ptr<Expression> left(filter_obj_left.is_attr        ? static_cast<Expression *>(new FieldExpr(filter_obj_left.field))
+                                : filter_obj_left.is_value     ? static_cast<Expression *>(new ValueExpr(filter_obj_left.value))
+                                : filter_obj_left.is_sub_query ? static_cast<Expression *>(new SubQueryExpr(filter_obj_left.sub_query))
+                                                               : static_cast<Expression *>(new ValueListExpr(filter_obj_left.value_list)));
 
-    unique_ptr<Expression> right(filter_obj_right.is_attr    ? static_cast<Expression *>(new FieldExpr(filter_obj_right.field))
-                                 : filter_obj_right.is_value ? static_cast<Expression *>(new ValueExpr(filter_obj_right.value))
-                                                             : static_cast<Expression *>(new SubQueryExpr(filter_obj_right.sub_query)));
+    unique_ptr<Expression> right(filter_obj_right.is_attr        ? static_cast<Expression *>(new FieldExpr(filter_obj_right.field))
+                                 : filter_obj_right.is_value     ? static_cast<Expression *>(new ValueExpr(filter_obj_right.value))
+                                 : filter_obj_right.is_sub_query ? static_cast<Expression *>(new SubQueryExpr(filter_obj_right.sub_query))
+                                                                 : static_cast<Expression *>(new ValueListExpr(filter_obj_right.value_list)));
 
     // 如果左右两边的类型不一致，需要先计算转换开销，再进行隐式类型转换，同时要排除有子查询的情况
-    if (left->value_type() != AttrType::SUB_QUERY && right->value_type() != AttrType::SUB_QUERY)
+    if (left->value_type() != AttrType::SUB_QUERY && right->value_type() != AttrType::SUB_QUERY && left->type() != ExprType::VALUELIST &&
+        right->type() != ExprType::VALUELIST)
       if (left->value_type() != right->value_type()) {
         auto left_to_right_cost = implicit_cast_cost(left->value_type(), right->value_type());
         auto right_to_left_cost = implicit_cast_cost(right->value_type(), left->value_type());

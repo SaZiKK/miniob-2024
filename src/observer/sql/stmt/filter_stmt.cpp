@@ -16,6 +16,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/string.h"
 #include "common/log/log.h"
 #include "common/rc.h"
+#include "sql/expr/expression.h"
 #include "storage/db/db.h"
 #include "storage/table/table.h"
 #include <common/type/date_type.h>
@@ -115,12 +116,12 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   ///////////////////////////////////////////////////////////////////
 
   // 左侧不是子查询
-  if (condition.left_is_sub_query == 0 && condition.left_expression != nullptr) {
+  if (condition.left_is_sub_query == 0 && condition.left_expression != nullptr && condition.left_expression->type() != ExprType::VALUELIST) {
     left_is_value = OB_SUCC(condition.left_expression->try_get_value(left_value));
   }
 
   // 右侧不是子查询
-  if (condition.right_is_sub_query == 0) {
+  if (condition.right_is_sub_query == 0 && condition.right_expression->type() != ExprType::VALUELIST) {
     right_is_value = OB_SUCC(right_expr->try_get_value(right_value));
   }
 
@@ -143,6 +144,14 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   else if (left_is_value) {
     FilterObj filter_obj;
     filter_obj.init_value(left_value);
+    filter_unit->set_left(filter_obj);
+  }
+  // list
+  else if (left_expr->type() == ExprType::VALUELIST) {
+    FilterObj filter_obj;
+    std::vector<Value> value_list;
+    condition.left_expression->get_value_list(value_list);
+    filter_obj.init_list(value_list);
     filter_unit->set_left(filter_obj);
   }
   // Attribute
@@ -171,6 +180,14 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   else if (right_is_value) {
     FilterObj filter_obj;
     filter_obj.init_value(right_value);
+    filter_unit->set_right(filter_obj);
+  }
+  // list
+  else if (right_expr->type() == ExprType::VALUELIST) {
+    FilterObj filter_obj;
+    std::vector<Value> value_list;
+    condition.right_expression->get_value_list(value_list);
+    filter_obj.init_list(value_list);
     filter_unit->set_right(filter_obj);
   }
   // Attribute

@@ -346,7 +346,7 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
   RC rc = RC::EMPTY;
 
   // 特判子查询，进入特殊处理函数获取数据
-  if (left_->value_type() == AttrType::SUB_QUERY) {
+  if (left_->value_type() == AttrType::SUB_QUERY || left_->type() == ExprType::VALUELIST) {
     rc = right_->get_value_list(left_values);
   } else {
     rc = left_->get_value(tuple, left_value);
@@ -357,7 +357,7 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
     return rc;
   }
 
-  if (right_->value_type() == AttrType::SUB_QUERY) {
+  if (right_->value_type() == AttrType::SUB_QUERY || right_->type() == ExprType::VALUELIST) {
     rc = right_->get_value_list(right_values);
   } else {
     rc = right_->get_value(tuple, right_value);

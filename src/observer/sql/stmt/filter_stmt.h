@@ -29,14 +29,17 @@ struct FilterObj {
   bool is_attr;
   bool is_value;
   bool is_sub_query;
+  bool is_list;
   Field field;
   Value value;
+  std::vector<Value> value_list;
   SelectStmt *sub_query = nullptr;
 
   void init_attr(const Field &field) {
     is_attr = true;
     is_value = false;
     is_sub_query = false;
+    is_list = false;
     this->field = field;
   }
 
@@ -44,6 +47,7 @@ struct FilterObj {
     is_attr = false;
     is_value = true;
     is_sub_query = false;
+    is_list = false;
     this->value = value;
   }
 
@@ -51,7 +55,16 @@ struct FilterObj {
     is_attr = false;
     is_value = false;
     is_sub_query = true;
+    is_list = false;
     this->sub_query = sub_query;
+  }
+
+  void init_list(const std::vector<Value> &value_list) {
+    is_attr = false;
+    is_value = false;
+    is_sub_query = false;
+    is_list = true;
+    this->value_list = value_list;
   }
 };
 

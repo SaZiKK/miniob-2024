@@ -665,10 +665,6 @@ expression:
       $$ = new FuncExpr(FuncExpr::FuncType::DATE_FORMAT, nullptr, $5, $3);
       $$->set_name(token_name(sql_string, &@$));
     }
-    | expression rel_attr{
-      $$ = $1;
-      $$->set_name(token_name(sql_string, &@$));
-    }
     ;
 
 rel_attr:
@@ -786,6 +782,16 @@ condition:
       $$->right_sub_query = $2;
       $$->comp = $1;
       $$->left_expression = new ValueExpr(Value(114514));
+    }
+    | expression comp_op LBRACE value value_list RBRACE
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_sub_query = false;
+      $$->right_is_sub_query = false;
+      $$->comp = $2;
+      $$->left_expression = $1;
+      $5->push_back(*$4);
+      $$->right_expression = new ValueListExpr(*$5);
     }
     ;
 
