@@ -13,8 +13,17 @@ See the Mulan PSL v2 for more details. */
 //
 
 #include "sql/expr/expression.h"
+#include "common/log/log.h"
+#include "common/rc.h"
+#include "common/type/attr_type.h"
 #include "sql/expr/tuple.h"
 #include "sql/expr/arithmetic_operator.hpp"
+#include "sql/optimizer/logical_plan_generator.h"
+#include "sql/optimizer/physical_plan_generator.h"
+#include "sql/parser/parse_defs.h"
+#include "sql/stmt/select_stmt.h"
+#include "sql/stmt/stmt.h"
+#include "storage/trx/trx.h"
 
 using namespace std;
 
@@ -99,6 +108,104 @@ RC CastExpr::try_get_value(Value &result) const {
   return cast(value, result);
 }
 
+RC SubQueryExpr::get_value(const Tuple &tuple, Value &value) const {
+  LOG_WARN("invalid operation. cannot get single value from subquery expression");
+  return RC::INVALID_ARGUMENT;
+}
+
+RC SubQueryExpr::get_value_list(std::vector<Value> &value_list) {
+  LogicalPlanGenerator generator;
+  SelectStmt *selectstmt = this->sub_query_;
+  Trx *trx = nullptr;  // todo: 暂时使用临时创建的trx
+
+  if (selectstmt == nullptr) {
+    LOG_WARN("subquery is null");
+    return RC::INVALID_ARGUMENT;
+  }
+
+  // // 如果之前没有生成过逻辑计划，那么生成逻辑计划
+  // if (logical_operator == nullptr) {
+  //   RC rc = create_sub_logical_plan(selectstmt, logical_operator);
+  //   if (rc != RC::SUCCESS) {
+  //     LOG_WARN("failed to create sub logical plan. rc=%s", strrc(rc));
+  //     return rc;
+  //   }
+  // }
+
+  // // 如果之前没有生成过物理计划，那么生成物理计划
+  // if (physical_operator == nullptr) {
+  //   RC rc = generate_sub_physical_plan(logical_operator, physical_operator);
+  //   if (rc != RC::SUCCESS) {
+  //     LOG_WARN("failed to create sub physical plan. rc=%s", strrc(rc));
+  //     return rc;
+  //   }
+  // }
+
+  // 初始化物理算子
+  RC rc = physical_operator->open(trx);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to open sub physical operator. rc=%s", strrc(rc));
+    return rc;
+  }
+
+  // 将查表结果放入value_list
+  while (RC::SUCCESS == (rc = physical_operator->next())) {
+    Tuple *tuple = physical_operator->current_tuple();
+    Value value;
+    RC rc = tuple->cell_at(0, value);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to get tuple cell value. rc=%s", strrc(rc));
+      return rc;
+    }
+    value_list.push_back(value);
+  }
+
+  rc = physical_operator->close();
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to close sub physical operator. rc=%s", strrc(rc));
+    return rc;
+  }
+
+  return RC::SUCCESS;
+}
+
+// RC SubQueryExpr::create_sub_logical_plan(SelectStmt *selectstmt, std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator) {
+//   LogicalPlanGenerator generator;
+//   std::unique_ptr<LogicalOperator> temp_logical;
+//   RC rc = generator.create(selectstmt, temp_logical);
+//   if (rc == RC::SUCCESS && temp_logical) {
+//     logical_operator = std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)>(
+//         temp_logical.release(), [](LogicalOperator *ptr) { delete ptr; }  // 使用 lambda 作为删除器
+//     );
+//   }
+//   return rc;
+// }
+
+// RC SubQueryExpr::generate_sub_physical_plan(std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator,
+//                                             std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> &physical_operator) {
+//   RC rc = RC::SUCCESS;
+//   PhysicalPlanGenerator physical_plan_generator;
+//   std::unique_ptr<PhysicalOperator> temp_physical;
+//   rc = physical_plan_generator.create(*logical_operator, temp_physical);
+//   if (rc == RC::SUCCESS && temp_physical) {
+//     physical_operator = std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)>(
+//         temp_physical.release(), [](PhysicalOperator *ptr) { delete ptr; }  // 使用 lambda 作为删除器
+//     );
+//   }
+//   if (rc != RC::SUCCESS) {
+//     LOG_WARN("failed to create physical operator. rc=%s", strrc(rc));
+//   }
+//   return rc;
+// }
+
+void SubQueryExpr::set_logical_operator(std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> logical_op) {
+  logical_operator = std::move(logical_op);
+}
+
+void SubQueryExpr::set_physical_operator(std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> physical_op) {
+  physical_operator = std::move(physical_op);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 ComparisonExpr::ComparisonExpr(CompOp comp, unique_ptr<Expression> left, unique_ptr<Expression> right)
@@ -106,27 +213,33 @@ ComparisonExpr::ComparisonExpr(CompOp comp, unique_ptr<Expression> left, unique_
 
 ComparisonExpr::~ComparisonExpr() {}
 
-RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &result) const {
+RC ComparisonExpr::compare_value(const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list,
+                                 bool &result) const {
   RC rc = RC::SUCCESS;
-  int cmp_result = left.compare(right);
   result = false;
   switch (comp_) {
     case EQUAL_TO: {
+      int cmp_result = left.compare(right);
       result = (0 == cmp_result);
     } break;
     case LESS_EQUAL: {
+      int cmp_result = left.compare(right);
       result = (cmp_result <= 0);
     } break;
     case NOT_EQUAL: {
+      int cmp_result = left.compare(right);
       result = (cmp_result != 0);
     } break;
     case LESS_THAN: {
+      int cmp_result = left.compare(right);
       result = (cmp_result < 0);
     } break;
     case GREAT_EQUAL: {
+      int cmp_result = left.compare(right);
       result = (cmp_result >= 0);
     } break;
     case GREAT_THAN: {
+      int cmp_result = left.compare(right);
       result = (cmp_result > 0);
     } break;
     case LIKE_XXX: {
@@ -134,6 +247,28 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
     } break;
     case NOT_LIKE_XXX: {
       result = !ComparisonExpr::likeMatch(left.get_string(), right.get_string());
+    } break;
+    case IN_XXX: {
+      for (const Value &value : right_list) {
+        if (0 == left.compare(value)) {
+          result = true;
+          break;
+        }
+      }
+    } break;
+    case NOT_IN_XXX: {
+      for (const Value &value : right_list) {
+        if (0 == left.compare(value)) {
+          result = false;
+          break;
+        }
+      }
+    } break;
+    case XXX_EXISTS: {
+      result = !right_list.empty();  // todo: 目前仅支持右边是子查询的情况
+    } break;
+    case XXX_NOT_EXISTS: {
+      result = right_list.empty();  // todo: 目前仅支持右边是子查询的情况
     } break;
     default: {
       LOG_WARN("unsupported comparison. %d", comp_);
@@ -185,9 +320,11 @@ RC ComparisonExpr::try_get_value(Value &cell) const {
     ValueExpr *right_value_expr = static_cast<ValueExpr *>(right_.get());
     const Value &left_cell = left_value_expr->get_value();
     const Value &right_cell = right_value_expr->get_value();
+    std::vector<Value> left_list;
+    std::vector<Value> right_list;
 
     bool value = false;
-    RC rc = compare_value(left_cell, right_cell, value);
+    RC rc = compare_value(left_cell, right_cell, left_list, right_list, value);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to compare tuple cells. rc=%s", strrc(rc));
     } else {
@@ -202,13 +339,28 @@ RC ComparisonExpr::try_get_value(Value &cell) const {
 RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
   Value left_value;
   Value right_value;
+  vector<Value> right_values;
+  vector<Value> left_values;
+  RC rc = RC::EMPTY;
 
-  RC rc = left_->get_value(tuple, left_value);
+  // 特判子查询，进入特殊处理函数获取数据
+  if (left_->value_type() == AttrType::SUB_QUERY) {
+    rc = right_->get_value_list(left_values);
+  } else {
+    rc = left_->get_value(tuple, left_value);
+  }
+
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
     return rc;
   }
-  rc = right_->get_value(tuple, right_value);
+
+  if (right_->value_type() == AttrType::SUB_QUERY) {
+    rc = right_->get_value_list(right_values);
+  } else {
+    rc = right_->get_value(tuple, right_value);
+  }
+
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
     return rc;
@@ -216,7 +368,7 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
 
   bool bool_value = false;
 
-  rc = compare_value(left_value, right_value, bool_value);
+  rc = compare_value(left_value, right_value, left_values, right_values, bool_value);
   if (rc == RC::SUCCESS) {
     value.set_boolean(bool_value);
   }

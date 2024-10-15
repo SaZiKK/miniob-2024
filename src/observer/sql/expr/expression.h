@@ -16,13 +16,18 @@ See the Mulan PSL v2 for more details. */
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "common/log/log.h"
 #include "common/value.h"
+#include "sql/stmt/stmt.h"
 #include "storage/field/field.h"
 #include "sql/expr/aggregator.h"
 #include "storage/common/chunk.h"
 
+class Trx;
+class PhysicalOperator;
+class LogicalOperator;
 class Tuple;
 
 /**
@@ -77,6 +82,8 @@ class Expression {
    * 根据具体的tuple，来计算当前表达式的值。tuple有可能是一个具体某个表的行数据
    */
   virtual RC get_value(const Tuple &tuple, Value &value) const = 0;
+
+  virtual RC get_value_list(std::vector<Value> &value) { return RC::UNIMPLEMENTED; }
 
   /**
    * @brief
@@ -244,19 +251,33 @@ class ValueExpr : public Expression {
  */
 class SubQueryExpr : public Expression {
  public:
-  SubQueryExpr() = default;
-  explicit SubQueryExpr(SelectStmt *sub_query) : sub_query_(sub_query) {}
+  SubQueryExpr();
+  explicit SubQueryExpr(SelectStmt *sub_query)
+      : sub_query_(sub_query), logical_operator(nullptr, [](LogicalOperator *) {}), physical_operator(nullptr, [](PhysicalOperator *) {}){};
 
   virtual ~SubQueryExpr() = default;
 
   ExprType type() const override { return ExprType::SUBQUERY; }
   AttrType value_type() const override { return AttrType::SUB_QUERY; }
 
-  RC get_value(const Tuple &tuple, Value &value) const { return RC::SUCCESS; }
+  RC get_value(const Tuple &tuple, Value &value) const override;
+
+  RC get_value_list(std::vector<Value> &value) override;
+
+  // RC create_sub_logical_plan(SelectStmt *selectstmt, std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator);
+  // RC generate_sub_physical_plan(std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator,
+  //                               std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> &physical_operator);
+
+  void set_logical_operator(std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> LogicalOperator);
+
+  void set_physical_operator(std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> PhysicalOperator);
+
   SelectStmt *sub_query() { return sub_query_; }
 
  private:
   SelectStmt *sub_query_;
+  std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> logical_operator;
+  std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> physical_operator;
 };
 
 /**
@@ -320,7 +341,7 @@ class ComparisonExpr : public Expression {
    * compare the two tuple cells
    * @param value the result of comparison
    */
-  RC compare_value(const Value &left, const Value &right, bool &value) const;
+  RC compare_value(const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list, bool &value) const;
 
   /// compare two string with pattern
   static bool likeMatch(const std::string &str, const std::string &pattern);

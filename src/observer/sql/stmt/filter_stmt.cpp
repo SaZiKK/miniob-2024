@@ -130,9 +130,11 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
     filter_unit->set_left(filter_obj);
-  }
-  // 创建变量类 FilterObj
-  else {
+  } else if (condition.left_is_sub_query) {  // 创建变量类 FilterObj
+    FilterObj filter_obj;
+    filter_obj.init_sub_query(condition.left_sub_query_stmt);
+    filter_unit->set_left(filter_obj);
+  } else {
     FilterObj filter_obj;
     filter_obj.init_value(condition.left_value);
     filter_unit->set_left(filter_obj);
@@ -153,6 +155,10 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     // 创建属性类 FilterObj
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
+    filter_unit->set_right(filter_obj);
+  } else if (condition.right_is_sub_query) {  // 创建变量类 FilterObj
+    FilterObj filter_obj;
+    filter_obj.init_sub_query(condition.right_sub_query_stmt);
     filter_unit->set_right(filter_obj);
   }
   // 创建变量类 FilterObj

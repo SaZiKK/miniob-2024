@@ -21,6 +21,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/optimizer/logical_plan_generator.h"
 #include "sql/optimizer/physical_plan_generator.h"
 #include "sql/optimizer/rewriter.h"
+#include "sql/parser/parse_defs.h"
 
 class SQLStageEvent;
 class LogicalOperator;

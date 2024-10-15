@@ -15,8 +15,10 @@ See the Mulan PSL v2 for more details. */
 #include "sql/optimizer/logical_plan_generator.h"
 
 #include <common/log/log.h>
+#include <memory>
 
 #include "common/type/attr_type.h"
+#include "sql/expr/expression.h"
 #include "sql/operator/calc_logical_operator.h"
 #include "sql/operator/delete_logical_operator.h"
 #include "sql/operator/update_logical_operator.h"
@@ -29,6 +31,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/table_get_logical_operator.h"
 #include "sql/operator/group_by_logical_operator.h"
 
+#include "sql/optimizer/physical_plan_generator.h"
 #include "sql/stmt/calc_stmt.h"
 #include "sql/stmt/delete_stmt.h"
 #include "sql/stmt/update_stmt.h"
@@ -39,8 +42,6 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/stmt.h"
 
 #include "sql/expr/expression_iterator.h"
-#include "src/observer/event/sql_debug.h"
-#include "src/observer/event/sql_debug.h"
 
 using namespace std;
 using namespace common;
@@ -160,7 +161,6 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   }
 
   logical_operator = std::move(project_oper);
-
   return RC::SUCCESS;
 }
 
@@ -181,72 +181,137 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
                                                              : static_cast<Expression *>(new SubQueryExpr(filter_obj_right.sub_query)));
 
     // 如果左右两边的类型不一致，需要先计算转换开销，再进行隐式类型转换，同时要排除有子查询的情况
-    if (left->value_type() != right->value_type() && left->value_type() != AttrType::SUB_QUERY && right->value_type() != AttrType::SUB_QUERY) {
-      auto left_to_right_cost = implicit_cast_cost(left->value_type(), right->value_type());
-      auto right_to_left_cost = implicit_cast_cost(right->value_type(), left->value_type());
-      if (left_to_right_cost <= right_to_left_cost && left_to_right_cost != INT32_MAX) {
-        ExprType left_type = left->type();
+    if (left->value_type() != AttrType::SUB_QUERY && right->value_type() != AttrType::SUB_QUERY)
+      if (left->value_type() != right->value_type()) {
+        auto left_to_right_cost = implicit_cast_cost(left->value_type(), right->value_type());
+        auto right_to_left_cost = implicit_cast_cost(right->value_type(), left->value_type());
+        if (left_to_right_cost <= right_to_left_cost && left_to_right_cost != INT32_MAX) {
+          ExprType left_type = left->type();
 
-        // 特殊判断，如果为 INTS 和 CHARS 比较大小，均转换成 FLOATS 类型
-        unique_ptr<CastExpr> cast_expr;
-        if (left->value_type() == AttrType::CHARS && right->value_type() == AttrType::INTS)
-          cast_expr = make_unique<CastExpr>(std::move(left), AttrType::FLOATS);
-        else
-          cast_expr = make_unique<CastExpr>(std::move(left), right->value_type());
-        if (left_type == ExprType::VALUE) {
-          Value left_val;
-          if (OB_FAIL(rc = cast_expr->try_get_value(left_val))) {
-            LOG_WARN("failed to get value from left child", strrc(rc));
-            return rc;
+          // 特殊判断，如果为 INTS 和 CHARS 比较大小，均转换成 FLOATS 类型
+          unique_ptr<CastExpr> cast_expr;
+          if (left->value_type() == AttrType::CHARS && right->value_type() == AttrType::INTS)
+            cast_expr = make_unique<CastExpr>(std::move(left), AttrType::FLOATS);
+          else
+            cast_expr = make_unique<CastExpr>(std::move(left), right->value_type());
+          if (left_type == ExprType::VALUE) {
+            Value left_val;
+            if (OB_FAIL(rc = cast_expr->try_get_value(left_val))) {
+              LOG_WARN("failed to get value from left child", strrc(rc));
+              return rc;
+            }
+            left = make_unique<ValueExpr>(left_val);
+          } else {
+            left = std::move(cast_expr);
           }
-          left = make_unique<ValueExpr>(left_val);
-        } else {
-          left = std::move(cast_expr);
-        }
-      } else if (right_to_left_cost < left_to_right_cost && right_to_left_cost != INT32_MAX) {
-        ExprType right_type = right->type();
+        } else if (right_to_left_cost < left_to_right_cost && right_to_left_cost != INT32_MAX) {
+          ExprType right_type = right->type();
 
-        // 特殊判断，如果为 INTS 和 CHARS 比较大小，均转换成 FLOATS 类型
-        unique_ptr<CastExpr> cast_expr;
-        if (left->value_type() == AttrType::INTS && right->value_type() == AttrType::CHARS)
-          cast_expr = make_unique<CastExpr>(std::move(right), AttrType::FLOATS);
-        else
-          cast_expr = make_unique<CastExpr>(std::move(right), left->value_type());
+          // 特殊判断，如果为 INTS 和 CHARS 比较大小，均转换成 FLOATS 类型
+          unique_ptr<CastExpr> cast_expr;
+          if (left->value_type() == AttrType::INTS && right->value_type() == AttrType::CHARS)
+            cast_expr = make_unique<CastExpr>(std::move(right), AttrType::FLOATS);
+          else
+            cast_expr = make_unique<CastExpr>(std::move(right), left->value_type());
 
-        if (right_type == ExprType::VALUE) {
-          Value right_val;
-          if (OB_FAIL(rc = cast_expr->try_get_value(right_val))) {
-            LOG_WARN("failed to get value from right child", strrc(rc));
-            return rc;
+          if (right_type == ExprType::VALUE) {
+            Value right_val;
+            if (OB_FAIL(rc = cast_expr->try_get_value(right_val))) {
+              LOG_WARN("failed to get value from right child", strrc(rc));
+              return rc;
+            }
+            right = make_unique<ValueExpr>(right_val);
+          } else {
+            right = std::move(cast_expr);
           }
-          right = make_unique<ValueExpr>(right_val);
-        } else {
-          right = std::move(cast_expr);
-        }
 
-      } else if (filter_unit->comp() == CompOp::LIKE_XXX || filter_unit->comp() == CompOp::NOT_LIKE_XXX) {
-        ExprType right_type = right->type();
+        } else if (filter_unit->comp() == CompOp::LIKE_XXX || filter_unit->comp() == CompOp::NOT_LIKE_XXX) {
+          ExprType right_type = right->type();
 
-        // 如果执行LIKE运算符，把右边转化成CHARS类型
-        unique_ptr<CastExpr> cast_expr;
-        cast_expr = make_unique<CastExpr>(std::move(right), AttrType::CHARS);
+          // 如果执行LIKE运算符，把右边转化成CHARS类型
+          unique_ptr<CastExpr> cast_expr;
+          cast_expr = make_unique<CastExpr>(std::move(right), AttrType::CHARS);
 
-        if (right_type == ExprType::VALUE) {
-          Value right_val;
-          if (OB_FAIL(rc = cast_expr->try_get_value(right_val))) {
-            LOG_WARN("failed to get value from right child", strrc(rc));
-            return rc;
+          if (right_type == ExprType::VALUE) {
+            Value right_val;
+            if (OB_FAIL(rc = cast_expr->try_get_value(right_val))) {
+              LOG_WARN("failed to get value from right child", strrc(rc));
+              return rc;
+            }
+            right = make_unique<ValueExpr>(right_val);
+          } else {
+            right = std::move(cast_expr);
           }
-          right = make_unique<ValueExpr>(right_val);
-        } else {
-          right = std::move(cast_expr);
-        }
 
-      } else {
-        rc = RC::UNSUPPORTED;
-        LOG_WARN("unsupported cast from %s to %s", attr_type_to_string(left->value_type()), attr_type_to_string(right->value_type()));
+        } else {
+          rc = RC::UNSUPPORTED;
+          LOG_WARN("unsupported cast from %s to %s", attr_type_to_string(left->value_type()), attr_type_to_string(right->value_type()));
+          return rc;
+        }
+      }
+
+    if (filter_obj_right.is_sub_query) {
+      // 创建右子查询的逻辑算子
+      LogicalPlanGenerator sub_logical_plan_generator_;
+      PhysicalPlanGenerator sub_physical_plan_generator_;
+      unique_ptr<LogicalOperator> temp_sub_logical_operator;
+      unique_ptr<PhysicalOperator> temp_sub_physical_operator;
+      SelectStmt *sub_stmt = filter_obj_right.sub_query;
+      // 创建子查询的逻辑算子，这里实际上是递归的创建
+      RC rc = sub_logical_plan_generator_.create(sub_stmt, temp_sub_logical_operator);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to create sub logical plan. rc=%s", strrc(rc));
         return rc;
       }
+      // 创建子查询的物理算子
+      rc = sub_physical_plan_generator_.create(*temp_sub_logical_operator, temp_sub_physical_operator);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to create sub physical plan. rc=%s", strrc(rc));
+        return rc;
+      }
+      // 创建带有自定义删除器的 unique_ptr
+      auto sub_logical_operator =
+          std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)>(temp_sub_logical_operator.release(), [](LogicalOperator *p) { delete p; });
+      auto sub_physical_operator = std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)>(temp_sub_physical_operator.release(),
+                                                                                                   [](PhysicalOperator *p) { delete p; });
+      // 把父类对象强转一下，方便我调用子类专属的方法
+      unique_ptr<SubQueryExpr> sub_query_expr(dynamic_cast<SubQueryExpr *>(right.release()));
+      // 设置逻辑和物理操作符
+      sub_query_expr->set_logical_operator(std::move(sub_logical_operator));
+      sub_query_expr->set_physical_operator(std::move(sub_physical_operator));
+      // 归还所有权，便于下一步操作
+      right = std::move(sub_query_expr);
+    }
+    if (filter_obj_left.is_sub_query) {
+      // 创建左子查询的逻辑算子
+      LogicalPlanGenerator sub_logical_plan_generator_;
+      PhysicalPlanGenerator sub_physical_plan_generator_;
+      unique_ptr<LogicalOperator> temp_sub_logical_operator;
+      unique_ptr<PhysicalOperator> temp_sub_physical_operator;
+      SelectStmt *sub_stmt = filter_obj_left.sub_query;
+      // 创建子查询的逻辑算子，这里实际上是递归的创建
+      RC rc = sub_logical_plan_generator_.create(sub_stmt, temp_sub_logical_operator);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to create sub logical plan. rc=%s", strrc(rc));
+        return rc;
+      }
+      // 创建子查询的物理算子
+      rc = sub_physical_plan_generator_.create(*temp_sub_logical_operator, temp_sub_physical_operator);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to create sub physical plan. rc=%s", strrc(rc));
+        return rc;
+      }
+      // 创建带有自定义删除器的 unique_ptr
+      auto sub_logical_operator =
+          std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)>(temp_sub_logical_operator.release(), [](LogicalOperator *p) { delete p; });
+      auto sub_physical_operator = std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)>(temp_sub_physical_operator.release(),
+                                                                                                   [](PhysicalOperator *p) { delete p; });
+      // 把父类对象强转一下，方便我调用子类专属的方法
+      unique_ptr<SubQueryExpr> sub_query_expr(dynamic_cast<SubQueryExpr *>(left.release()));
+      sub_query_expr->set_logical_operator(std::move(sub_logical_operator));
+      sub_query_expr->set_physical_operator(std::move(sub_physical_operator));
+      // 归还所有权，便于下一步操作
+      left = std::move(sub_query_expr);
     }
 
     ComparisonExpr *cmp_expr = new ComparisonExpr(filter_unit->comp(), std::move(left), std::move(right));

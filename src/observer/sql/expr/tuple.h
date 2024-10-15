@@ -26,6 +26,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/record/record.h"
 
 class Table;
+class FieldExpr;
 
 /**
  * @defgroup Tuple
