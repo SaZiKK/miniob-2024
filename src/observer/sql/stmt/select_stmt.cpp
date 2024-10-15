@@ -69,7 +69,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
       select_sql.conditions[i].right_sub_query_stmt = sub_select_stmt;
     }
     if (select_sql.conditions[i].left_is_sub_query) {
-      auto left_sub_query = select_sql.conditions[i].right_sub_query;
+      auto left_sub_query = select_sql.conditions[i].left_sub_query;
       // 左子查询目前必须是select
       if (left_sub_query->flag != SCF_SELECT) {
         LOG_WARN("invalid argument. sub query is not select. index=%d", i);

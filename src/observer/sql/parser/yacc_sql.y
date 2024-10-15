@@ -767,6 +767,17 @@ condition:
       $$->right_sub_query = $3;
       $$->right_expression = nullptr;
     }
+    |
+    sub_select_stmt comp_op expression
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_sub_query = true;
+      $$->right_is_sub_query = false;
+      $$->comp = $2;
+      $$->left_sub_query = $1;
+      $$->left_expression = nullptr;
+      $$->right_expression = $3;
+    }
     | 
     expression comp_op expression
     {

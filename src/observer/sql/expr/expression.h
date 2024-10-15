@@ -368,7 +368,8 @@ class ComparisonExpr : public Expression {
    * compare the two tuple cells
    * @param value the result of comparison
    */
-  RC compare_value(const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list, bool &value) const;
+  RC compare_value(const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list, bool &value,
+                   bool left_is_value, bool right_is_value) const;
 
   /// compare two string with pattern
   static bool likeMatch(const std::string &str, const std::string &pattern);

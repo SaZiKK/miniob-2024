@@ -216,33 +216,141 @@ ComparisonExpr::ComparisonExpr(CompOp comp, unique_ptr<Expression> left, unique_
 ComparisonExpr::~ComparisonExpr() {}
 
 RC ComparisonExpr::compare_value(const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list,
-                                 bool &result) const {
+                                 bool &result, bool left_is_value, bool right_is_value) const {
   RC rc = RC::SUCCESS;
   result = false;
+  if (!left_is_value && !right_is_value) {
+    LOG_WARN("both left and right are not value");
+    return RC::INVALID_ARGUMENT;
+  }
   switch (comp_) {
     case EQUAL_TO: {
-      int cmp_result = left.compare(right);
-      result = (0 == cmp_result);
+      // 有一个不等于就返回false
+      result = true;
+      if (!left_is_value && right_is_value) {
+        for (auto it : left_list) {
+          if (0 != it.compare(right)) {
+            result = false;
+            break;
+          }
+        }
+      } else if (!right_is_value && left_is_value) {
+        for (auto it : right_list) {
+          if (0 != left.compare(it)) {
+            result = false;
+            break;
+          }
+        }
+      } else {
+        int cmp_result = left.compare(right);
+        result = (0 == cmp_result);
+      }
     } break;
     case LESS_EQUAL: {
-      int cmp_result = left.compare(right);
-      result = (cmp_result <= 0);
+      // 返回所有小于等于 ，注意左边是list的时候，也就是左边是子查询的时候符号反向
+      if (!left_is_value && right_is_value) {
+        for (auto it : left_list) {
+          if (0 >= it.compare(right)) {
+            result = true;
+            break;
+          }
+        }
+      } else if (!right_is_value && left_is_value) {
+        for (auto it : right_list) {
+          if (0 <= left.compare(it)) {
+            result = true;
+            break;
+          }
+        }
+      } else {
+        int cmp_result = left.compare(right);
+        result = (0 <= cmp_result);
+      }
     } break;
     case NOT_EQUAL: {
-      int cmp_result = left.compare(right);
-      result = (cmp_result != 0);
+      // 有一个相等就返回false
+      result = true;
+      if (!left_is_value && right_is_value) {
+        for (auto it : left_list) {
+          if (0 == it.compare(right)) {
+            result = false;
+            break;
+          }
+        }
+      } else if (!right_is_value && left_is_value) {
+        for (auto it : right_list) {
+          if (0 == left.compare(it)) {
+            result = false;
+            break;
+          }
+        }
+      } else {
+        int cmp_result = left.compare(right);
+        result = (0 != cmp_result);
+      }
     } break;
     case LESS_THAN: {
-      int cmp_result = left.compare(right);
-      result = (cmp_result < 0);
+      // 返回所有小于 ，注意左边是list的时候，也就是左边是子查询的时候符号反向
+      if (!left_is_value && right_is_value) {
+        for (auto it : left_list) {
+          if (0 > it.compare(right)) {
+            result = true;
+            break;
+          }
+        }
+      } else if (!right_is_value && left_is_value) {
+        for (auto it : right_list) {
+          if (0 < left.compare(it)) {
+            result = true;
+            break;
+          }
+        }
+      } else {
+        int cmp_result = left.compare(right);
+        result = (0 < cmp_result);
+      }
     } break;
     case GREAT_EQUAL: {
-      int cmp_result = left.compare(right);
-      result = (cmp_result >= 0);
+      // 返回所有大于等于 ，注意左边是list的时候，也就是左边是子查询的时候符号反向
+      if (!left_is_value && right_is_value) {
+        for (auto it : left_list) {
+          if (0 <= it.compare(right)) {
+            result = true;
+            break;
+          }
+        }
+      } else if (!right_is_value && left_is_value) {
+        for (auto it : right_list) {
+          if (0 >= left.compare(it)) {
+            result = true;
+            break;
+          }
+        }
+      } else {
+        int cmp_result = left.compare(right);
+        result = (0 >= cmp_result);
+      }
     } break;
     case GREAT_THAN: {
-      int cmp_result = left.compare(right);
-      result = (cmp_result > 0);
+      // 返回所有大于 ，注意左边是list的时候，也就是左边是子查询的时候符号反向
+      if (!left_is_value && right_is_value) {
+        for (auto it : left_list) {
+          if (0 < it.compare(right)) {
+            result = true;
+            break;
+          }
+        }
+      } else if (!right_is_value && left_is_value) {
+        for (auto it : right_list) {
+          if (0 > left.compare(it)) {
+            result = true;
+            break;
+          }
+        }
+      } else {
+        int cmp_result = left.compare(right);
+        result = (0 > cmp_result);
+      }
     } break;
     case LIKE_XXX: {
       result = ComparisonExpr::likeMatch(left.get_string(), right.get_string());
@@ -251,26 +359,58 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
       result = !ComparisonExpr::likeMatch(left.get_string(), right.get_string());
     } break;
     case IN_XXX: {
-      for (const Value &value : right_list) {
-        if (0 == left.compare(value)) {
-          result = true;
-          break;
+      if (!left_is_value && right_is_value) {
+        for (const Value &value : left_list) {
+          if (0 == value.compare(right)) {
+            result = true;
+            break;
+          }
         }
+      } else if (!right_is_value && left_is_value) {
+        for (const Value &value : right_list) {
+          if (0 == left.compare(value)) {
+            result = true;
+            break;
+          }
+        }
+      } else {
+        LOG_WARN("unsupported comparison. %d", comp_);
+        rc = RC::INTERNAL;
       }
     } break;
     case NOT_IN_XXX: {
-      for (const Value &value : right_list) {
-        if (0 != left.compare(value)) {
-          result = true;
-          break;
+      if (!left_is_value && right_is_value) {
+        for (const Value &value : left_list) {
+          if (0 != value.compare(right)) {
+            result = true;
+            break;
+          }
         }
+      } else if (!right_is_value && left_is_value) {
+        for (const Value &value : right_list) {
+          if (0 != left.compare(value)) {
+            result = true;
+            break;
+          }
+        }
+      } else {
+        LOG_WARN("unsupported comparison. %d", comp_);
+        rc = RC::INTERNAL;
       }
     } break;
     case XXX_EXISTS: {
-      result = !right_list.empty();  // todo: 目前仅支持右边是子查询的情况
+      if (!left_is_value && right_is_value) {
+        result = !left_list.empty();
+      } else if (!right_is_value && left_is_value) {
+        result = !right_list.empty();
+      }
     } break;
     case XXX_NOT_EXISTS: {
-      result = right_list.empty();  // todo: 目前仅支持右边是子查询的情况
+      if (!left_is_value && right_is_value) {
+        result = left_list.empty();
+      } else if (!right_is_value && left_is_value) {
+        result = right_list.empty();
+      }
     } break;
     default: {
       LOG_WARN("unsupported comparison. %d", comp_);
@@ -324,9 +464,11 @@ RC ComparisonExpr::try_get_value(Value &cell) const {
     const Value &right_cell = right_value_expr->get_value();
     std::vector<Value> left_list;
     std::vector<Value> right_list;
+    bool left_is_value = true;
+    bool right_is_value = true;  // todo 这里暂时没考虑是list的情况
 
     bool value = false;
-    RC rc = compare_value(left_cell, right_cell, left_list, right_list, value);
+    RC rc = compare_value(left_cell, right_cell, left_list, right_list, value, left_is_value, right_is_value);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to compare tuple cells. rc=%s", strrc(rc));
     } else {
@@ -343,13 +485,16 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
   Value right_value;
   vector<Value> right_values;
   vector<Value> left_values;
+  bool left_is_value = false;
+  bool right_is_value = false;
   RC rc = RC::EMPTY;
 
   // 特判子查询，进入特殊处理函数获取数据
   if (left_->value_type() == AttrType::SUB_QUERY || left_->type() == ExprType::VALUELIST) {
-    rc = right_->get_value_list(left_values);
+    rc = left_->get_value_list(left_values);
   } else {
     rc = left_->get_value(tuple, left_value);
+    left_is_value = true;
   }
 
   if (rc != RC::SUCCESS) {
@@ -361,6 +506,7 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
     rc = right_->get_value_list(right_values);
   } else {
     rc = right_->get_value(tuple, right_value);
+    right_is_value = true;
   }
 
   if (rc != RC::SUCCESS) {
@@ -370,7 +516,7 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
 
   bool bool_value = false;
 
-  rc = compare_value(left_value, right_value, left_values, right_values, bool_value);
+  rc = compare_value(left_value, right_value, left_values, right_values, bool_value, left_is_value, right_is_value);
   if (rc == RC::SUCCESS) {
     value.set_boolean(bool_value);
   }
