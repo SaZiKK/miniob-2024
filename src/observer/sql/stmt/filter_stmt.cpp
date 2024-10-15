@@ -38,26 +38,11 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
   for (int i = 0; i < condition_num; i++) {
     FilterUnit *filter_unit = nullptr;
 
+    // 重写 ConditionSqlNode
+    if (rc != RC::SUCCESS) return rc;
+
     // 创建单个筛选条件
     rc = create_filter_unit(db, default_table, tables, conditions[i], filter_unit);
-
-    // DATE类型值合法性校验
-    if (!conditions[i].left_is_attr) {
-      if (conditions[i].left_value.attr_type() == AttrType::DATE) {
-        int date = conditions[i].left_value.get_date();
-        if (DateType::check_date(date) == false) {
-          return RC::INVALID_ARGUMENT;
-        }
-      }
-    }
-    if (!conditions[i].right_is_attr) {
-      if (conditions[i].right_value.attr_type() == AttrType::DATE) {
-        int date = conditions[i].right_value.get_date();
-        if (DateType::check_date(date) == false) {
-          return RC::INVALID_ARGUMENT;
-        }
-      }
-    }
 
     // 查错
     if (rc != RC::SUCCESS) {
@@ -74,26 +59,30 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
   return rc;
 }
 
-RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const RelAttrSqlNode &attr, Table *&table,
+RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, Expression *expression, Table *&table,
                        const FieldMeta *&field) {
-  if (common::is_blank(attr.relation_name.c_str())) {
+  UnboundFieldExpr *field_expr = static_cast<UnboundFieldExpr *>(expression);
+  string relation_name = field_expr->table_name();
+  string attribute_name = field_expr->field_name();
+
+  if (common::is_blank(relation_name.c_str())) {
     table = default_table;
   } else if (nullptr != tables) {
-    auto iter = tables->find(attr.relation_name);
+    auto iter = tables->find(relation_name);
     if (iter != tables->end()) {
       table = iter->second;
     }
   } else {
-    table = db->find_table(attr.relation_name.c_str());
+    table = db->find_table(relation_name.c_str());
   }
   if (nullptr == table) {
-    LOG_WARN("No such table: attr.relation_name: %s", attr.relation_name.c_str());
+    LOG_WARN("No such table: attr.relation_name: %s", relation_name.c_str());
     return RC::SCHEMA_TABLE_NOT_EXIST;
   }
 
-  field = table->table_meta().field(attr.attribute_name.c_str());
+  field = table->table_meta().field(attribute_name.c_str());
   if (nullptr == field) {
-    LOG_WARN("no such field in table: table %s, field %s", table->name(), attr.attribute_name.c_str());
+    LOG_WARN("no such field in table: table %s, field %s", table->name(), attribute_name.c_str());
     table = nullptr;
     return RC::SCHEMA_FIELD_NOT_EXIST;
   }
@@ -114,64 +103,90 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
 
   filter_unit = new FilterUnit;
 
-  // 左值为属性
-  if (condition.left_is_attr) {
-    // 找到目标表格和属性域
-    Table *table = nullptr;
-    const FieldMeta *field = nullptr;
-    // 获取表格和字段
-    rc = get_table_and_field(db, default_table, tables, condition.left_attr, table, field);
-    if (rc != RC::SUCCESS) {
-      LOG_WARN("cannot find attr");
-      return rc;
-    }
+  Expression *left_expr = condition.left_expression;
+  Expression *right_expr = condition.right_expression;
 
-    // 创建属性类 FilterObj
+  Value left_value, right_value;
+  bool left_is_value, right_is_value;
+
+  ///////////////////////////////////////////////////////////////////
+  // left_expr 为 UnboundFieldExpr 时，代表该表达式为属性
+  // 此时，try_get_value() 返回 RC::UNIMPLEMENTED
+  //
+  // left_expr 为 其他表达式 时，代表该表达式最终算出来的是一个 Value
+  // 此时，try_get_value() 可以拿到算出来的 Value 对象
+  ///////////////////////////////////////////////////////////////////
+
+  // 左侧不是子查询
+  if (condition.left_is_sub_query == 0 && condition.left_expression != nullptr) {
+    left_is_value = OB_SUCC(condition.left_expression->try_get_value(left_value));
+  }
+
+  // 右侧不是子查询
+  if (condition.right_is_sub_query == 0) {
+    right_is_value = OB_SUCC(right_expr->try_get_value(right_value));
+  }
+
+  // 判断日期合法性
+  if (left_is_value && left_value.attr_type() == AttrType::DATE) {
+    if (!DateType::check_date(left_value.get_date())) return RC::INVALID_ARGUMENT;
+  }
+  if (right_is_value && right_value.attr_type() == AttrType::DATE) {
+    if (!DateType::check_date(right_value.get_date())) return RC::INVALID_ARGUMENT;
+  }
+
+  // 创建左 filterObj
+  // sub_select
+  if (condition.left_is_sub_query) {
+  }
+  // Value
+  else if (left_is_value) {
     FilterObj filter_obj;
-    filter_obj.init_attr(Field(table, field));
+    filter_obj.init_value(left_value);
     filter_unit->set_left(filter_obj);
   }
-  // 创建变量类 FilterObj
+  // Attribute
   else {
-    FilterObj filter_obj;
-    filter_obj.init_value(condition.left_value);
-    filter_unit->set_left(filter_obj);
-  }
-
-  // 右值是属性
-  if (condition.right_is_attr) {
-    // 找到目标表格和属性域
     Table *table = nullptr;
     const FieldMeta *field = nullptr;
-    // 获取表格和字段
-    rc = get_table_and_field(db, default_table, tables, condition.right_attr, table, field);
+    rc = get_table_and_field(db, default_table, tables, left_expr, table, field);
     if (rc != RC::SUCCESS) {
       LOG_WARN("cannot find attr");
       return rc;
     }
 
-    // 创建属性类 FilterObj
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
+    filter_unit->set_left(filter_obj);
+  }
+
+  // 创建右 filterObj
+  // sub_select
+  if (condition.right_is_sub_query) {
+  }
+  // Value
+  else if (right_is_value) {
+    FilterObj filter_obj;
+    filter_obj.init_value(right_value);
     filter_unit->set_right(filter_obj);
   }
-  // 创建变量类 FilterObj
+  // Attribute
   else {
+    Table *table = nullptr;
+    const FieldMeta *field = nullptr;
+    rc = get_table_and_field(db, default_table, tables, right_expr, table, field);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("cannot find attr");
+      return rc;
+    }
+
     FilterObj filter_obj;
-    filter_obj.init_value(condition.right_value);
+    filter_obj.init_attr(Field(table, field));
     filter_unit->set_right(filter_obj);
   }
 
   // 设置比较符
   filter_unit->set_comp(comp);
 
-  // 检查两个类型是否能够比较
-  // AttrType left_type = filter_unit->left().is_attr
-  //                          ? filter_unit->left().field.attr_type()
-  //                          : filter_unit->left().value.attr_type();
-  // AttrType right_type = filter_unit->right().is_attr
-  //                           ? filter_unit->right().field.attr_type()
-  //                           : filter_unit->right().value.attr_type();
-  // 目前先不实现该功能
   return rc;
 }

@@ -648,6 +648,18 @@ expression:
         $$ = create_aggregate_expression("SUM", $3->at(0).get(), sql_string, &@$);
       }
     }
+    | LENGTH LBRACE expression RBRACE {
+      $$ = new FuncExpr(FuncExpr::FuncType::LENGTH, nullptr, nullptr, $3);
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | ROUND LBRACE expression COMMA expression RBRACE {
+      $$ = new FuncExpr(FuncExpr::FuncType::ROUND, $5, nullptr, $3);
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | DATE_FORMAT LBRACE expression COMMA expression RBRACE {
+      $$ = new FuncExpr(FuncExpr::FuncType::DATE_FORMAT, nullptr, $5, $3);
+      $$->set_name(token_name(sql_string, &@$));
+    }
     ;
 
 rel_attr:
@@ -737,74 +749,24 @@ condition_list:
     }
     ;
 condition:
-    rel_attr comp_op value
+    expression comp_op sub_select_stmt
     {
       $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 0;
-      $$->left_is_sub_query = false;
-      $$->right_is_sub_query = false;
-      $$->right_value = *$3;
-      $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | value comp_op value 
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 0;
-      $$->left_value = *$1;
-      $$->right_is_attr = 0;
-      $$->left_is_sub_query = false;
-      $$->right_is_sub_query = false;
-      $$->right_value = *$3;
-      $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | rel_attr comp_op rel_attr
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 1;
-      $$->left_is_sub_query = false;
-      $$->right_is_sub_query = false;
-      $$->right_attr = *$3;
-      $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | value comp_op rel_attr
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 0;
-      $$->left_value = *$1;
-      $$->right_is_attr = 1;
-      $$->left_is_sub_query = false;
-      $$->right_is_sub_query = false;
-      $$->right_attr = *$3;
-      $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | rel_attr comp_op sub_select_stmt
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 0;
       $$->left_is_sub_query = false;
       $$->right_is_sub_query = true;
-      $$->right_sub_query = $3;
       $$->comp = $2;
-
-      delete $1;
+      $$->left_expression = $1;
+      $$->right_expression = nullptr;
+    }
+    | 
+    expression comp_op expression
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_sub_query = false;
+      $$->right_is_sub_query = false;
+      $$->comp = $2;
+      $$->left_expression = $1;
+      $$->right_expression = $3;
     }
     ;
 
