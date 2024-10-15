@@ -785,6 +785,7 @@ condition:
       $$->right_is_sub_query = true;
       $$->right_sub_query = $2;
       $$->comp = $1;
+      $$->left_expression = new ValueExpr(Value(114514));
     }
     ;
 
