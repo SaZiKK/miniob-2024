@@ -260,8 +260,8 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
     } break;
     case NOT_IN_XXX: {
       for (const Value &value : right_list) {
-        if (0 == left.compare(value)) {
-          result = false;
+        if (0 != left.compare(value)) {
+          result = true;
           break;
         }
       }
