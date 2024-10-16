@@ -223,6 +223,14 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
     LOG_WARN("both left and right are not value");
     return RC::INVALID_ARGUMENT;
   }
+  if (!left_is_value && right_is_value && left_list.size() > 1) {
+    LOG_WARN("比较符号左边是list，右边是value，但是左边有多个值");
+    return RC::INVALID_ARGUMENT;
+  }
+  if (left_is_value && !right_is_value && right_list.size() > 1) {
+    LOG_WARN("比较符号左边是value，右边是list，但是右边有多个值");
+    return RC::INVALID_ARGUMENT;
+  }
   switch (comp_) {
     case EQUAL_TO: {
       // 有一个不等于就返回false
@@ -257,14 +265,14 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
         }
       } else if (!right_is_value && left_is_value) {
         for (auto it : right_list) {
-          if (0 <= left.compare(it)) {
+          if (0 >= left.compare(it)) {
             result = true;
             break;
           }
         }
       } else {
         int cmp_result = left.compare(right);
-        result = (0 <= cmp_result);
+        result = (0 >= cmp_result);
       }
     } break;
     case NOT_EQUAL: {
@@ -300,14 +308,14 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
         }
       } else if (!right_is_value && left_is_value) {
         for (auto it : right_list) {
-          if (0 < left.compare(it)) {
+          if (0 > left.compare(it)) {
             result = true;
             break;
           }
         }
       } else {
         int cmp_result = left.compare(right);
-        result = (0 < cmp_result);
+        result = (0 > cmp_result);
       }
     } break;
     case GREAT_EQUAL: {
@@ -321,14 +329,14 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
         }
       } else if (!right_is_value && left_is_value) {
         for (auto it : right_list) {
-          if (0 >= left.compare(it)) {
+          if (0 <= left.compare(it)) {
             result = true;
             break;
           }
         }
       } else {
         int cmp_result = left.compare(right);
-        result = (0 >= cmp_result);
+        result = (0 <= cmp_result);
       }
     } break;
     case GREAT_THAN: {
@@ -342,14 +350,14 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
         }
       } else if (!right_is_value && left_is_value) {
         for (auto it : right_list) {
-          if (0 > left.compare(it)) {
+          if (0 < left.compare(it)) {
             result = true;
             break;
           }
         }
       } else {
         int cmp_result = left.compare(right);
-        result = (0 > cmp_result);
+        result = (0 < cmp_result);
       }
     } break;
     case LIKE_XXX: {
