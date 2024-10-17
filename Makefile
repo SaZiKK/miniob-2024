@@ -1,5 +1,7 @@
 BUILD_DIR:= build_debug
+DEBUG_DIR:= test/case
 SRC_DIR := src
+TEST:= basic
 
 
 all: fmt gen
@@ -25,4 +27,8 @@ fmt:
 		-print0 | xargs -0 clang-format -i
 	@echo "Formatting complete."
 
-.PHONY: all run clean fmt
+debug:
+	@echo "Building debug..."
+	@cd $(DEBUG_DIR) && python3 miniob_test.py --test-cases=primary-$(TEST)
+
+.PHONY: all run clean fmt gen debug
