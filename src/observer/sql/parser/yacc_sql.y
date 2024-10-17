@@ -121,6 +121,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         LENGTH
         ROUND
         DATE_FORMAT
+        NULLABLE
+        UNNULLABLE
         EQ
         LT
         GT
@@ -147,6 +149,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   char *                                     string;
   int                                        number;
   float                                      floats;
+  bool                                       boolean;
 }
 
 %token <number> NUMBER
@@ -171,6 +174,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <condition_list>      condition_list
 %type <string>              storage_format
 %type <relation_list>       rel_list
+%type <boolean>              null_def
 %type <join_list>           join_list
 %type <expression>          expression
 %type <expression_list>     expression_list
@@ -356,12 +360,10 @@ create_table_stmt:    /*create table 语句的语法解析树*/
 attr_def_list:
     /* empty */
     {
-      LOG_DEBUG("parse attr_def_list");
       $$ = nullptr;
     }
     | COMMA attr_def attr_def_list
     {
-      LOG_DEBUG("parse attr_def_list");
       if ($3 != nullptr) {
         $$ = $3;
       } else {
@@ -373,25 +375,35 @@ attr_def_list:
     ;
     
 attr_def:
-    ID type LBRACE number RBRACE 
+    ID type LBRACE number RBRACE null_def 
     {
-      LOG_DEBUG("parse attr_def");
       $$ = new AttrInfoSqlNode;
       $$->type = (AttrType)$2;
       $$->name = $1;
       $$->length = $4;
+      $$->can_be_null = $6;
       free($1);
     }
-    | ID type
+    | ID type null_def
     {
-      LOG_DEBUG("parse attr_def");
       $$ = new AttrInfoSqlNode;
       $$->type = (AttrType)$2;
       $$->name = $1;
       $$->length = 4;
+      $$->can_be_null = $3;
       free($1);
     }
     ;
+null_def:
+    {
+      $$ = true;
+    }
+    | NULLABLE {
+      $$ = true;
+    }
+    | UNNULLABLE {
+      $$ = false;
+    }
 number:
     NUMBER {$$ = $1;}
     ;
@@ -436,7 +448,11 @@ value_list:
     }
     ;
 value:
-    NUMBER {
+    NULLABLE {
+      $$ = new Value(string("ckk is stupid!"), 114514);
+      @$ = @1;
+    }
+    | NUMBER {
       LOG_DEBUG("parse NUMBER: %d", $1);
       $$ = new Value((int)$1);
       @$ = @1;

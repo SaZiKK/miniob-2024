@@ -14,7 +14,8 @@ See the Mulan PSL v2 for more details. */
 #include "common/type/integer_type.h"
 #include "common/value.h"
 
-int IntegerType::compare(const Value &left, const Value &right) const {
+int IntegerType::compare(const Value &left, const Value &right) const
+{
   ASSERT(left.attr_type() == AttrType::INTS, "left type is not integer");
 
   Value real_left_value = left;
@@ -27,88 +28,107 @@ int IntegerType::compare(const Value &left, const Value &right) const {
   return common::compare_float((void *)&left_val, (void *)&right_val);
 }
 
-RC IntegerType::add(const Value &left, const Value &right, Value &result) const {
+RC IntegerType::add(const Value &left, const Value &right, Value &result) const
+{
   result.set_int(left.get_int() + right.get_int());
   return RC::SUCCESS;
 }
 
-RC IntegerType::subtract(const Value &left, const Value &right, Value &result) const {
+RC IntegerType::subtract(const Value &left, const Value &right, Value &result) const
+{
   result.set_int(left.get_int() - right.get_int());
   return RC::SUCCESS;
 }
 
-RC IntegerType::multiply(const Value &left, const Value &right, Value &result) const {
+RC IntegerType::multiply(const Value &left, const Value &right, Value &result) const
+{
   result.set_int(left.get_int() * right.get_int());
   return RC::SUCCESS;
 }
 
-RC IntegerType::negative(const Value &val, Value &result) const {
+RC IntegerType::negative(const Value &val, Value &result) const
+{
   result.set_int(-val.get_int());
   return RC::SUCCESS;
 }
 
-RC IntegerType::set_value_from_str(Value &val, const string &data) const {
+RC IntegerType::set_value_from_str(Value &val, const string &data) const
+{
   RC rc = RC::SUCCESS;
   stringstream deserialize_stream;
-  deserialize_stream.clear();  // 清理stream的状态，防止多次解析出现异常
+  deserialize_stream.clear(); // 清理stream的状态，防止多次解析出现异常
   deserialize_stream.str(data);
   int int_value;
   deserialize_stream >> int_value;
-  if (!deserialize_stream || !deserialize_stream.eof()) {
+  if (!deserialize_stream || !deserialize_stream.eof())
+  {
     rc = RC::SCHEMA_FIELD_TYPE_MISMATCH;
-  } else {
+  }
+  else
+  {
     val.set_int(int_value);
   }
   return rc;
 }
 
-RC IntegerType::to_string(const Value &val, string &result) const {
+RC IntegerType::to_string(const Value &val, string &result) const
+{
   stringstream ss;
   ss << val.value_.int_value_;
   result = ss.str();
   return RC::SUCCESS;
 }
 
-RC IntegerType::cast_to(const Value &val, AttrType type, Value &result) const {
-  switch (type) {
-    // INTS => FLOATS
-    case (AttrType::FLOATS): {
-      float target = (float)val.get_int();
-      result.set_float(target);
-    } break;
+RC IntegerType::cast_to(const Value &val, AttrType type, Value &result) const
+{
+  switch (type)
+  {
+  // INTS => FLOATS
+  case (AttrType::FLOATS):
+  {
+    float target = (float)val.get_int();
+    result.set_float(target);
+  }
+  break;
 
-    // INTS => CHARS
-    case (AttrType::CHARS): {
-      string target;
-      to_string(val, target);
-      result.set_string(target.c_str());
-    } break;
-    case (AttrType::INTS): {
-      result = val;
-    } break;
-    default:
-      return RC::INVALID_ARGUMENT;
+  // INTS => CHARS
+  case (AttrType::CHARS):
+  {
+    string target;
+    to_string(val, target);
+    result.set_string(target.c_str());
+  }
+  break;
+  case (AttrType::INTS):
+  {
+    result = val;
+  }
+  break;
+  default:
+    return RC::INVALID_ARGUMENT;
   }
   return RC::SUCCESS;
 }
 
 // FLOATS > INTS > BOOLEANS > CHARS
-int IntegerType::cast_cost(AttrType type) {
-  switch (type) {
-    case (AttrType::FLOATS):
-      return 1;
+int IntegerType::cast_cost(AttrType type)
+{
+  switch (type)
+  {
+  case (AttrType::FLOATS):
+    return 1;
 
-    case (AttrType::CHARS):
-      return 2;
+  case (AttrType::CHARS):
+    return 2;
 
-    case (AttrType::BOOLEANS):
-      return 2;
+  case (AttrType::BOOLEANS):
+    return 2;
 
-    case (AttrType::INTS):
-      return 0;
+  case (AttrType::INTS):
+    return 0;
 
-    default:
-      return INT32_MAX;
+  default:
+    return INT32_MAX;
   }
   return INT32_MAX;
 }

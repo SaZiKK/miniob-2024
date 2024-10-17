@@ -1,6 +1,9 @@
 ## 运行 miniob 命令
 ./bin/observer -f ../etc/observer.ini -P cli
 
+## MySql 模拟器
+https://sqlfiddle.com/mysql/
+
 ## miniob 辅助开发手册
 https://oceanbase.github.io/miniob/
 

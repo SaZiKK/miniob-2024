@@ -49,8 +49,9 @@ class FieldExpr;
  * @brief 元组的结构，包含哪些字段(这里成为Cell)，每个字段的说明
  * @ingroup Tuple
  */
-class TupleSchema {
- public:
+class TupleSchema
+{
+public:
   void append_cell(const TupleCellSpec &cell) { cells_.push_back(cell); }
   void append_cell(const char *table, const char *field) { append_cell(TupleCellSpec(table, field)); }
   void append_cell(const char *alias) { append_cell(TupleCellSpec(alias)); }
@@ -58,7 +59,7 @@ class TupleSchema {
 
   const TupleCellSpec &cell_at(int i) const { return cells_[i]; }
 
- private:
+private:
   std::vector<TupleCellSpec> cells_;
 };
 
@@ -66,8 +67,9 @@ class TupleSchema {
  * @brief 元组的抽象描述
  * @ingroup Tuple
  */
-class Tuple {
- public:
+class Tuple
+{
+public:
   Tuple() = default;
   virtual ~Tuple() = default;
 
@@ -95,17 +97,20 @@ class Tuple {
    */
   virtual RC find_cell(const TupleCellSpec &spec, Value &cell) const = 0;
 
-  virtual std::string to_string() const {
+  virtual std::string to_string() const
+  {
     std::string str;
     const int cell_num = this->cell_num();
-    for (int i = 0; i < cell_num - 1; i++) {
+    for (int i = 0; i < cell_num - 1; i++)
+    {
       Value cell;
       cell_at(i, cell);
       str += cell.to_string();
       str += ", ";
     }
 
-    if (cell_num > 0) {
+    if (cell_num > 0)
+    {
       Value cell;
       cell_at(cell_num - 1, cell);
       str += cell.to_string();
@@ -113,35 +118,42 @@ class Tuple {
     return str;
   }
 
-  virtual RC compare(const Tuple &other, int &result) const {
+  virtual RC compare(const Tuple &other, int &result) const
+  {
     RC rc = RC::SUCCESS;
 
     const int this_cell_num = this->cell_num();
     const int other_cell_num = other.cell_num();
-    if (this_cell_num < other_cell_num) {
+    if (this_cell_num < other_cell_num)
+    {
       result = -1;
       return rc;
     }
-    if (this_cell_num > other_cell_num) {
+    if (this_cell_num > other_cell_num)
+    {
       result = 1;
       return rc;
     }
 
     Value this_value;
     Value other_value;
-    for (int i = 0; i < this_cell_num; i++) {
+    for (int i = 0; i < this_cell_num; i++)
+    {
       rc = this->cell_at(i, this_value);
-      if (OB_FAIL(rc)) {
+      if (OB_FAIL(rc))
+      {
         return rc;
       }
 
       rc = other.cell_at(i, other_value);
-      if (OB_FAIL(rc)) {
+      if (OB_FAIL(rc))
+      {
         return rc;
       }
 
       result = this_value.compare(other_value);
-      if (0 != result) {
+      if (0 != result)
+      {
         return rc;
       }
     }
@@ -156,11 +168,14 @@ class Tuple {
  * @ingroup Tuple
  * @details 直接就是获取表中的一条记录
  */
-class RowTuple : public Tuple {
- public:
+class RowTuple : public Tuple
+{
+public:
   RowTuple() = default;
-  virtual ~RowTuple() {
-    for (FieldExpr *spec : speces_) {
+  virtual ~RowTuple()
+  {
+    for (FieldExpr *spec : speces_)
+    {
       delete spec;
     }
     speces_.clear();
@@ -168,21 +183,25 @@ class RowTuple : public Tuple {
 
   void set_record(Record *record) { this->record_ = record; }
 
-  void set_schema(const Table *table, const std::vector<FieldMeta> *fields) {
+  void set_schema(const Table *table, const std::vector<FieldMeta> *fields)
+  {
     table_ = table;
     // fix:join当中会多次调用右表的open,open当中会调用set_scheme，从而导致tuple当中会存储
     // 很多无意义的field和value，因此需要先clear掉
     this->speces_.clear();
     this->speces_.reserve(fields->size());
-    for (const FieldMeta &field : *fields) {
+    for (const FieldMeta &field : *fields)
+    {
       speces_.push_back(new FieldExpr(table, &field));
     }
   }
 
   int cell_num() const override { return speces_.size(); }
 
-  RC cell_at(int index, Value &cell) const override {
-    if (index < 0 || index >= static_cast<int>(speces_.size())) {
+  RC cell_at(int index, Value &cell) const override
+  {
+    if (index < 0 || index >= static_cast<int>(speces_.size()))
+    {
       LOG_WARN("invalid argument. index=%d", index);
       return RC::INVALID_ARGUMENT;
     }
@@ -190,27 +209,35 @@ class RowTuple : public Tuple {
     FieldExpr *field_expr = speces_[index];
     const FieldMeta *field_meta = field_expr->field().meta();
     cell.set_type(field_meta->type());
-    cell.set_data(this->record_->data() + field_meta->offset(), field_meta->len());
+    if ((record_->data() + field_meta->offset())[0] == 'N' && (record_->data() + field_meta->offset())[1] == 'U' && (record_->data() + field_meta->offset())[2] == 'L' && (record_->data() + field_meta->offset())[3] == 'L')
+      cell.set_null(true);
+    else
+      cell.set_data(this->record_->data() + field_meta->offset(), field_meta->len());
     return RC::SUCCESS;
   }
 
-  RC spec_at(int index, TupleCellSpec &spec) const override {
+  RC spec_at(int index, TupleCellSpec &spec) const override
+  {
     const Field &field = speces_[index]->field();
     spec = TupleCellSpec(table_->name(), field.field_name());
     return RC::SUCCESS;
   }
 
-  RC find_cell(const TupleCellSpec &spec, Value &cell) const override {
+  RC find_cell(const TupleCellSpec &spec, Value &cell) const override
+  {
     const char *table_name = spec.table_name();
     const char *field_name = spec.field_name();
-    if (0 != strcmp(table_name, table_->name())) {
+    if (0 != strcmp(table_name, table_->name()))
+    {
       return RC::NOTFOUND;
     }
 
-    for (size_t i = 0; i < speces_.size(); ++i) {
+    for (size_t i = 0; i < speces_.size(); ++i)
+    {
       const FieldExpr *field_expr = speces_[i];
       const Field &field = field_expr->field();
-      if (0 == strcmp(field_name, field.field_name())) {
+      if (0 == strcmp(field_name, field.field_name()))
+      {
         return cell_at(i, cell);
       }
     }
@@ -233,7 +260,7 @@ class RowTuple : public Tuple {
 
   const Record &record() const { return *record_; }
 
- private:
+private:
   Record *record_ = nullptr;
   const Table *table_ = nullptr;
   std::vector<FieldExpr *> speces_;
@@ -245,8 +272,9 @@ class RowTuple : public Tuple {
  * @details 一般在select语句中使用。
  * 投影也可以是很复杂的操作，比如某些字段需要做类型转换、重命名、表达式运算、函数计算等。
  */
-class ProjectTuple : public Tuple {
- public:
+class ProjectTuple : public Tuple
+{
+public:
   ProjectTuple() = default;
   virtual ~ProjectTuple() = default;
 
@@ -258,11 +286,14 @@ class ProjectTuple : public Tuple {
 
   int cell_num() const override { return static_cast<int>(expressions_.size()); }
 
-  RC cell_at(int index, Value &cell) const override {
-    if (index < 0 || index >= cell_num()) {
+  RC cell_at(int index, Value &cell) const override
+  {
+    if (index < 0 || index >= cell_num())
+    {
       return RC::INTERNAL;
     }
-    if (tuple_ == nullptr) {
+    if (tuple_ == nullptr)
+    {
       return RC::INTERNAL;
     }
 
@@ -270,7 +301,8 @@ class ProjectTuple : public Tuple {
     return expr->get_value(*tuple_, cell);
   }
 
-  RC spec_at(int index, TupleCellSpec &spec) const override {
+  RC spec_at(int index, TupleCellSpec &spec) const override
+  {
     spec = TupleCellSpec(expressions_[index]->name());
     return RC::SUCCESS;
   }
@@ -287,7 +319,7 @@ class ProjectTuple : public Tuple {
     return RC::SUCCESS;
   }
 #endif
- private:
+private:
   std::vector<std::unique_ptr<Expression>> expressions_;
   Tuple *tuple_ = nullptr;
 };
@@ -297,8 +329,9 @@ class ProjectTuple : public Tuple {
  * @ingroup Tuple
  * TODO 使用单独文件
  */
-class ValueListTuple : public Tuple {
- public:
+class ValueListTuple : public Tuple
+{
+public:
   ValueListTuple() = default;
   virtual ~ValueListTuple() = default;
 
@@ -307,8 +340,10 @@ class ValueListTuple : public Tuple {
 
   virtual int cell_num() const override { return static_cast<int>(cells_.size()); }
 
-  virtual RC cell_at(int index, Value &cell) const override {
-    if (index < 0 || index >= cell_num()) {
+  virtual RC cell_at(int index, Value &cell) const override
+  {
+    if (index < 0 || index >= cell_num())
+    {
       return RC::NOTFOUND;
     }
 
@@ -316,8 +351,10 @@ class ValueListTuple : public Tuple {
     return RC::SUCCESS;
   }
 
-  RC spec_at(int index, TupleCellSpec &spec) const override {
-    if (index < 0 || index >= cell_num()) {
+  RC spec_at(int index, TupleCellSpec &spec) const override
+  {
+    if (index < 0 || index >= cell_num())
+    {
       return RC::NOTFOUND;
     }
 
@@ -325,12 +362,15 @@ class ValueListTuple : public Tuple {
     return RC::SUCCESS;
   }
 
-  virtual RC find_cell(const TupleCellSpec &spec, Value &cell) const override {
+  virtual RC find_cell(const TupleCellSpec &spec, Value &cell) const override
+  {
     ASSERT(cells_.size() == specs_.size(), "cells_.size()=%d, specs_.size()=%d", cells_.size(), specs_.size());
 
     const int size = static_cast<int>(specs_.size());
-    for (int i = 0; i < size; i++) {
-      if (specs_[i].equals(spec)) {
+    for (int i = 0; i < size; i++)
+    {
+      if (specs_[i].equals(spec))
+      {
         cell = cells_[i];
         return RC::SUCCESS;
       }
@@ -338,18 +378,22 @@ class ValueListTuple : public Tuple {
     return RC::NOTFOUND;
   }
 
-  static RC make(const Tuple &tuple, ValueListTuple &value_list) {
+  static RC make(const Tuple &tuple, ValueListTuple &value_list)
+  {
     const int cell_num = tuple.cell_num();
-    for (int i = 0; i < cell_num; i++) {
+    for (int i = 0; i < cell_num; i++)
+    {
       Value cell;
       RC rc = tuple.cell_at(i, cell);
-      if (OB_FAIL(rc)) {
+      if (OB_FAIL(rc))
+      {
         return rc;
       }
 
       TupleCellSpec spec;
       rc = tuple.spec_at(i, spec);
-      if (OB_FAIL(rc)) {
+      if (OB_FAIL(rc))
+      {
         return rc;
       }
 
@@ -359,7 +403,7 @@ class ValueListTuple : public Tuple {
     return RC::SUCCESS;
   }
 
- private:
+private:
   std::vector<Value> cells_;
   std::vector<TupleCellSpec> specs_;
 };
@@ -370,8 +414,9 @@ class ValueListTuple : public Tuple {
  * @details 在join算子中使用
  * TODO replace with composite tuple
  */
-class JoinedTuple : public Tuple {
- public:
+class JoinedTuple : public Tuple
+{
+public:
   JoinedTuple() = default;
   virtual ~JoinedTuple() = default;
 
@@ -380,42 +425,50 @@ class JoinedTuple : public Tuple {
 
   int cell_num() const override { return left_->cell_num() + right_->cell_num(); }
 
-  RC cell_at(int index, Value &value) const override {
+  RC cell_at(int index, Value &value) const override
+  {
     const int left_cell_num = left_->cell_num();
-    if (index >= 0 && index < left_cell_num) {
+    if (index >= 0 && index < left_cell_num)
+    {
       return left_->cell_at(index, value);
     }
 
-    if (index >= left_cell_num && index < left_cell_num + right_->cell_num()) {
+    if (index >= left_cell_num && index < left_cell_num + right_->cell_num())
+    {
       return right_->cell_at(index - left_cell_num, value);
     }
 
     return RC::NOTFOUND;
   }
 
-  RC spec_at(int index, TupleCellSpec &spec) const override {
+  RC spec_at(int index, TupleCellSpec &spec) const override
+  {
     const int left_cell_num = left_->cell_num();
-    if (index >= 0 && index < left_cell_num) {
+    if (index >= 0 && index < left_cell_num)
+    {
       return left_->spec_at(index, spec);
     }
 
-    if (index >= left_cell_num && index < left_cell_num + right_->cell_num()) {
+    if (index >= left_cell_num && index < left_cell_num + right_->cell_num())
+    {
       return right_->spec_at(index - left_cell_num, spec);
     }
 
     return RC::NOTFOUND;
   }
 
-  RC find_cell(const TupleCellSpec &spec, Value &value) const override {
+  RC find_cell(const TupleCellSpec &spec, Value &value) const override
+  {
     RC rc = left_->find_cell(spec, value);
-    if (rc == RC::SUCCESS || rc != RC::NOTFOUND) {
+    if (rc == RC::SUCCESS || rc != RC::NOTFOUND)
+    {
       return rc;
     }
 
     return right_->find_cell(spec, value);
   }
 
- private:
+private:
   Tuple *left_ = nullptr;
   Tuple *right_ = nullptr;
 };

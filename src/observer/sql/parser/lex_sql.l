@@ -137,6 +137,8 @@ NOT[ \t]+IN                             RETURN_TOKEN(NOT_IN);
 IN                                      RETURN_TOKEN(IN);
 EXISTS                                  RETURN_TOKEN(EXISTS);
 NOT[ \t]+EXISTS                         RETURN_TOKEN(NOT_EXISTS);
+NULL                                    RETURN_TOKEN(NULLABLE);
+NOT[ \t]+NULL                           RETURN_TOKEN(UNNULLABLE);
 
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
 {QUOTE}[0-9]{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01]){QUOTE} yylval->string=strdup(yytext); RETURN_TOKEN(DATE_STR); 

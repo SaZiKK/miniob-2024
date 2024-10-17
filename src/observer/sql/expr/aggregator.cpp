@@ -17,8 +17,13 @@ See the Mulan PSL v2 for more details. */
 
 ////////////////////////////////////////////////////////////
 // SUM
-RC SumAggregator::accumulate(const Value &value) {
-  if (value_.attr_type() == AttrType::UNDEFINED) {
+RC SumAggregator::accumulate(const Value &value)
+{
+  if (value.get_null())
+    return RC::SUCCESS;
+
+  if (value_.attr_type() == AttrType::UNDEFINED)
+  {
     value_ = value;
     return RC::SUCCESS;
   }
@@ -30,15 +35,20 @@ RC SumAggregator::accumulate(const Value &value) {
   return RC::SUCCESS;
 }
 
-RC SumAggregator::evaluate(Value &result) {
+RC SumAggregator::evaluate(Value &result)
+{
   result = value_;
   return RC::SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////
 // MAX
-RC MaxAggregator::accumulate(const Value &value) {
-  if (value_.attr_type() == AttrType::UNDEFINED) {
+RC MaxAggregator::accumulate(const Value &value)
+{
+  if (value.get_null())
+    return RC::SUCCESS;
+  if (value_.attr_type() == AttrType::UNDEFINED)
+  {
     value_ = value;
     return RC::SUCCESS;
   }
@@ -47,19 +57,25 @@ RC MaxAggregator::accumulate(const Value &value) {
          attr_type_to_string(value_.attr_type()));
 
   // 需要更新
-  if (value_.compare(value) == -1) value_ = value;
+  if (value_.compare(value) == -1)
+    value_ = value;
   return RC::SUCCESS;
 }
 
-RC MaxAggregator::evaluate(Value &result) {
+RC MaxAggregator::evaluate(Value &result)
+{
   result = value_;
   return RC::SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////
 // Min
-RC MinAggregator::accumulate(const Value &value) {
-  if (value_.attr_type() == AttrType::UNDEFINED) {
+RC MinAggregator::accumulate(const Value &value)
+{
+  if (value.get_null())
+    return RC::SUCCESS;
+  if (value_.attr_type() == AttrType::UNDEFINED)
+  {
     value_ = value;
     return RC::SUCCESS;
   }
@@ -68,20 +84,26 @@ RC MinAggregator::accumulate(const Value &value) {
          attr_type_to_string(value_.attr_type()));
 
   // 需要更新
-  if (value_.compare(value) == 1) value_ = value;
+  if (value_.compare(value) == 1)
+    value_ = value;
   return RC::SUCCESS;
 }
 
-RC MinAggregator::evaluate(Value &result) {
+RC MinAggregator::evaluate(Value &result)
+{
   result = value_;
   return RC::SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////
 // Avg
-RC AvgAggregator::accumulate(const Value &value) {
+RC AvgAggregator::accumulate(const Value &value)
+{
+  if (value.get_null())
+    return RC::SUCCESS;
   num++;
-  if (value_.attr_type() == AttrType::UNDEFINED) {
+  if (value_.attr_type() == AttrType::UNDEFINED)
+  {
     value_ = value;
     Value::cast_to(value_, AttrType::FLOATS, value_);
     return RC::SUCCESS;
@@ -99,15 +121,20 @@ RC AvgAggregator::accumulate(const Value &value) {
   return RC::SUCCESS;
 }
 
-RC AvgAggregator::evaluate(Value &result) {
+RC AvgAggregator::evaluate(Value &result)
+{
   result = value_;
   return RC::SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////
 // Count
-RC CountAggregator::accumulate(const Value &value) {
-  if (value_.attr_type() == AttrType::UNDEFINED) {
+RC CountAggregator::accumulate(const Value &value)
+{
+  if (value.get_null())
+    return RC::SUCCESS;
+  if (value_.attr_type() == AttrType::UNDEFINED)
+  {
     value_ = Value(1);
     return RC::SUCCESS;
   }
@@ -116,7 +143,8 @@ RC CountAggregator::accumulate(const Value &value) {
   return RC::SUCCESS;
 }
 
-RC CountAggregator::evaluate(Value &result) {
+RC CountAggregator::evaluate(Value &result)
+{
   result = value_;
   return RC::SUCCESS;
 }
