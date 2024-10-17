@@ -385,8 +385,14 @@ static void yynoreturn yy_fatal_error ( const char* msg , yyscan_t yyscanner );
 	yyg->yy_hold_char = *yy_cp; \
 	*yy_cp = '\0'; \
 	yyg->yy_c_buf_p = yy_cp;
+<<<<<<< HEAD
 #define YY_NUM_RULES 82
 #define YY_END_OF_BUFFER 83
+=======
+
+#define YY_NUM_RULES 62
+#define YY_END_OF_BUFFER 63
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -394,6 +400,7 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
+<<<<<<< HEAD
 static const flex_int16_t yy_accept[295] =
     {   0,
         0,    0,    0,    0,   83,   81,    1,    2,   81,   81,
@@ -429,6 +436,30 @@ static const flex_int16_t yy_accept[295] =
         0,    0,    0,   64,   64,   64,   64,   63,   50,    0,
        58,   49,   62,    0
 
+=======
+static yyconst flex_int16_t yy_accept[188] =
+    {   0,
+        0,    0,    0,    0,   63,   61,    1,    2,   61,   61,
+       61,   45,   46,   57,   55,   47,   56,    6,   58,    3,
+        5,   52,   48,   54,   44,   44,   44,   44,   44,   44,
+       44,   44,   44,   44,   44,   44,   44,   44,   44,   44,
+       44,   44,   62,   51,    0,   59,    0,   60,    3,    0,
+       49,   50,   53,   44,   44,   44,   44,   41,   44,   44,
+       44,   44,   44,   44,   44,   44,   44,   44,   44,   44,
+       44,   44,   44,   15,   44,   44,   44,   44,   44,   44,
+       44,   44,   44,   44,    4,   22,   44,   44,   44,   44,
+       44,   44,   44,   44,   44,   44,   44,   44,   44,   44,
+
+       44,   44,   44,   44,   44,   32,   44,   44,   44,   28,
+       44,   44,   44,   44,   44,   44,   44,   44,   44,   19,
+       33,   44,   44,   37,   44,    9,   11,    7,   44,   44,
+       44,   20,   44,    8,   44,   44,   44,   24,   36,   44,
+       44,   16,   44,   17,   44,   44,   44,   44,   44,   29,
+       44,   44,   44,   44,   34,   44,   40,   14,   44,   44,
+       44,   44,   44,   12,   44,   44,   44,   21,   30,   10,
+       26,   44,   43,   38,   23,   44,   18,   44,   13,   27,
+       25,   35,   39,   44,   42,   31,    0
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
     } ;
 
 static const YY_CHAR yy_ec[256] =
@@ -475,6 +506,7 @@ static const YY_CHAR yy_meta[75] =
         2,    2,    2,    2
     } ;
 
+<<<<<<< HEAD
 static const flex_int16_t yy_base[300] =
     {   0,
         0,    0,    0,    0,  206, 2037, 2037, 2037,  172,   69,
@@ -550,6 +582,61 @@ static const flex_int16_t yy_def[300] =
     } ;
 
 static const flex_int16_t yy_nxt[2112] =
+=======
+static yyconst flex_int16_t yy_base[193] =
+    {   0,
+        0,    0,    0,    0,  499,  500,  500,  500,  480,  492,
+      490,  500,  500,  500,  500,  500,  480,  500,  500,   54,
+      500,   52,  500,  476,   53,   57,   60,   59,   70,   91,
+       61,   67,   75,  478,   87,   77,   98,  113,  109,   58,
+      119,  111,  500,  500,  487,  500,  485,  500,   86,  475,
+      500,  500,  500,    0,  474,  126,  121,  473,  115,  137,
+      127,  151,  139,  153,  155,  150,  157,  161,  171,  172,
+      165,  178,  189,  472,  180,  206,  183,  207,  203,  209,
+      208,  195,  220,  228,  471,  462,  217,  231,  232,  233,
+      236,  242,  246,  256,  248,  235,  243,  264,  257,  260,
+
+      266,  272,  275,  267,  285,  270,  278,  283,  296,  461,
+      288,  295,  302,  301,  298,  306,  311,  307,  320,  460,
+      459,  319,  321,  458,  323,  457,  456,  453,  326,  324,
+      336,  452,  325,  449,  335,  342,  343,  448,  447,  348,
+      352,  446,  366,  445,  363,  374,  373,  360,  375,  444,
+      376,  377,  380,  388,  443,  391,  436,  434,  394,  392,
+      400,  393,  398,  390,  417,  418,  407,  432,  411,  350,
+      349,  423,  179,  177,  173,  424,  168,  421,  145,  143,
+       99,   83,   74,  404,   73,   69,  500,  479,  481,  483,
+       76,   75
+
+    } ;
+
+static yyconst flex_int16_t yy_def[193] =
+    {   0,
+      187,    1,  188,  188,  187,  187,  187,  187,  187,  189,
+      190,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  187,  187,  189,  187,  190,  187,  187,  187,
+      187,  187,  187,  192,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  187,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,  191,  191,  191,  191,
+      191,  191,  191,  191,  191,  191,    0,  187,  187,  187,
+      187,  187
+
+    } ;
+
+static yyconst flex_int16_t yy_nxt[567] =
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
     {   0,
         6,    7,    7,    8,    9,   10,   11,   12,   13,   14,
        15,   16,   17,   18,   19,   20,   20,   20,   20,   20,
@@ -562,6 +649,7 @@ static const flex_int16_t yy_nxt[2112] =
        52,   56,   57,   59,   50,   50,   50,   50,   50,   53,
        53,   53,   53,   53,   55,   60,   54,   54,   54,   54,
 
+<<<<<<< HEAD
        54,   59,   59,   59,   59,   59,   59,   59,   59,   59,
        59,   69,   84,   52,   49,   70,   60,  235,   60,   63,
        85,  222,   49,   61,  207,   60,   60,   49,   71,  263,
@@ -787,6 +875,62 @@ static const flex_int16_t yy_nxt[2112] =
     } ;
 
 static const flex_int16_t yy_chk[2112] =
+=======
+       49,   54,   63,   59,   57,   54,   64,   72,   56,   74,
+       60,   66,   54,   54,   71,   81,   61,   65,   62,   70,
+       73,   67,   58,   54,   68,   54,   69,   54,   80,   54,
+       72,   75,   74,   54,   66,   54,   76,   84,   82,   77,
+       54,   54,   83,   73,   67,   88,   87,   68,   86,   69,
+       78,   54,   80,   54,   75,   79,   89,   54,   90,   54,
+       76,   84,   82,   77,   54,   54,   83,   54,   88,   54,
+       87,   54,   86,   78,   91,   54,   92,   96,   79,   54,
+       89,   90,   54,   93,   97,   54,   54,   54,   95,   94,
+       98,   54,   54,   54,   54,  102,   99,   54,   91,   92,
+
+      103,   96,  104,   54,  100,  101,   93,   97,  107,   54,
+      108,   95,   94,   98,  105,  106,  111,   54,  102,   99,
+       54,   54,   54,   54,  103,  116,  104,  100,  101,  114,
+      115,   54,  107,  108,   54,  113,  109,  105,  106,  111,
+      112,  117,   54,  110,  119,   54,   54,   54,  116,   54,
+       54,  118,  120,  114,  115,  123,   54,   54,  113,  109,
+       54,  124,   54,  112,  122,  117,  110,  121,  119,  125,
+       54,   54,  128,  129,   54,  118,  120,  126,   54,  123,
+       54,   54,  127,  130,   54,  124,   54,  122,  131,   54,
+      121,  132,   54,  125,  136,  128,  129,   54,  135,   54,
+
+      139,  126,   54,  138,  133,  127,  134,  130,  137,   54,
+       54,  131,   54,  140,  132,   54,   54,  146,  136,  141,
+       54,   54,  135,  144,  139,   54,  138,  133,  142,  134,
+      143,  145,  137,   54,   54,   54,  140,   54,   54,   54,
+       54,  146,  149,  141,  147,  154,  151,  144,  148,   54,
+       54,  142,  150,  143,  145,  156,   54,   54,  152,  157,
+      153,  155,   54,   54,   54,  149,   54,  147,  161,  154,
+      151,  148,  159,  162,   54,  150,  158,   54,  160,  156,
+       54,  152,  157,  153,  155,  163,  164,   54,   54,   54,
+       54,   54,  161,  167,   54,  159,  166,  162,  168,  158,
+
+      170,  160,   54,  171,   54,   54,   54,   54,   54,  163,
+      164,  165,   54,  169,   54,  172,  167,  174,   54,  176,
+      166,   54,  168,  178,  170,   54,  179,  171,  173,  175,
+      177,   54,   54,  186,  165,   54,  169,   54,   54,  172,
+      180,  174,  182,  176,  185,  184,   54,  178,   54,  179,
+       54,  173,  175,  177,  181,  183,  186,   54,   54,   54,
+       54,   54,   54,   54,  180,  182,   54,   54,  185,  184,
+       54,   54,   54,   54,   54,   54,   54,  181,  183,   43,
+       43,   45,   45,   47,   47,   85,   54,   54,   54,   85,
+       48,   46,   54,   53,   49,   48,   46,   44,  187,    5,
+
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187
+    } ;
+
+static yyconst flex_int16_t yy_chk[567] =
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -794,6 +938,7 @@ static const flex_int16_t yy_chk[2112] =
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+<<<<<<< HEAD
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,   10,   17,   17,   17,   17,   17,
        11,   22,   22,  299,   10,   10,   10,   10,   10,   11,
@@ -1021,6 +1166,64 @@ static const flex_int16_t yy_chk[2112] =
 
       294,  294,  294,  294,  294,  294,  294,  294,  294,  294,
       294
+=======
+        1,    1,    1,    1,    1,    1,   20,   25,   20,   22,
+       22,   26,   40,   28,   27,   31,  192,  191,   28,   27,
+       26,   32,   28,  186,   29,   25,   27,  185,  183,   33,
+       32,   36,   40,   27,   28,   27,   31,  182,   49,   26,
+
+       49,   35,   28,   27,   26,   30,   28,   33,   25,   36,
+       27,   29,   37,  181,   32,   40,   27,   28,   27,   31,
+       35,   30,   26,   39,   30,   42,   30,   38,   39,   59,
+       33,   37,   36,   41,   29,   57,   38,   42,   41,   38,
+       56,   61,   41,   35,   30,   59,   57,   30,   56,   30,
+       38,   60,   39,   63,   37,   38,   60,  180,   61,  179,
+       38,   42,   41,   38,   66,   62,   41,   64,   59,   65,
+       57,   67,   56,   38,   62,   68,   63,   66,   38,   71,
+       60,   61,  177,   64,   66,   69,   70,  175,   65,   64,
+       67,  174,   72,  173,   75,   71,   68,   77,   62,   63,
+
+       72,   66,   72,   73,   69,   70,   64,   66,   73,   82,
+       75,   65,   64,   67,   72,   72,   77,   79,   71,   68,
+       76,   78,   81,   80,   72,   82,   72,   69,   70,   80,
+       81,   87,   73,   75,   83,   79,   76,   72,   72,   77,
+       78,   83,   84,   76,   87,   88,   89,   90,   82,   96,
+       91,   84,   88,   80,   81,   91,   92,   97,   79,   76,
+       93,   92,   95,   78,   90,   83,   76,   89,   87,   93,
+       94,   99,   96,   97,  100,   84,   88,   94,   98,   91,
+      101,  104,   95,   98,  106,   92,  102,   90,   99,  103,
+       89,  100,  107,   93,  104,   96,   97,  108,  103,  105,
+
+      107,   94,  111,  106,  101,   95,  102,   98,  105,  112,
+      109,   99,  115,  108,  100,  114,  113,  115,  104,  109,
+      116,  118,  103,  113,  107,  117,  106,  101,  111,  102,
+      112,  114,  105,  122,  119,  123,  108,  125,  130,  133,
+      129,  115,  118,  109,  116,  129,  122,  113,  117,  135,
+      131,  111,  119,  112,  114,  131,  136,  137,  123,  133,
+      125,  130,  140,  171,  170,  118,  141,  116,  140,  129,
+      122,  117,  136,  141,  148,  119,  135,  145,  137,  131,
+      143,  123,  133,  125,  130,  143,  145,  147,  146,  149,
+      151,  152,  140,  148,  153,  136,  147,  141,  149,  135,
+
+      152,  137,  154,  153,  164,  156,  160,  162,  159,  143,
+      145,  146,  163,  151,  161,  154,  148,  159,  184,  161,
+      147,  167,  149,  163,  152,  169,  164,  153,  156,  160,
+      162,  165,  166,  184,  146,  178,  151,  172,  176,  154,
+      165,  159,  167,  161,  178,  176,  168,  163,  158,  164,
+      157,  156,  160,  162,  166,  172,  184,  155,  150,  144,
+      142,  139,  138,  134,  165,  167,  132,  128,  178,  176,
+      127,  126,  124,  121,  120,  110,   86,  166,  172,  188,
+      188,  189,  189,  190,  190,   85,   74,   58,   55,   50,
+       47,   45,   34,   24,   17,   11,   10,    9,    5,  187,
+
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187,  187,  187,  187,  187,
+      187,  187,  187,  187,  187,  187
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -1067,7 +1270,11 @@ extern double atof();
 /* 1. 匹配的规则长的优先 */
 /* 2. 写在最前面的优先 */
 /* yylval 就可以认为是 yacc 中 %union 定义的结构体(union 结构) */
+<<<<<<< HEAD
 #line 1071 "lex_sql.cpp"
+=======
+#line 679 "lex_sql.cpp"
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 
 #define INITIAL 0
 #define STR 1
@@ -1319,6 +1526,14 @@ YY_DECL
 	int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
+<<<<<<< HEAD
+=======
+#line 75 "lex_sql.l"
+
+
+#line 922 "lex_sql.cpp"
+
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
     yylval = yylval_param;
 
     yylloc = yylloc_param;
@@ -1380,13 +1595,22 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
+<<<<<<< HEAD
 				if ( yy_current_state >= 295 )
 					yy_c = yy_meta[yy_c];
+=======
+				if ( yy_current_state >= 188 )
+					yy_c = yy_meta[(unsigned int) yy_c];
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			++yy_cp;
 			}
+<<<<<<< HEAD
 		while ( yy_base[yy_current_state] != 2037 );
+=======
+		while ( yy_base[yy_current_state] != 500 );
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -1583,6 +1807,7 @@ RETURN_TOKEN(TRX_BEGIN);
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
+<<<<<<< HEAD
 #line 116 "lex_sql.l"
 RETURN_TOKEN(TRX_COMMIT);
 	YY_BREAK
@@ -1655,6 +1880,80 @@ case 49:
 YY_RULE_SETUP
 #line 130 "lex_sql.l"
 RETURN_TOKEN(DATE_FORMAT);
+=======
+#line 113 "lex_sql.l"
+RETURN_TOKEN(VECTOR_T);
+	YY_BREAK
+case 36:
+YY_RULE_SETUP
+#line 114 "lex_sql.l"
+RETURN_TOKEN(LOAD);
+	YY_BREAK
+case 37:
+YY_RULE_SETUP
+#line 115 "lex_sql.l"
+RETURN_TOKEN(DATA);
+	YY_BREAK
+case 38:
+YY_RULE_SETUP
+#line 116 "lex_sql.l"
+RETURN_TOKEN(INFILE);
+	YY_BREAK
+case 39:
+YY_RULE_SETUP
+#line 117 "lex_sql.l"
+RETURN_TOKEN(EXPLAIN);
+	YY_BREAK
+case 40:
+YY_RULE_SETUP
+#line 118 "lex_sql.l"
+RETURN_TOKEN(GROUP);
+	YY_BREAK
+case 41:
+YY_RULE_SETUP
+#line 119 "lex_sql.l"
+RETURN_TOKEN(BY);
+	YY_BREAK
+case 42:
+YY_RULE_SETUP
+#line 120 "lex_sql.l"
+RETURN_TOKEN(STORAGE);
+	YY_BREAK
+case 43:
+YY_RULE_SETUP
+#line 121 "lex_sql.l"
+RETURN_TOKEN(FORMAT);
+	YY_BREAK
+case 44:
+YY_RULE_SETUP
+#line 122 "lex_sql.l"
+yylval->string=strdup(yytext); RETURN_TOKEN(ID);
+	YY_BREAK
+case 45:
+YY_RULE_SETUP
+#line 123 "lex_sql.l"
+RETURN_TOKEN(LBRACE);
+	YY_BREAK
+case 46:
+YY_RULE_SETUP
+#line 124 "lex_sql.l"
+RETURN_TOKEN(RBRACE);
+	YY_BREAK
+case 47:
+YY_RULE_SETUP
+#line 126 "lex_sql.l"
+RETURN_TOKEN(COMMA);
+	YY_BREAK
+case 48:
+YY_RULE_SETUP
+#line 127 "lex_sql.l"
+RETURN_TOKEN(EQ);
+	YY_BREAK
+case 49:
+YY_RULE_SETUP
+#line 128 "lex_sql.l"
+RETURN_TOKEN(LE);
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
@@ -1663,6 +1962,7 @@ RETURN_TOKEN(INNER_JOIN);
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
+<<<<<<< HEAD
 #line 132 "lex_sql.l"
 RETURN_TOKEN(STORAGE);
 	YY_BREAK
@@ -1680,6 +1980,25 @@ case 54:
 YY_RULE_SETUP
 #line 135 "lex_sql.l"
 RETURN_TOKEN(LIKE);
+=======
+#line 130 "lex_sql.l"
+RETURN_TOKEN(NE);
+	YY_BREAK
+case 52:
+YY_RULE_SETUP
+#line 131 "lex_sql.l"
+RETURN_TOKEN(LT);
+	YY_BREAK
+case 53:
+YY_RULE_SETUP
+#line 132 "lex_sql.l"
+RETURN_TOKEN(GE);
+	YY_BREAK
+case 54:
+YY_RULE_SETUP
+#line 133 "lex_sql.l"
+RETURN_TOKEN(GT);
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
@@ -1692,11 +2011,22 @@ YY_RULE_SETUP
 RETURN_TOKEN(IN);
 	YY_BREAK
 case 57:
+<<<<<<< HEAD
 YY_RULE_SETUP
 #line 138 "lex_sql.l"
 RETURN_TOKEN(EXISTS);
 	YY_BREAK
 case 58:
+=======
+#line 138 "lex_sql.l"
+case 58:
+YY_RULE_SETUP
+#line 138 "lex_sql.l"
+{ return yytext[0]; }
+	YY_BREAK
+case 59:
+/* rule 59 can match eol */
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 YY_RULE_SETUP
 #line 139 "lex_sql.l"
 RETURN_TOKEN(NOT_EXISTS);
@@ -1707,18 +2037,29 @@ YY_RULE_SETUP
 RETURN_TOKEN(NULLABLE);
 	YY_BREAK
 case 60:
+/* rule 60 can match eol */
 YY_RULE_SETUP
+<<<<<<< HEAD
 #line 141 "lex_sql.l"
 RETURN_TOKEN(UNNULLABLE);
+=======
+#line 140 "lex_sql.l"
+yylval->string = strdup(yytext); RETURN_TOKEN(SSS);
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
 #line 142 "lex_sql.l"
+<<<<<<< HEAD
 RETURN_TOKEN(IS_NULL);
+=======
+LOG_DEBUG("Unknown character [%c]",yytext[0]); return yytext[0];
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
 #line 143 "lex_sql.l"
+<<<<<<< HEAD
 RETURN_TOKEN(IS_NOT_NULL);
 	YY_BREAK
 case 63:
@@ -1815,6 +2156,11 @@ YY_RULE_SETUP
 ECHO;
 	YY_BREAK
 #line 1818 "lex_sql.cpp"
+=======
+ECHO;
+	YY_BREAK
+#line 1313 "lex_sql.cpp"
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(STR):
 	yyterminate();
@@ -2114,8 +2460,13 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
+<<<<<<< HEAD
 			if ( yy_current_state >= 295 )
 				yy_c = yy_meta[yy_c];
+=======
+			if ( yy_current_state >= 188 )
+				yy_c = yy_meta[(unsigned int) yy_c];
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 		}
@@ -2143,11 +2494,19 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
+<<<<<<< HEAD
 		if ( yy_current_state >= 295 )
 			yy_c = yy_meta[yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 	yy_is_jam = (yy_current_state == 294);
+=======
+		if ( yy_current_state >= 188 )
+			yy_c = yy_meta[(unsigned int) yy_c];
+		}
+	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+	yy_is_jam = (yy_current_state == 187);
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 
 	(void)yyg;
 	return yy_is_jam ? 0 : yy_current_state;
@@ -2970,7 +3329,12 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
+<<<<<<< HEAD
 #line 168 "lex_sql.l"
+=======
+#line 143 "lex_sql.l"
+
+>>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
 
 
 void scan_string(const char *str, yyscan_t scanner) {
