@@ -123,6 +123,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         DATE_FORMAT
         NULLABLE
         UNNULLABLE
+        IS_NULL
+        IS_NOT_NULL
         EQ
         LT
         GT
@@ -396,7 +398,7 @@ attr_def:
     ;
 null_def:
     {
-      $$ = true;
+      $$ = false;
     }
     | NULLABLE {
       $$ = true;
@@ -773,7 +775,16 @@ condition_list:
     }
     ;
 condition:
-    expression comp_op sub_select_stmt
+    expression comp_op
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_sub_query = false;
+      $$->right_is_sub_query = false;
+      $$->comp = $2;
+      $$->left_expression = $1;
+      $$->right_expression = new ValueExpr(Value(114514));
+    }
+    | expression comp_op sub_select_stmt
     {
       $$ = new ConditionSqlNode;
       $$->left_is_sub_query = false;
@@ -832,6 +843,8 @@ comp_op:
     | LE { $$ = LESS_EQUAL; }
     | GE { $$ = GREAT_EQUAL; }
     | NE { $$ = NOT_EQUAL; }
+    | IS_NULL { $$ = XXX_IS_NULL; }
+    | IS_NOT_NULL { $$ = XXX_IS_NOT_NULL; }
     | NOT_LIKE { $$ = NOT_LIKE_XXX; }
     | LIKE { $$ = LIKE_XXX; }
     | NOT_IN { $$ = NOT_IN_XXX; }

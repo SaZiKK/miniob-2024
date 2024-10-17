@@ -46,18 +46,20 @@ struct RelAttrSqlNode {
  * @ingroup SQLParser
  */
 enum CompOp {
-  EQUAL_TO,        ///< "="
-  LESS_EQUAL,      ///< "<="
-  NOT_EQUAL,       ///< "<>"
-  LESS_THAN,       ///< "<"
-  GREAT_EQUAL,     ///< ">="
-  GREAT_THAN,      ///< ">"
-  LIKE_XXX,        ///< "LIKE"通过正则表达式匹配
-  NOT_LIKE_XXX,    ///< "NOT LIKE"通过正则表达式匹配
-  IN_XXX,          ///< "IN"是否在某个集合中
-  NOT_IN_XXX,      ///< "NOT IN"是否不在某个集合中
-  XXX_NOT_EXISTS,  ///< "NOT EXISTS"是否不存在
-  XXX_EXISTS,      ///< "EXISTS"是否存在
+  EQUAL_TO,         ///< "="
+  LESS_EQUAL,       ///< "<="
+  NOT_EQUAL,        ///< "<>"
+  LESS_THAN,        ///< "<"
+  GREAT_EQUAL,      ///< ">="
+  GREAT_THAN,       ///< ">"
+  LIKE_XXX,         ///< "LIKE"通过正则表达式匹配
+  NOT_LIKE_XXX,     ///< "NOT LIKE"通过正则表达式匹配
+  IN_XXX,           ///< "IN"是否在某个集合中
+  NOT_IN_XXX,       ///< "NOT IN"是否不在某个集合中
+  XXX_NOT_EXISTS,   ///< "NOT EXISTS"是否不存在
+  XXX_EXISTS,       ///< "EXISTS"是否存在
+  XXX_IS_NULL,      ///< "IS NULL"是否为NULL
+  XXX_IS_NOT_NULL,  ///< "IS NOT NULL"是否不为NULL
   NO_OP
 };
 
@@ -73,18 +75,18 @@ typedef class ParsedSqlNode SubSelectSqlNode;
  */
 struct ConditionSqlNode {
   bool left_is_sub_query;
-  Expression* left_expression;
+  Expression *left_expression;
 
   CompOp comp;
 
   bool right_is_sub_query;
-  Expression* right_expression;
+  Expression *right_expression;
 
   // SELECT 子句
-  SubSelectSqlNode* left_sub_query;
-  SubSelectSqlNode* right_sub_query;
-  SelectStmt* left_sub_query_stmt;
-  SelectStmt* right_sub_query_stmt;
+  SubSelectSqlNode *left_sub_query;
+  SubSelectSqlNode *right_sub_query;
+  SelectStmt *left_sub_query_stmt;
+  SelectStmt *right_sub_query_stmt;
 };
 
 struct JoinSqlNode {
@@ -320,7 +322,7 @@ class ParsedSqlResult {
  public:
   void add_sql_node(std::unique_ptr<ParsedSqlNode> sql_node);
 
-  std::vector<std::unique_ptr<ParsedSqlNode>>& sql_nodes() { return sql_nodes_; }
+  std::vector<std::unique_ptr<ParsedSqlNode>> &sql_nodes() { return sql_nodes_; }
 
  private:
   std::vector<std::unique_ptr<ParsedSqlNode>> sql_nodes_;  ///< 这里记录SQL命令。虽然看起来支持多个，但是当前仅处理一个

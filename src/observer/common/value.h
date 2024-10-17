@@ -28,9 +28,8 @@ See the Mulan PSL v2 for more details. */
  * DataType::add。在进行运算前，应该设置好结果的类型，
  * 比如进行两个INT类型的除法运算时，结果类型应该设置为FLOAT。
  */
-class Value final
-{
-public:
+class Value final {
+ public:
   friend class DataType;
   friend class IntegerType;
   friend class FloatType;
@@ -59,30 +58,25 @@ public:
 
   void reset();
 
-  static RC add(const Value &left, const Value &right, Value &result)
-  {
+  static RC add(const Value &left, const Value &right, Value &result) {
     return DataType::type_instance(result.attr_type())->add(left, right, result);
   }
 
-  static RC subtract(const Value &left, const Value &right, Value &result)
-  {
+  static RC subtract(const Value &left, const Value &right, Value &result) {
     return DataType::type_instance(result.attr_type())->subtract(left, right, result);
   }
 
-  static RC multiply(const Value &left, const Value &right, Value &result)
-  {
+  static RC multiply(const Value &left, const Value &right, Value &result) {
     return DataType::type_instance(result.attr_type())->multiply(left, right, result);
   }
 
-  static RC divide(const Value &left, const Value &right, Value &result)
-  {
+  static RC divide(const Value &left, const Value &right, Value &result) {
     return DataType::type_instance(result.attr_type())->divide(left, right, result);
   }
 
   static RC negative(const Value &value, Value &result) { return DataType::type_instance(result.attr_type())->negative(value, result); }
 
-  static RC cast_to(const Value &value, AttrType to_type, Value &result)
-  {
+  static RC cast_to(const Value &value, AttrType to_type, Value &result) {
     return DataType::type_instance(value.attr_type())->cast_to(value, to_type, result);
   }
 
@@ -101,7 +95,7 @@ public:
   int length() const { return length_; }
   AttrType attr_type() const { return attr_type_; }
 
-public:
+ public:
   /**
    * 获取对应的值
    * 如果当前的类型与期望获取的类型不符，就会执行转换操作
@@ -113,7 +107,7 @@ public:
   int get_date() const;
   bool get_null() const;
 
-public:
+ public:
   void set_int(int val);
   void set_date(int val);
   void set_float(float val);
@@ -121,12 +115,11 @@ public:
   void set_string_from_other(const Value &other);
   void set_null(bool flag);
 
-private:
+ private:
   AttrType attr_type_ = AttrType::UNDEFINED;
   int length_ = 0;
 
-  union Val
-  {
+  union Val {
     int32_t int_value_;
     float float_value_;
     bool bool_value_;
