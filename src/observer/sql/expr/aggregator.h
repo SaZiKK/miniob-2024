@@ -17,48 +17,54 @@ See the Mulan PSL v2 for more details. */
 #include "common/value.h"
 #include "common/rc.h"
 
-class Aggregator {
- public:
+class Aggregator
+{
+public:
   virtual ~Aggregator() = default;
 
   virtual RC accumulate(const Value &value) = 0;
   virtual RC evaluate(Value &result) = 0;
 
- protected:
+protected:
   Value value_;
 };
 
-class SumAggregator : public Aggregator {
- public:
-  SumAggregator() { value_.set_int(0); }
+class SumAggregator : public Aggregator
+{
+public:
+  SumAggregator() { value_.set_null(true); }
   RC accumulate(const Value &value) override;
   RC evaluate(Value &result) override;
 };
 
-class MaxAggregator : public Aggregator {
- public:
+class MaxAggregator : public Aggregator
+{
+public:
   MaxAggregator() { value_.set_null(true); }
   RC accumulate(const Value &value) override;
   RC evaluate(Value &result) override;
 };
 
-class MinAggregator : public Aggregator {
- public:
+class MinAggregator : public Aggregator
+{
+public:
   MinAggregator() { value_.set_null(true); }
   RC accumulate(const Value &value) override;
   RC evaluate(Value &result) override;
 };
 
-class AvgAggregator : public Aggregator {
- public:
+class AvgAggregator : public Aggregator
+{
+public:
   AvgAggregator() { value_.set_null(true); }
   float num = 0;
   RC accumulate(const Value &value) override;
   RC evaluate(Value &result) override;
 };
 
-class CountAggregator : public Aggregator {
- public:
+class CountAggregator : public Aggregator
+{
+public:
   CountAggregator() { value_.set_int(0); }
   RC accumulate(const Value &value) override;
   RC evaluate(Value &result) override;
