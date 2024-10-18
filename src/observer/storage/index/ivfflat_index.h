@@ -16,21 +16,13 @@ See the Mulan PSL v2 for more details. */
  * @brief ivfflat 向量索引
  * @ingroup Index
  */
-class IvfflatIndex : public Index
-{
-public:
+class IvfflatIndex : public Index {
+ public:
   IvfflatIndex(){};
   virtual ~IvfflatIndex() noexcept {};
 
-  RC create(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta)
-  {
-    return RC::UNIMPLEMENTED;
-  };
-  RC open(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta)
-  {
-
-    return RC::UNIMPLEMENTED;
-  };
+  RC create(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta) { return RC::UNIMPLEMENTED; };
+  RC open(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta) { return RC::UNIMPLEMENTED; };
 
   vector<RID> ann_search(const vector<float> &base_vector, size_t limit) { return vector<RID>(); }
 
@@ -41,9 +33,9 @@ public:
 
   RC sync() override { return RC::UNIMPLEMENTED; };
 
-private:
-  bool   inited_ = false;
-  Table *table_  = nullptr;
-  int    lists_  = 1;
-  int    probes_ = 1;
+ private:
+  bool inited_ = false;
+  Table *table_ = nullptr;
+  int lists_ = 1;
+  int probes_ = 1;
 };

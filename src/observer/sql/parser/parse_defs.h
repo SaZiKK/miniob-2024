@@ -141,14 +141,18 @@ struct DeleteSqlNode {
   std::vector<ConditionSqlNode> conditions;
 };
 
+struct UpdateTarget {
+  Value value;
+  std::string attribute_name;
+};
+
 /**
  * @brief 描述一个update语句
  * @ingroup SQLParser
  */
 struct UpdateSqlNode {
-  std::string relation_name;   ///< Relation to update
-  std::string attribute_name;  ///< 更新的字段，仅支持一个字段
-  Value value;                 ///< 更新的值，仅支持一个字段
+  std::string relation_name;  ///< Relation to update
+  std::vector<UpdateTarget> update_targets;
   std::vector<ConditionSqlNode> conditions;
 };
 

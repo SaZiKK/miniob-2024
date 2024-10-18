@@ -396,7 +396,6 @@ extern int yylex \
 #undef YY_DECL
 #endif
 
-<<<<<<< HEAD
 #ifndef yy_create_buffer_ALREADY_DEFINED
 #undef yy_create_buffer
 #endif
@@ -542,10 +541,7 @@ extern int yylex \
 #undef yyTABLES_NAME
 #endif
 
-#line 168 "lex_sql.l"
-=======
-#line 143 "lex_sql.l"
->>>>>>> 4d420c7 (add vectordb docs and unimplement vectordb (#460))
+#line 169 "lex_sql.l"
 
 
 #line 548 "lex_sql.h"

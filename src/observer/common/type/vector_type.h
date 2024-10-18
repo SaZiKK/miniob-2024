@@ -16,9 +16,8 @@ See the Mulan PSL v2 for more details. */
  * @brief 向量类型
  * @ingroup DataType
  */
-class VectorType : public DataType
-{
-public:
+class VectorType : public DataType {
+ public:
   VectorType() : DataType(AttrType::VECTORS) {}
   virtual ~VectorType() {}
 

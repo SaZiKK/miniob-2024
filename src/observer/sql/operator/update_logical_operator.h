@@ -11,19 +11,17 @@
  */
 class UpdateLogicalOperator : public LogicalOperator {
  public:
-  UpdateLogicalOperator(Table *table, Value *values, FieldMeta *fields);
+  UpdateLogicalOperator(Table *table, std::vector<std::pair<Value, FieldMeta>> update_map);
   virtual ~UpdateLogicalOperator() = default;
 
   LogicalOperatorType type() const override { return LogicalOperatorType::UPDATE; }
 
  public:
   Table *table() const { return table_; }
-  Value *values() { return values_; }
-  FieldMeta *fields() { return fields_; }
+  std::vector<std::pair<Value, FieldMeta>> update_map() const { return update_map_; }
 
   // 插入逻辑算子需要表格名称以及插入的值以及插入域
  private:
   Table *table_ = nullptr;
-  Value *values_;
-  FieldMeta *fields_;
+  std::vector<std::pair<Value, FieldMeta>> update_map_;
 };

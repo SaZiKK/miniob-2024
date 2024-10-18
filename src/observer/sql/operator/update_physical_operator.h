@@ -12,7 +12,7 @@ class FieldMeta;
  */
 class UpdatePhysicalOperator : public PhysicalOperator {
  public:
-  UpdatePhysicalOperator(Table *table, FieldMeta *field_meta, Value *value) : table_(table), field_meta_(field_meta), value_(value) {}
+  UpdatePhysicalOperator(Table *table, std::vector<std::pair<Value, FieldMeta>> update_map) : table_(table), update_map_(update_map) {}
 
   virtual ~UpdatePhysicalOperator() = default;
 
@@ -27,7 +27,6 @@ class UpdatePhysicalOperator : public PhysicalOperator {
  private:
   Table *table_ = nullptr;
   Trx *trx_ = nullptr;
-  FieldMeta *field_meta_ = nullptr;
-  Value *value_ = nullptr;
+  std::vector<std::pair<Value, FieldMeta>> update_map_;
   std::vector<Record> records_;
 };

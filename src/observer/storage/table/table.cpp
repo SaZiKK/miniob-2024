@@ -584,9 +584,13 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
     const char *field_name = field_meta->name();
 
     // 找到目标域
-    if (field_name == attr_name) {
+    if (strcmp(field_name, attr_name) == 0) {
+      // 判断 NULL 值
+      if (value->get_null()) {
+        if (field_meta->can_be_null() == false) return RC::INVALID_ARGUMENT;
+      }
       // 类型匹配检查
-      if (field_meta->type() != value->attr_type()) {
+      else if (field_meta->type() != value->attr_type()) {
         return RC::SCHEMA_FIELD_TYPE_MISMATCH;
       }
 
@@ -611,14 +615,19 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   char *old_data = record.data();
 
   // 对于 CHARS 这种不定长的记录，如果更新的元素大于原来的长度，需要截断
-  if (value->length() > field_length) memcpy(old_data + field_offset, value->data(), field_length);
+  if (value->length() > field_length) {
+    memcpy(old_data + field_offset, value->data(), field_length);
+  }
   // 对于 CHARS
   // 这种不定长的记录，如果更新的元素小于原来的长度，需要额外抹去原有元素
   else {
     memcpy(old_data + field_offset, value->data(), value->length());
     memset(old_data + field_offset + value->length(), 0, field_length - value->length());
   }
-
+  if (value->get_null()) {
+    const char *flag = "NULL";
+    memcpy(old_data + field_offset, flag, 4);
+  }
   record.set_data(old_data);
 
   // 判断索引是否重复

@@ -290,10 +290,9 @@ RC PhysicalPlanGenerator::create_plan(UpdateLogicalOperator &update_oper, std::u
   }
 
   Table *table = update_oper.table();
-  FieldMeta *field_meta = update_oper.fields();
-  Value *value = update_oper.values();
+  std::vector<pair<Value, FieldMeta>> update_map = update_oper.update_map();
 
-  oper = unique_ptr<PhysicalOperator>(new UpdatePhysicalOperator(table, field_meta, value));
+  oper = unique_ptr<PhysicalOperator>(new UpdatePhysicalOperator(table, update_map));
 
   if (child_physical_oper) {
     oper->add_child(std::move(child_physical_oper));

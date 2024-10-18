@@ -28,8 +28,8 @@ class FieldMeta;
 class UpdateStmt : public Stmt {
  public:
   UpdateStmt() = default;
-  UpdateStmt(Table *table, Value *values, int value_amount, FilterStmt *filter_stmt, FieldMeta *field_meta)
-      : table_(table), values_(values), value_amount_(value_amount), filter_stmt_(filter_stmt), field_meta_(field_meta) {}
+  UpdateStmt(Table *table, FilterStmt *filter_stmt, std::vector<FieldMeta> field_metas, std::vector<UpdateTarget> update_targets)
+      : table_(table), filter_stmt_(filter_stmt), field_metas_(field_metas), update_targets_(update_targets) {}
   ~UpdateStmt() override;
 
  public:
@@ -38,15 +38,13 @@ class UpdateStmt : public Stmt {
 
  public:
   Table *table() const { return table_; }
-  Value *values() const { return values_; }
-  int value_amount() const { return value_amount_; }
   FilterStmt *filter_stmt() const { return filter_stmt_; }
-  FieldMeta *field_meta() const { return field_meta_; }
+  std::vector<FieldMeta> field_metas() const { return field_metas_; }
+  std::vector<UpdateTarget> update_targets() const { return update_targets_; }
 
  private:
-  Table *table_ = nullptr;             // 目标表格名称
-  Value *values_ = nullptr;            // 更新字段
-  int value_amount_ = 0;               // 更新属性
-  FilterStmt *filter_stmt_ = nullptr;  // 筛选条件
-  FieldMeta *field_meta_ = nullptr;    // 更新域
+  Table *table_ = nullptr;
+  FilterStmt *filter_stmt_ = nullptr;
+  std::vector<FieldMeta> field_metas_;
+  std::vector<UpdateTarget> update_targets_;
 };

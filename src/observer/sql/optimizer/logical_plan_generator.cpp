@@ -46,6 +46,8 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
+class UpdateTarget;
+
 RC LogicalPlanGenerator::create(Stmt *stmt, unique_ptr<LogicalOperator> &logical_operator) {
   RC rc = RC::SUCCESS;
   switch (stmt->type()) {
@@ -376,16 +378,11 @@ RC LogicalPlanGenerator::create_plan(DeleteStmt *delete_stmt, unique_ptr<Logical
   return rc;
 }
 
-// 创建 UPDATE 的逻辑算子
 RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<LogicalOperator> &logical_operator) {
   // 拿到相关变量
   Table *table = update_stmt->table();
   FilterStmt *filter_stmt = update_stmt->filter_stmt();
-  FieldMeta *field_meta = update_stmt->field_meta();
-  Value *value = update_stmt->values();
-  // int         value_amount = update_stmt->value_amount();
 
-  // 不知道啥意思，跟谓词筛选有关
   unique_ptr<LogicalOperator> table_get_oper(new TableGetLogicalOperator(table, ReadWriteMode::READ_WRITE));
 
   unique_ptr<LogicalOperator> predicate_oper;
@@ -395,7 +392,13 @@ RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<Logical
   }
 
   // 创建逻辑算子
-  unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table, value, field_meta));
+  std::vector<std::pair<Value, FieldMeta>> update_map;
+  for (int i = 0; i < (int)update_stmt->update_targets().size(); i++) {
+    Value value = update_stmt->update_targets()[i].value;
+    FieldMeta field_meta = update_stmt->field_metas()[i];
+    update_map.push_back(make_pair(value, field_meta));
+  }
+  unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table, update_map));
   if (predicate_oper) {
     predicate_oper->add_child(std::move(table_get_oper));
     update_oper->add_child(std::move(predicate_oper));

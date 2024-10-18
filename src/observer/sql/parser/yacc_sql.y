@@ -137,6 +137,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %union {
   ParsedSqlNode *                            sql_node;
   ConditionSqlNode *                         condition;
+  UpdateTarget *                             update_target;
   Value *                                    value;
   enum CompOp                                comp;
   RelAttrSqlNode *                           rel_attr;
@@ -149,6 +150,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   std::vector<JoinSqlNode> *                 join_list;
   std::vector<RelAttrSqlNode> *              rel_attr_list;
   std::vector<std::string> *                 relation_list;
+  std::vector<UpdateTarget> *                update_target_list;
   char *                                     string;
   int                                        number;
   float                                      floats;
@@ -182,6 +184,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <expression_list>     group_by
+%type <update_target>       update_target
+%type <update_target_list>  update_target_list
 %type <sql_node>            calc_stmt
 %type <sql_node>            select_stmt
 %type <sql_node>            sub_select_stmt
@@ -509,21 +513,47 @@ delete_stmt:    /*  delete 语句的语法解析树*/
     }
     ;
 update_stmt:      /*  update 语句的语法解析树*/
-    UPDATE ID SET ID EQ value where 
+    UPDATE ID SET update_target update_target_list where 
     {
-      LOG_DEBUG("parse update_stmt");
       $$ = new ParsedSqlNode(SCF_UPDATE);
       $$->update.relation_name = $2;
-      $$->update.attribute_name = $4;
-      $$->update.value = *$6;
-      if ($7 != nullptr) {
-        $$->update.conditions.swap(*$7);
-        delete $7;
+
+      if ($6 != nullptr) {
+        $$->update.conditions.swap(*$6);
+        delete $6;
       }
-      free($2);
-      free($4);
+
+      if($5 != nullptr)
+        $$->update.update_targets.swap(*$5);
+      $$->update.update_targets.emplace_back(*$4);
+      std::reverse($$->update.update_targets.begin(), $$->update.update_targets.end());
     }
     ;
+
+update_target: 
+    ID EQ value 
+    {
+      $$ = new UpdateTarget;
+      $$->attribute_name = $1;
+      $$->value = *$3;
+
+      delete $3;
+    }
+    ;
+
+update_target_list:
+    /* nullptr */
+    {
+      $$ = nullptr;
+    }
+    | COMMA update_target update_target_list
+    {
+      if($3 == nullptr)
+        $$ = new std::vector<UpdateTarget>;
+      $$->emplace_back(*$2);
+    }
+    ;
+
 select_stmt:        /*  select 语句的语法解析树*/
     SELECT expression_list
     {
