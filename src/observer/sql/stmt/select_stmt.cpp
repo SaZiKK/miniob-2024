@@ -47,7 +47,6 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
   }
 
   // 检测并递归生成右子查询stmt  //
-  // todo：支持左子查询以及除了select之外的其他查询
   for (size_t i = 0; i < select_sql.conditions.size(); ++i) {
     if (select_sql.conditions[i].right_is_sub_query) {
       auto right_sub_query = select_sql.conditions[i].right_sub_query;

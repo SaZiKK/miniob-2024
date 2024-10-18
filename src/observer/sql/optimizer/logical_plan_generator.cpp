@@ -324,6 +324,13 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
     }
 
     ComparisonExpr *cmp_expr = new ComparisonExpr(filter_unit->comp(), std::move(left), std::move(right));
+
+    RC rc = cmp_expr->check_value();
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to create comparison expression");
+    return RC::INVALID_ARGUMENT;
+    }
+    
     cmp_exprs.emplace_back(cmp_expr);
   }
 

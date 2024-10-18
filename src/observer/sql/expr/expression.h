@@ -85,7 +85,11 @@ class Expression {
    */
   virtual RC get_value(const Tuple &tuple, Value &value) const = 0;
 
+  // 针对valuelist
   virtual RC get_value_list(std::vector<Value> &value) { return RC::UNIMPLEMENTED; }
+
+  // 针对子查询
+  virtual RC get_tuple_list(std::vector<std::vector<Value>> &tuple) { return RC::UNIMPLEMENTED; }
 
   /**
    * @brief
@@ -265,7 +269,7 @@ class SubQueryExpr : public Expression {
 
   RC get_value(const Tuple &tuple, Value &value) const override;
 
-  RC get_value_list(std::vector<Value> &value) override;
+  RC get_tuple_list(std::vector<std::vector<Value>> &tuple) override;
 
   // RC create_sub_logical_plan(SelectStmt *selectstmt, std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator);
   // RC generate_sub_physical_plan(std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator,
@@ -334,6 +338,25 @@ class CastExpr : public Expression {
   AttrType cast_type_;                 ///< 想要转换成这个类型
 };
 
+enum CompType {
+  VAL_VAL,        ///< 值-值
+  VAL_LIST,       ///< 值-列表
+  LIST_VAL,       ///< 列表-值
+  LIST_LIST,      ///< 列表-列表
+  VAL_TUPLES,     ///< 值-元组列
+  TUPLES_VAL,     ///< 元组列-值
+  TUPLES_TUPLES,  ///< 元组列-元组列
+  TUPLES_LIST,    ///< 元组列-列表
+  LIST_TUPLES,    ///< 列表-元组列
+  VAL_TUPLE,      ///< 值-元组
+  LIST_TUPLE,     ///< 列表-元组
+  TUPLE_TUPLE,    ///< 元组-元组
+  TUPLES_TUPLE,   ///< 元组列-元组
+  TUPLE_VAL,      ///< 元组-值
+  TUPLE_LIST,     ///< 元组-列表
+  TUPLE_TUPLES,   ///< 元组-元组列
+};
+
 /**
  * @brief 比较表达式
  * @ingroup Expression
@@ -369,7 +392,7 @@ class ComparisonExpr : public Expression {
    * @param value the result of comparison
    */
   RC compare_value(const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list, bool &value,
-                   bool left_is_value, bool right_is_value) const;
+                   const std::vector<std::vector<Value>> left_tuple_list, const std::vector<std::vector<Value>> right_tuple_list) const;
 
   /// compare two string with pattern
   static bool likeMatch(const std::string &str, const std::string &pattern);
@@ -377,7 +400,16 @@ class ComparisonExpr : public Expression {
   template <typename T>
   RC compare_column(const Column &left, const Column &right, std::vector<uint8_t> &result) const;
 
+  // 设置表达式的比较类型
+  void set_comp_type(CompType type) const { type_ = type; }
+
+  // 获取表达式的比较类型
+  CompType comp_type() const { return type_; }
+
+  RC check_value() const;
+
  private:
+  mutable CompType type_;
   CompOp comp_;
   std::unique_ptr<Expression> left_;
   std::unique_ptr<Expression> right_;

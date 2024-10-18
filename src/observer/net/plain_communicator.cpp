@@ -242,7 +242,6 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
     // 默认为 TUPLE 模式
     rc = write_tuple_result(sql_result);
   }
-
   if (OB_FAIL(rc)) {
     return rc;
   }
