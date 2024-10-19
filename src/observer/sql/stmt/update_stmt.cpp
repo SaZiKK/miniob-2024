@@ -89,10 +89,9 @@ RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt)
       RC rc = OptimizeStage::handle_sub_stmt(temp, tuple_list);
       if (rc != RC::SUCCESS)
         return RC::INVALID_ARGUMENT;
-      // if (tuple_list.size() != 1 || tuple_list[0].size() != 1)
       if (tuple_list.empty())
         update.update_targets[i].value.set_null(true);
-      else if (tuple_list[0].size() != 1)
+      else if (tuple_list.size() != 1 || tuple_list[0].size() != 1)
         return RC::INVALID_ARGUMENT;
       else
         update.update_targets[i].value = tuple_list[0][0];
