@@ -546,8 +546,6 @@ update_target:
       $$->attribute_name = $1;
       $$->sub_select = $3;
       $$->is_value = false;
-
-      delete $3;
     }
     ;
 
@@ -603,7 +601,6 @@ select_stmt:        /*  select 语句的语法解析树*/
 sub_select_stmt:
     LBRACE select_stmt RBRACE
     {
-      LOG_DEBUG("parse sub_select_stmt");
       $$ = $2;
     }
     ;

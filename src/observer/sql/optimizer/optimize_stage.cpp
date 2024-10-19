@@ -128,7 +128,7 @@ RC OptimizeStage::create_logical_plan(SQLStageEvent *sql_event, unique_ptr<Logic
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-RC OptimizeStage::handle_request(Stmt *stmt) {
+RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list) {
   // 创建逻辑算子
   unique_ptr<LogicalOperator> logical_operator;
 
@@ -167,6 +167,8 @@ RC OptimizeStage::handle_request(Stmt *stmt) {
     LOG_WARN("failed to generate physical plan. rc=%s", strrc(rc));
     return rc;
   }
+
+  get_tuple_list(physical_operator.get(), tuple_list);
 
   return rc;
 }

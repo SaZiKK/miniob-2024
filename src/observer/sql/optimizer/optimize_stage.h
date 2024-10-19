@@ -76,7 +76,8 @@ class OptimizeStage {
                             Session *session);
 
   /////////////////////////////////////////////////////////////////////////////////////////////
-  static RC handle_request(Stmt *stmt);
+ public:
+  static RC handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list);
   static RC optimize(std::unique_ptr<LogicalOperator> &logical_operator);
   static RC create_logical_plan(Stmt *stmt, std::unique_ptr<LogicalOperator> &logical_operator);
   static RC generate_physical_plan(std::unique_ptr<LogicalOperator> &logical_operator, std::unique_ptr<PhysicalOperator> &physical_operator);

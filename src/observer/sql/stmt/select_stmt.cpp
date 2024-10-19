@@ -39,7 +39,8 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
   BinderContext binder_context;
 
   // 将节点中的 join 添加到 conditions 以及 relations 当中
-  vector<JoinSqlNode> join = select_sql.join;
+  vector<JoinSqlNode> join;
+  for (auto it : select_sql.join) join.push_back(it);
   std::reverse(join.begin(), join.end());
   for (auto it : join) {
     select_sql.relations.emplace_back(it.relation);
