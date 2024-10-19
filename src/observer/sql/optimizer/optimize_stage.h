@@ -55,7 +55,7 @@ class OptimizeStage {
    * 规则改写也是一个递归的过程。
    * @param logical_operator 要改写的逻辑计划
    */
-  RC rewrite(std::unique_ptr<LogicalOperator> &logical_operator);
+  static RC rewrite(std::unique_ptr<LogicalOperator> &logical_operator);
 
   /**
    * @brief 优化逻辑计划
@@ -63,7 +63,6 @@ class OptimizeStage {
    * 当前什么都没做。可以增加每个逻辑计划的代价模型，然后根据代价模型进行优化。
    * @param logical_operator 需要优化的逻辑计划
    */
-  RC optimize(std::unique_ptr<LogicalOperator> &logical_operator);
 
   /**
    * @brief 根据逻辑计划生成物理计划
@@ -76,8 +75,10 @@ class OptimizeStage {
   RC generate_physical_plan(std::unique_ptr<LogicalOperator> &logical_operator, std::unique_ptr<PhysicalOperator> &physical_operator,
                             Session *session);
 
- private:
-  LogicalPlanGenerator logical_plan_generator_;    ///< 根据SQL生成逻辑计划
-  PhysicalPlanGenerator physical_plan_generator_;  ///< 根据逻辑计划生成物理计划
-  Rewriter rewriter_;                              ///< 逻辑计划改写
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  static RC handle_request(Stmt *stmt);
+  static RC optimize(std::unique_ptr<LogicalOperator> &logical_operator);
+  static RC create_logical_plan(Stmt *stmt, std::unique_ptr<LogicalOperator> &logical_operator);
+  static RC generate_physical_plan(std::unique_ptr<LogicalOperator> &logical_operator, std::unique_ptr<PhysicalOperator> &physical_operator);
+  static RC get_tuple_list(PhysicalOperator *physical_operator, std::vector<std::vector<Value>> &tuple_list);
 };

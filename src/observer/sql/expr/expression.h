@@ -258,7 +258,7 @@ class ValueExpr : public Expression {
  */
 class SubQueryExpr : public Expression {
  public:
-  SubQueryExpr();
+  SubQueryExpr() = default;
   explicit SubQueryExpr(SelectStmt *sub_query)
       : sub_query_(sub_query), logical_operator(nullptr, [](LogicalOperator *) {}), physical_operator(nullptr, [](PhysicalOperator *) {}){};
 

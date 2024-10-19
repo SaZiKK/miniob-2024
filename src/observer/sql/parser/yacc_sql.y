@@ -536,6 +536,16 @@ update_target:
       $$ = new UpdateTarget;
       $$->attribute_name = $1;
       $$->value = *$3;
+      $$->is_value = true;
+
+      delete $3;
+    }
+    | ID EQ sub_select_stmt
+    {
+      $$ = new UpdateTarget;
+      $$->attribute_name = $1;
+      $$->sub_select = $3;
+      $$->is_value = false;
 
       delete $3;
     }

@@ -69,8 +69,18 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt) {
     return rc;
   }
 
+  // 创建子查询的 STMT 对象
+  for (auto it : update.update_targets) {
+    if (it.is_value == false) {
+      Stmt *stmt = nullptr;
+      Stmt::create_stmt(db, *it.sub_select, stmt);
+      it.select_stmt = static_cast<SelectStmt *>(stmt);
+    }
+  }
+
   // check date validity
   for (auto it : update.update_targets) {
+    if (it.is_value == false) continue;
     Value value = it.value;
     if (value.attr_type() == AttrType::DATE) {
       if (!DateType::check_date(value.get_date())) {

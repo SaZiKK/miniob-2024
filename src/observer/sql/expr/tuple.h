@@ -154,7 +154,7 @@ class Tuple {
 // 测试用例
 class TinyTuple : public Tuple {
  public:
-  TinyTuple(Value value): value_(value) {}
+  TinyTuple(Value value) : value_(value) {}
   virtual ~TinyTuple() = default;
 
   void set_value(const Value &value) { value_ = value; }
