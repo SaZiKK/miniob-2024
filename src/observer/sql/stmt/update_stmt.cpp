@@ -20,6 +20,8 @@ See the Mulan PSL v2 for more details. */
 #include "storage/table/table.h"
 #include "common/type/date_type.h"
 #include "sql/optimizer/optimize_stage.h"
+#include "event/sql_debug.h"
+#include <sstream>
 
 using namespace std;
 using namespace common;
@@ -90,11 +92,20 @@ RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt)
       if (rc != RC::SUCCESS)
         return RC::INVALID_ARGUMENT;
       if (tuple_list.empty())
+      {
+        sql_debug("empty");
         update.update_targets[i].value.set_null(true);
+      }
       else if (tuple_list.size() != 1 || tuple_list[0].size() != 1)
+      {
+        sql_debug("wrong tuple_list.size = %d,  tuple_list[0].size = %d", (int)tuple_list.size() + (int)tuple_list[0].size());
         return RC::INVALID_ARGUMENT;
+      }
       else
+      {
+        sql_debug("correct tuple_list.size = %d,  tuple_list[0].size = %d", (int)tuple_list.size() + (int)tuple_list[0].size());
         update.update_targets[i].value = tuple_list[0][0];
+      }
       update.update_targets[i].is_value = true;
     }
   }
