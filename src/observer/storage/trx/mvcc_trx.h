@@ -79,6 +79,7 @@ class MvccTrx : public Trx {
   RC insert_record(Table *table, Record &record) override;
   RC delete_record(Table *table, Record &record) override;
   RC update_record(Table *table, Record &record, const char *attr_name, Value *value) override;
+  RC update_records(Table *table, Record &record, std::vector<std::pair<Value, FieldMeta>> update_map_) override;
 
   /**
    * @brief 当访问到某条数据时，使用此函数来判断是否可见，或者是否有访问冲突

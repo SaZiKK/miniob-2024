@@ -178,6 +178,10 @@ RC MvccTrx::update_record(Table *table, Record &record, const char *attr_name, V
   return table->update_record(record, attr_name, value);
 }
 
+RC MvccTrx::update_records(Table *table, Record &record, std::vector<std::pair<Value, FieldMeta>> update_map_) {
+  return table->update_records(record, update_map_);
+}
+
 RC MvccTrx::visit_record(Table *table, Record &record, ReadWriteMode mode) {
   Field begin_field;
   Field end_field;

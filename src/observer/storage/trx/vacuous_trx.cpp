@@ -40,6 +40,10 @@ RC VacuousTrx::update_record(Table *table, Record &record, const char *attr_name
   return table->update_record(record, attr_name, value);
 }
 
+RC VacuousTrx::update_records(Table *table, Record &record, std::vector<std::pair<Value, FieldMeta>> update_map_) {
+  return table->update_records(record, update_map_);
+}
+
 RC VacuousTrx::visit_record(Table *table, Record &record, ReadWriteMode) { return RC::SUCCESS; }
 
 RC VacuousTrx::start_if_need() { return RC::SUCCESS; }
