@@ -26,6 +26,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/stmt.h"
 #include "storage/trx/trx.h"
 #include "common/type/date_type.h"
+#include "sql/optimizer/optimize_stage.h"
 #include <cmath>
 
 using namespace std;
@@ -116,97 +117,18 @@ RC SubQueryExpr::get_value(const Tuple &tuple, Value &value) const {
   return RC::INVALID_ARGUMENT;
 }
 
+RC SubQueryExpr::init() { return get_tuple_list(tuple_list_); }
+
 RC SubQueryExpr::get_tuple_list(std::vector<std::vector<Value>> &tuple_list) {
-  LogicalPlanGenerator generator;
-  SelectStmt *selectstmt = this->sub_query_;
-  Trx *trx = nullptr;  // todo: 暂时使用临时创建的trx
-
-  if (selectstmt == nullptr) {
-    LOG_WARN("subquery is null");
-    return RC::INVALID_ARGUMENT;
-  }
-
-  // // 如果之前没有生成过逻辑计划，那么生成逻辑计划
-  // if (logical_operator == nullptr) {
-  //   RC rc = create_sub_logical_plan(selectstmt, logical_operator);
-  //   if (rc != RC::SUCCESS) {
-  //     LOG_WARN("failed to create sub logical plan. rc=%s", strrc(rc));
-  //     return rc;
-  //   }
-  // }
-
-  // // 如果之前没有生成过物理计划，那么生成物理计划
-  // if (physical_operator == nullptr) {
-  //   RC rc = generate_sub_physical_plan(logical_operator, physical_operator);
-  //   if (rc != RC::SUCCESS) {
-  //     LOG_WARN("failed to create sub physical plan. rc=%s", strrc(rc));
-  //     return rc;
-  //   }
-  // }
-
-  // 初始化物理算子
-  RC rc = physical_operator->open(trx);
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to open sub physical operator. rc=%s", strrc(rc));
+  if (sub_query_ == nullptr) return RC::INVALID_ARGUMENT;
+  if (has_calculated == false) {
+    has_calculated = true;
+    RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list);
+    if (rc == RC::SUCCESS) tuple_list_ = tuple_list;
     return rc;
   }
-
-  // 将查表结果放入value_list
-  while (RC::SUCCESS == (rc = physical_operator->next())) {
-    Tuple *tuple = physical_operator->current_tuple();
-    std::vector<Value> single_tuple;
-    for (int i = 0; i < tuple->cell_num(); i++) {
-      Value value;
-      tuple->cell_at(0, value);
-      single_tuple.push_back(value);
-    }
-    tuple_list.push_back(single_tuple);
-  }
-
-  rc = physical_operator->close();
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to close sub physical operator. rc=%s", strrc(rc));
-    return rc;
-  }
-
+  tuple_list = tuple_list_;
   return RC::SUCCESS;
-}
-
-// RC SubQueryExpr::create_sub_logical_plan(SelectStmt *selectstmt, std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator) {
-//   LogicalPlanGenerator generator;
-//   std::unique_ptr<LogicalOperator> temp_logical;
-//   RC rc = generator.create(selectstmt, temp_logical);
-//   if (rc == RC::SUCCESS && temp_logical) {
-//     logical_operator = std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)>(
-//         temp_logical.release(), [](LogicalOperator *ptr) { delete ptr; }  // 使用 lambda 作为删除器
-//     );
-//   }
-//   return rc;
-// }
-
-// RC SubQueryExpr::generate_sub_physical_plan(std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator,
-//                                             std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> &physical_operator) {
-//   RC rc = RC::SUCCESS;
-//   PhysicalPlanGenerator physical_plan_generator;
-//   std::unique_ptr<PhysicalOperator> temp_physical;
-//   rc = physical_plan_generator.create(*logical_operator, temp_physical);
-//   if (rc == RC::SUCCESS && temp_physical) {
-//     physical_operator = std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)>(
-//         temp_physical.release(), [](PhysicalOperator *ptr) { delete ptr; }  // 使用 lambda 作为删除器
-//     );
-//   }
-//   if (rc != RC::SUCCESS) {
-//     LOG_WARN("failed to create physical operator. rc=%s", strrc(rc));
-//   }
-//   return rc;
-// }
-
-void SubQueryExpr::set_logical_operator(std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> logical_op) {
-  logical_operator = std::move(logical_op);
-}
-
-void SubQueryExpr::set_physical_operator(std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> physical_op) {
-  physical_operator = std::move(physical_op);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -216,9 +138,68 @@ ComparisonExpr::ComparisonExpr(CompOp comp, unique_ptr<Expression> left, unique_
 
 ComparisonExpr::~ComparisonExpr() {}
 
+int basicCompare(CompType type_, const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list,
+                 const std::vector<std::vector<Value>> left_tuple_list, const std::vector<std::vector<Value>> right_tuple_list) {
+  int cmp_result = INT32_MAX;
+  Value value;
+  if (!right_tuple_list.empty() && type_ == CompType::VAL_TUPLES) {
+    value = right_tuple_list[0][0];
+    cmp_result = left.compare(value);
+  }
+  if (!left_tuple_list.empty() && type_ == CompType::TUPLES_VAL) {
+    value = left_tuple_list[0][0];
+    cmp_result = value.compare(right);
+  }
+  if (!left_list.empty() && type_ == CompType::LIST_VAL) {
+    value = left_list[0];
+    cmp_result = value.compare(right);
+  }
+  if (!right_list.empty() && type_ == CompType::VAL_LIST) {
+    value = right_list[0];
+    cmp_result = value.compare(right);
+  }
+  if (type_ == CompType::VAL_VAL) {
+    cmp_result = left.compare(right);
+  }
+  return cmp_result;
+}
+
+bool IN_Compare(CompType type_, const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list,
+                const std::vector<std::vector<Value>> left_tuple_list, const std::vector<std::vector<Value>> right_tuple_list) {
+  if (type_ == CompType::VAL_TUPLES) {
+    for (const std::vector<Value> &vec : right_tuple_list)
+      if (0 == left.compare(vec[0])) return true;
+  } else if (type_ == CompType::VAL_LIST) {
+    for (const Value &value : right_list)
+      if (0 == left.compare(value)) return true;
+  }
+  return false;
+}
+
+bool EXSIT_Compare(CompType type_, const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list,
+                   const std::vector<std::vector<Value>> left_tuple_list, const std::vector<std::vector<Value>> right_tuple_list) {
+  return !right_tuple_list.empty();
+}
+
+bool IS_NULL_Compare(CompType type_, const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list,
+                     const std::vector<std::vector<Value>> left_tuple_list, const std::vector<std::vector<Value>> right_tuple_list) {
+  if (type_ == CompType::VAL_LIST || type_ == CompType::VAL_VAL || type_ == CompType::VAL_TUPLES) {
+    return left.get_null();
+  }
+  if (!left_list.empty() && type_ == CompType::LIST_VAL) {
+    return left_list[0].get_null();
+  }
+  if (!left_tuple_list.empty() && type_ == CompType::TUPLES_VAL) {
+    return left_tuple_list[0][0].get_null();
+  }
+  return false;
+}
+
 RC ComparisonExpr::compare_value(const Value &left, const Value &right, const std::vector<Value> left_list, const std::vector<Value> right_list,
                                  bool &result, const std::vector<std::vector<Value>> left_tuple_list,
-                                 const std::vector<std::vector<Value>> right_tuple_list) const {
+                                 const std::vector<std::vector<Value>> right_tuple_list) const
+
+{
   RC rc = RC::SUCCESS;
   result = false;
 
@@ -231,9 +212,14 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
    * LIST_TUPLES
    * TUPLES_TUPLES
    */
+
+  CompOp comp_ = comp();
+  CompType type_ = comp_type();
+  // 如果左右值存在 NULL 并且不是 NULL 的专属运算，默认 false
   if ((left.get_null() || right.get_null()) && (comp_ != CompOp::XXX_IS_NULL && comp_ != CompOp::XXX_IS_NOT_NULL)) return RC::SUCCESS;
-  if (this->comp_type() == CompType::LIST_LIST || this->comp_type() == CompType::TUPLES_LIST || this->comp_type() == CompType::LIST_TUPLES ||
-      this->comp_type() == CompType::TUPLES_TUPLES) {
+
+  // 暂不支持多值之间比较
+  if (type_ == CompType::LIST_LIST || type_ == CompType::TUPLES_LIST || type_ == CompType::LIST_TUPLES || type_ == CompType::TUPLES_TUPLES) {
     LOG_WARN("both left and right are not value");  // todo 支持单tuple比较
     return RC::INVALID_ARGUMENT;
   }
@@ -247,26 +233,22 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
     case CompOp::GREAT_THAN:
     case CompOp::GREAT_EQUAL: {
       // 列表只能有一个值
-      if (this->comp_type() == CompType::VAL_LIST) {
-        if (right_list.size() > 1) {
-          LOG_WARN("invaild comparison. %d", comp_);
-          return RC::INVALID_ARGUMENT;
-        }
-      } else if (this->comp_type() == CompType::LIST_VAL) {
-        if (left_list.size() > 1) {
-          LOG_WARN("invaild comparison. %d", comp_);
-          return RC::INVALID_ARGUMENT;
-        }
+      if (type_ == CompType::VAL_LIST && right_list.size() > 1) {
+        LOG_WARN("invaild comparison. %d", type_);
+        return RC::INVALID_ARGUMENT;
+      } else if (type_ == CompType::LIST_VAL && left_list.size() > 1) {
+        LOG_WARN("invaild comparison. %d", type_);
+        return RC::INVALID_ARGUMENT;
       }
       // 子查询结果（元组列）只能有一个值（一行一列）
-      if (this->comp_type() == CompType::VAL_TUPLES) {
+      if (type_ == CompType::VAL_TUPLES) {
         if (right_tuple_list.size() > 1 || (!right_tuple_list.empty() && right_tuple_list.front().size() > 1)) {
-          LOG_WARN("invaild comparison. %d", comp_);
+          LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
-      } else if (this->comp_type() == CompType::TUPLES_VAL) {
+      } else if (type_ == CompType::TUPLES_VAL) {
         if (left_tuple_list.size() > 1 || (!left_tuple_list.empty() && left_tuple_list.front().size() > 1)) {
-          LOG_WARN("invaild comparison. %d", comp_);
+          LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
       }
@@ -274,30 +256,30 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
     case CompOp::LIKE_XXX:
     case CompOp::NOT_LIKE_XXX: {
       // LIKE 和 NOT LIKE 只能单个值比较
-      if (this->comp_type() != CompType::VAL_VAL) {
-        LOG_WARN("invaild comparison. %d", comp_);
+      if (type_ != CompType::VAL_VAL) {
+        LOG_WARN("invaild comparison. %d", type_);
         return RC::INVALID_ARGUMENT;
       }
     } break;
     case CompOp::IN_XXX:
     case CompOp::NOT_IN_XXX: {
       // IN 和 NOT IN 不支持左子查询和左LIST
-      if (this->comp_type() == CompType::LIST_VAL || this->comp_type() == CompType::TUPLES_VAL) {
-        LOG_WARN("invaild comparison. %d", comp_);
+      if (type_ == CompType::LIST_VAL || type_ == CompType::TUPLES_VAL) {
+        LOG_WARN("invaild comparison. %d", type_);
         return RC::INVALID_ARGUMENT;
       }
       // 子查询结果最多一列
-      if (this->comp_type() == CompType::VAL_TUPLES) {
+      if (type_ == CompType::VAL_TUPLES) {
         if (!right_tuple_list.empty() && right_tuple_list.front().size() > 1) {
-          LOG_WARN("invaild comparison. %d", comp_);
+          LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
       }
     } break;
     case CompOp::XXX_EXISTS:
     case CompOp::XXX_NOT_EXISTS: {
-      if (this->comp_type() != CompType::VAL_TUPLES) {
-        LOG_WARN("invaild comparison. %d", comp_);
+      if (type_ != CompType::VAL_TUPLES) {
+        LOG_WARN("invaild comparison. %d", type_);
         return RC::INVALID_ARGUMENT;
       }
     } break;
@@ -307,200 +289,67 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
       rc = RC::SUCCESS;
     } break;
     default:
-      LOG_WARN("unsupported comparison. %d", comp_);
+      LOG_WARN("unsupported comparison. %d", type_);
       rc = RC::INTERNAL;
   }
 
   // -------------------------处理比较结果--------------------------
+
+  int cmp_result = INT32_MAX;
   switch (comp_) {
-    case EQUAL_TO: {
-      // 不等于就返回false
-      int cmp_result = -1;
-      Value value;
-      if (!right_tuple_list.empty() && this->comp_type() == CompType::VAL_TUPLES) {
-        value = right_tuple_list.front()[0];
-        cmp_result = left.compare(value);
-      } else if (!left_tuple_list.empty() && this->comp_type() == CompType::TUPLES_VAL) {
-        value = left_tuple_list.front()[0];
-        cmp_result = value.compare(right);
-      } else if (!left_list.empty() && this->comp_type() == CompType::LIST_VAL) {
-        value = left_list[0];
-        cmp_result = value.compare(right);
-      } else if (!right_list.empty() && this->comp_type() == CompType::VAL_LIST) {
-        value = right_list[0];
-        cmp_result = value.compare(right);
-      } else if (this->comp_type() == CompType::VAL_VAL) {
-        cmp_result = left.compare(right);
-      }
-      result = (0 == cmp_result);
-    } break;
-    case LESS_EQUAL: {
-      // 返回所有小于等于
-      int cmp_result = false;
-      Value value;
-      if (!right_tuple_list.empty() && this->comp_type() == CompType::VAL_TUPLES) {
-        value = right_tuple_list.front()[0];
-        cmp_result = left.compare(value);
-      } else if (!left_tuple_list.empty() && this->comp_type() == CompType::TUPLES_VAL) {
-        value = left_tuple_list.front()[0];
-        cmp_result = value.compare(right);
-      } else if (this->comp_type() == CompType::VAL_VAL) {
-        cmp_result = left.compare(right);
-      }
-      result = (0 >= cmp_result);
-    } break;
-    case NOT_EQUAL: {
-      // 相等就返回false
-      int cmp_result = false;
-      Value value;
-      if (!right_tuple_list.empty() && this->comp_type() == CompType::VAL_TUPLES) {
-        value = right_tuple_list.front()[0];
-        cmp_result = left.compare(value);
-      } else if (!left_tuple_list.empty() && this->comp_type() == CompType::TUPLES_VAL) {
-        value = left_tuple_list.front()[0];
-        cmp_result = value.compare(right);
-      } else if (this->comp_type() == CompType::VAL_VAL) {
-        cmp_result = left.compare(right);
-      }
-      result = (0 != cmp_result);
-    } break;
-    case LESS_THAN: {
-      // 返回所有小于 ，注意左边是list的时候，也就是左边是子查询的时候符号反向
-      int cmp_result = false;
-      Value value;
-      if (!right_tuple_list.empty() && this->comp_type() == CompType::VAL_TUPLES) {
-        value = right_tuple_list.front()[0];
-        cmp_result = left.compare(value);
-      } else if (!left_tuple_list.empty() && this->comp_type() == CompType::TUPLES_VAL) {
-        value = left_tuple_list.front()[0];
-        cmp_result = value.compare(right);
-      } else if (this->comp_type() == CompType::VAL_VAL) {
-        cmp_result = left.compare(right);
-      }
-      result = (0 > cmp_result);
-    } break;
-    case GREAT_EQUAL: {
-      // 返回所有大于等于 ，注意左边是list的时候，也就是左边是子查询的时候符号反向
-      int cmp_result = false;
-      Value value;
-      if (!right_tuple_list.empty() && this->comp_type() == CompType::VAL_TUPLES) {
-        value = right_tuple_list.front()[0];
-        cmp_result = left.compare(value);
-      } else if (!left_tuple_list.empty() && this->comp_type() == CompType::TUPLES_VAL) {
-        value = left_tuple_list.front()[0];
-        cmp_result = value.compare(right);
-      } else if (this->comp_type() == CompType::VAL_VAL) {
-        cmp_result = left.compare(right);
-      }
-      result = (0 <= cmp_result);
-    } break;
-    case GREAT_THAN: {
-      // 返回所有大于 ，注意左边是list的时候，也就是左边是子查询的时候符号反向
-      int cmp_result = false;
-      Value value;
-      if (!right_tuple_list.empty() && this->comp_type() == CompType::VAL_TUPLES) {
-        value = right_tuple_list.front()[0];
-        cmp_result = left.compare(value);
-      } else if (!left_tuple_list.empty() && this->comp_type() == CompType::TUPLES_VAL) {
-        value = left_tuple_list.front()[0];
-        cmp_result = value.compare(right);
-      } else if (this->comp_type() == CompType::VAL_VAL) {
-        cmp_result = left.compare(right);
-      }
-      result = (0 < cmp_result);
-    } break;
-    case LIKE_XXX: {
+    case EQUAL_TO:
+      cmp_result = basicCompare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      result = cmp_result != INT32_MAX && (0 == cmp_result);
+      break;
+    case LESS_EQUAL:
+      cmp_result = basicCompare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      result = cmp_result != INT32_MAX && (0 >= cmp_result);
+      break;
+    case NOT_EQUAL:
+      cmp_result = basicCompare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      result = cmp_result != INT32_MAX && (0 != cmp_result);
+      break;
+    case LESS_THAN:
+      cmp_result = basicCompare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      result = cmp_result != INT32_MAX && (0 > cmp_result);
+      break;
+    case GREAT_EQUAL:
+      cmp_result = basicCompare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      result = cmp_result != INT32_MAX && (0 <= cmp_result);
+      break;
+    case GREAT_THAN:
+      cmp_result = basicCompare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      result = cmp_result != INT32_MAX && (0 < cmp_result);
+      break;
+    case LIKE_XXX:
       result = ComparisonExpr::likeMatch(left.get_string(), right.get_string());
-    } break;
-    case NOT_LIKE_XXX: {
+      break;
+    case NOT_LIKE_XXX:
       result = !ComparisonExpr::likeMatch(left.get_string(), right.get_string());
-    } break;
-    case IN_XXX: {
-      if (this->comp_type() == CompType::VAL_TUPLES) {
-        for (const std::vector<Value> &vec : right_tuple_list) {
-          Value value;
-          value = vec[0];
-          if (0 == left.compare(value)) {
-            result = true;
-            break;
-          }
-        }
-      } else if (this->comp_type() == CompType::VAL_LIST) {
-        for (const Value &value : right_list) {
-          if (0 == left.compare(value)) {
-            result = true;
-            break;
-          }
-        }
-      } else {
-        LOG_WARN("unsupported comparison. %d", comp_);
-        rc = RC::INTERNAL;
-      }
-    } break;
-    case NOT_IN_XXX: {
-      if (this->comp_type() == CompType::VAL_TUPLES) {
-        result = true;
-        for (const std::vector<Value> &vec : right_tuple_list) {
-          Value value;
-          value = vec[0];
-          if (0 == left.compare(value)) {
-            result = false;
-            break;
-          }
-        }
-      } else if (this->comp_type() == CompType::VAL_LIST) {
-        result = true;
-        for (const Value &value : right_list) {
-          if (0 == left.compare(value)) {
-            result = false;
-            break;
-          }
-        }
-      } else {
-        LOG_WARN("unsupported comparison. %d", comp_);
-        rc = RC::INTERNAL;
-      }
-    } break;
-    case XXX_EXISTS: {
-      if (right_tuple_list.empty()) {
-        result = false;
-      } else {
-        result = true;
-      }
-    } break;
-    case XXX_NOT_EXISTS: {
-      if (right_tuple_list.empty()) {
-        result = true;
-      } else {
-        result = false;
-      }
-    } break;
-    case XXX_IS_NULL: {
-      if (this->comp_type() == CompType::VAL_LIST || this->comp_type() == CompType::VAL_VAL || this->comp_type() == CompType::VAL_TUPLES) {
-        result = left.get_null();
-      } else if (!left_list.empty() && this->comp_type() == CompType::LIST_VAL) {
-        result = left_list.front().get_null();
-      } else if (!left_tuple_list.empty() && this->comp_type() == CompType::TUPLES_VAL) {
-        Value value;
-        value = left_tuple_list.front()[0];
-        result = value.get_null();
-      }
-    } break;
-    case XXX_IS_NOT_NULL: {
-      if (this->comp_type() == CompType::VAL_LIST || this->comp_type() == CompType::VAL_VAL || this->comp_type() == CompType::VAL_TUPLES) {
-        result = !left.get_null();
-      } else if (!left_list.empty() && this->comp_type() == CompType::LIST_VAL) {
-        result = !left_list.front().get_null();
-      } else if (!left_tuple_list.empty() && this->comp_type() == CompType::TUPLES_VAL) {
-        Value value;
-        value = left_tuple_list.front()[0];
-        result = !value.get_null();
-      }
-    } break;
-    default: {
-      LOG_WARN("unsupported comparison. %d", comp_);
+      break;
+    case IN_XXX:
+      result = IN_Compare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      break;
+      break;
+    case NOT_IN_XXX:
+      result = !IN_Compare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      break;
+    case XXX_EXISTS:
+      result = EXSIT_Compare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      break;
+    case XXX_NOT_EXISTS:
+      result = !EXSIT_Compare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      break;
+    case XXX_IS_NULL:
+      result = IS_NULL_Compare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      break;
+    case XXX_IS_NOT_NULL:
+      result = !IS_NULL_Compare(type_, left, right, left_list, right_list, left_tuple_list, right_tuple_list);
+      break;
+      break;
+    default:
       rc = RC::INTERNAL;
-    } break;
+      break;
   }
 
   return rc;
@@ -690,8 +539,7 @@ RC ComparisonExpr::check_value() const {
    * TUPLES_TUPLES
    */
   if ((left_value.get_null() || right_value.get_null()) && (comp_ != CompOp::XXX_IS_NULL && comp_ != CompOp::XXX_IS_NOT_NULL)) return RC::SUCCESS;
-  if (this->comp_type() == CompType::LIST_LIST || this->comp_type() == CompType::TUPLES_LIST || this->comp_type() == CompType::LIST_TUPLES ||
-      this->comp_type() == CompType::TUPLES_TUPLES) {
+  if (type_ == CompType::LIST_LIST || type_ == CompType::TUPLES_LIST || type_ == CompType::LIST_TUPLES || type_ == CompType::TUPLES_TUPLES) {
     LOG_WARN("both left and right are not value");  // todo 支持单tuple比较
     return RC::INVALID_ARGUMENT;
   }
@@ -705,26 +553,26 @@ RC ComparisonExpr::check_value() const {
     case CompOp::GREAT_THAN:
     case CompOp::GREAT_EQUAL: {
       // 列表只能有一个值
-      if (this->comp_type() == CompType::VAL_LIST) {
+      if (type_ == CompType::VAL_LIST) {
         if (right_values.size() > 1) {
-          LOG_WARN("invaild comparison. %d", comp_);
+          LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
-      } else if (this->comp_type() == CompType::LIST_VAL) {
+      } else if (type_ == CompType::LIST_VAL) {
         if (left_values.size() > 1) {
-          LOG_WARN("invaild comparison. %d", comp_);
+          LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
       }
       // 子查询结果（元组列）只能有一个值（一行一列）
-      if (this->comp_type() == CompType::VAL_TUPLES) {
+      if (type_ == CompType::VAL_TUPLES) {
         if (right_tuples.size() > 1 || (!right_tuples.empty() && right_tuples.front().size() > 1)) {
-          LOG_WARN("invaild comparison. %d", comp_);
+          LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
-      } else if (this->comp_type() == CompType::TUPLES_VAL) {
+      } else if (type_ == CompType::TUPLES_VAL) {
         if (left_tuples.size() > 1 || (!left_tuples.empty() && left_tuples.front().size() > 1)) {
-          LOG_WARN("invaild comparison. %d", comp_);
+          LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
       }
@@ -732,30 +580,30 @@ RC ComparisonExpr::check_value() const {
     case CompOp::LIKE_XXX:
     case CompOp::NOT_LIKE_XXX: {
       // LIKE 和 NOT LIKE 只能单个值比较
-      if (this->comp_type() != CompType::VAL_VAL) {
-        LOG_WARN("invaild comparison. %d", comp_);
+      if (type_ != CompType::VAL_VAL) {
+        LOG_WARN("invaild comparison. %d", type_);
         return RC::INVALID_ARGUMENT;
       }
     } break;
     case CompOp::IN_XXX:
     case CompOp::NOT_IN_XXX: {
       // IN 和 NOT IN 不支持左子查询和左LIST
-      if (this->comp_type() == CompType::LIST_VAL || this->comp_type() == CompType::TUPLES_VAL) {
-        LOG_WARN("invaild comparison. %d", comp_);
+      if (type_ == CompType::LIST_VAL || type_ == CompType::TUPLES_VAL) {
+        LOG_WARN("invaild comparison. %d", type_);
         return RC::INVALID_ARGUMENT;
       }
       // 子查询结果最多一列
-      if (this->comp_type() == CompType::VAL_TUPLES) {
+      if (type_ == CompType::VAL_TUPLES) {
         if (!right_tuples.empty() && right_tuples.front().size() > 1) {
-          LOG_WARN("invaild comparison. %d", comp_);
+          LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
       }
     } break;
     case CompOp::XXX_EXISTS:
     case CompOp::XXX_NOT_EXISTS: {
-      if (this->comp_type() != CompType::VAL_TUPLES) {
-        LOG_WARN("invaild comparison. %d", comp_);
+      if (type_ != CompType::VAL_TUPLES) {
+        LOG_WARN("invaild comparison. %d", type_);
         return RC::INVALID_ARGUMENT;
       }
     } break;
@@ -765,7 +613,7 @@ RC ComparisonExpr::check_value() const {
       rc = RC::SUCCESS;
     } break;
     default:
-      LOG_WARN("unsupported comparison. %d", comp_);
+      LOG_WARN("unsupported comparison. %d", type_);
       rc = RC::INTERNAL;
   }
 

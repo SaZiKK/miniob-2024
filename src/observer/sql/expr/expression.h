@@ -259,8 +259,7 @@ class ValueExpr : public Expression {
 class SubQueryExpr : public Expression {
  public:
   SubQueryExpr() = default;
-  explicit SubQueryExpr(SelectStmt *sub_query)
-      : sub_query_(sub_query), logical_operator(nullptr, [](LogicalOperator *) {}), physical_operator(nullptr, [](PhysicalOperator *) {}){};
+  explicit SubQueryExpr(SelectStmt *sub_query) : sub_query_(sub_query) { init(); };
 
   virtual ~SubQueryExpr() = default;
 
@@ -271,20 +270,14 @@ class SubQueryExpr : public Expression {
 
   RC get_tuple_list(std::vector<std::vector<Value>> &tuple) override;
 
-  // RC create_sub_logical_plan(SelectStmt *selectstmt, std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator);
-  // RC generate_sub_physical_plan(std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> &logical_operator,
-  //                               std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> &physical_operator);
-
-  void set_logical_operator(std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> LogicalOperator);
-
-  void set_physical_operator(std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> PhysicalOperator);
+  RC init();
 
   SelectStmt *sub_query() { return sub_query_; }
 
  private:
   SelectStmt *sub_query_;
-  std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)> logical_operator;
-  std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)> physical_operator;
+  bool has_calculated = false;
+  std::vector<std::vector<Value>> tuple_list_;
 };
 
 class ValueListExpr : public Expression {

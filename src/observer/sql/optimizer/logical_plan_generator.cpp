@@ -259,69 +259,6 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
         }
       }
     }
-    if (filter_obj_right.is_sub_query) {
-      // 创建右子查询的逻辑算子
-      LogicalPlanGenerator sub_logical_plan_generator_;
-      PhysicalPlanGenerator sub_physical_plan_generator_;
-      unique_ptr<LogicalOperator> temp_sub_logical_operator;
-      unique_ptr<PhysicalOperator> temp_sub_physical_operator;
-      SelectStmt *sub_stmt = filter_obj_right.sub_query;
-      // 创建子查询的逻辑算子，这里实际上是递归的创建
-      RC rc = sub_logical_plan_generator_.create(sub_stmt, temp_sub_logical_operator);
-      if (rc != RC::SUCCESS) {
-        LOG_WARN("failed to create sub logical plan. rc=%s", strrc(rc));
-        return rc;
-      }
-      // 创建子查询的物理算子
-      rc = sub_physical_plan_generator_.create(*temp_sub_logical_operator, temp_sub_physical_operator);
-      if (rc != RC::SUCCESS) {
-        LOG_WARN("failed to create sub physical plan. rc=%s", strrc(rc));
-        return rc;
-      }
-      // 创建带有自定义删除器的 unique_ptr
-      auto sub_logical_operator =
-          std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)>(temp_sub_logical_operator.release(), [](LogicalOperator *p) { delete p; });
-      auto sub_physical_operator = std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)>(temp_sub_physical_operator.release(),
-                                                                                                   [](PhysicalOperator *p) { delete p; });
-      // 把父类对象强转一下，方便我调用子类专属的方法
-      unique_ptr<SubQueryExpr> sub_query_expr(dynamic_cast<SubQueryExpr *>(right.release()));
-      // 设置逻辑和物理操作符
-      sub_query_expr->set_logical_operator(std::move(sub_logical_operator));
-      sub_query_expr->set_physical_operator(std::move(sub_physical_operator));
-      // 归还所有权，便于下一步操作
-      right = std::move(sub_query_expr);
-    }
-    if (filter_obj_left.is_sub_query) {
-      // 创建左子查询的逻辑算子
-      LogicalPlanGenerator sub_logical_plan_generator_;
-      PhysicalPlanGenerator sub_physical_plan_generator_;
-      unique_ptr<LogicalOperator> temp_sub_logical_operator;
-      unique_ptr<PhysicalOperator> temp_sub_physical_operator;
-      SelectStmt *sub_stmt = filter_obj_left.sub_query;
-      // 创建子查询的逻辑算子，这里实际上是递归的创建
-      RC rc = sub_logical_plan_generator_.create(sub_stmt, temp_sub_logical_operator);
-      if (rc != RC::SUCCESS) {
-        LOG_WARN("failed to create sub logical plan. rc=%s", strrc(rc));
-        return rc;
-      }
-      // 创建子查询的物理算子
-      rc = sub_physical_plan_generator_.create(*temp_sub_logical_operator, temp_sub_physical_operator);
-      if (rc != RC::SUCCESS) {
-        LOG_WARN("failed to create sub physical plan. rc=%s", strrc(rc));
-        return rc;
-      }
-      // 创建带有自定义删除器的 unique_ptr
-      auto sub_logical_operator =
-          std::unique_ptr<LogicalOperator, void (*)(LogicalOperator *)>(temp_sub_logical_operator.release(), [](LogicalOperator *p) { delete p; });
-      auto sub_physical_operator = std::unique_ptr<PhysicalOperator, void (*)(PhysicalOperator *)>(temp_sub_physical_operator.release(),
-                                                                                                   [](PhysicalOperator *p) { delete p; });
-      // 把父类对象强转一下，方便我调用子类专属的方法
-      unique_ptr<SubQueryExpr> sub_query_expr(dynamic_cast<SubQueryExpr *>(left.release()));
-      sub_query_expr->set_logical_operator(std::move(sub_logical_operator));
-      sub_query_expr->set_physical_operator(std::move(sub_physical_operator));
-      // 归还所有权，便于下一步操作
-      left = std::move(sub_query_expr);
-    }
 
     ComparisonExpr *cmp_expr = new ComparisonExpr(filter_unit->comp(), std::move(left), std::move(right));
 

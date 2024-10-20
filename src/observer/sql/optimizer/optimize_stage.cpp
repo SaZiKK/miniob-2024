@@ -143,13 +143,14 @@ RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &t
   }
   ASSERT(logical_operator, "logical operator is null");
 
-  rc = rewrite(logical_operator);
+  // rc = rewrite(logical_operator);
 
   // 查错
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to rewrite plan. rc=%s", strrc(rc));
-    return rc;
-  }
+  // if (rc != RC::SUCCESS)
+  // {
+  //   LOG_WARN("failed to rewrite plan. rc=%s", strrc(rc));
+  //   return rc;
+  // }
 
   rc = optimize(logical_operator);
 
