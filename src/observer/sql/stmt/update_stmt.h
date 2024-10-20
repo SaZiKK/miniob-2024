@@ -25,25 +25,24 @@ class FieldMeta;
  * @brief 更新语句
  * @ingroup Statement
  */
-class UpdateStmt : public Stmt
-{
-public:
+class UpdateStmt : public Stmt {
+ public:
   UpdateStmt() = default;
   UpdateStmt(Table *table, FilterStmt *filter_stmt, std::vector<FieldMeta> field_metas, std::vector<UpdateTarget> update_targets)
       : table_(table), filter_stmt_(filter_stmt), field_metas_(field_metas), update_targets_(update_targets) {}
   ~UpdateStmt() override;
 
-public:
+ public:
   static RC create(Db *db, UpdateSqlNode &update_sql, Stmt *&stmt);
   StmtType type() const override { return StmtType::UPDATE; }
 
-public:
+ public:
   Table *table() const { return table_; }
   FilterStmt *filter_stmt() const { return filter_stmt_; }
   std::vector<FieldMeta> field_metas() const { return field_metas_; }
   std::vector<UpdateTarget> update_targets() const { return update_targets_; }
 
-private:
+ private:
   Table *table_ = nullptr;
   FilterStmt *filter_stmt_ = nullptr;
   std::vector<FieldMeta> field_metas_;
