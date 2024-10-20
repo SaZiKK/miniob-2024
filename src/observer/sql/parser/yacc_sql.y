@@ -558,6 +558,7 @@ update_target_list:
     {
       if($3 == nullptr)
         $$ = new std::vector<UpdateTarget>;
+      else $$ = $3;
       $$->emplace_back(*$2);
     }
     ;

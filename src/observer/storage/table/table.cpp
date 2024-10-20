@@ -591,7 +591,10 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
       }
       // 类型匹配检查
       else if (field_meta->type() != value->attr_type()) {
-        return RC::SCHEMA_FIELD_TYPE_MISMATCH;
+        Value real_value;
+        RC rc = Value::cast_to(*value, field_meta->type(), real_value);
+        if (OB_FAIL(rc)) return rc;
+        *value = real_value;
       }
 
       // 判断是否为索引列
