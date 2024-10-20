@@ -33,7 +33,7 @@ class LogicalOperator;
  */
 class Rewriter {
  public:
-  Rewriter();
+  Rewriter() = default;
   virtual ~Rewriter() = default;
 
   /**
@@ -43,8 +43,5 @@ class Rewriter {
    * @param oper 逻辑计划
    * @param change_made 当前是否有重写发生
    */
-  RC rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made);
-
- private:
-  std::vector<std::unique_ptr<RewriteRule>> rewrite_rules_;
+  static RC rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made);
 };

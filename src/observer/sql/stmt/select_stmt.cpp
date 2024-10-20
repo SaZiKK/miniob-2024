@@ -39,18 +39,20 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
   BinderContext binder_context;
 
   // 将节点中的 join 添加到 conditions 以及 relations 当中
-  vector<JoinSqlNode> join = select_sql.join;
+  vector<JoinSqlNode> join;
+  for (auto it : select_sql.join) join.push_back(it);
   std::reverse(join.begin(), join.end());
   for (auto it : join) {
     select_sql.relations.emplace_back(it.relation);
     for (auto condition : it.conditions) select_sql.conditions.emplace_back(condition);
   }
 
-  // 检测并递归生成右子查询stmt  //
-  for (size_t i = 0; i < select_sql.conditions.size(); ++i) {
+  // 检测右侧子查询 STMT
+  for (size_t i = 0; i < select_sql.conditions.size(); i++) {
     if (select_sql.conditions[i].right_is_sub_query) {
       auto right_sub_query = select_sql.conditions[i].right_sub_query;
-      // 右子查询目前必须是select
+
+      // 右子查询目前必须是 SELECT 节点
       if (right_sub_query->flag != SCF_SELECT) {
         LOG_WARN("invalid argument. sub query is not select. index=%d", i);
         return RC::INVALID_ARGUMENT;
@@ -67,6 +69,8 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
       auto *sub_select_stmt = dynamic_cast<SelectStmt *>(right_sub_query_stmt);
       select_sql.conditions[i].right_sub_query_stmt = sub_select_stmt;
     }
+
+    // 检测左侧子查询 STMT
     if (select_sql.conditions[i].left_is_sub_query) {
       auto left_sub_query = select_sql.conditions[i].left_sub_query;
       // 左子查询目前必须是select

@@ -19,6 +19,9 @@ See the Mulan PSL v2 for more details. */
 #include "storage/db/db.h"
 #include "storage/table/table.h"
 #include "common/type/date_type.h"
+#include "sql/optimizer/optimize_stage.h"
+#include "event/sql_debug.h"
+#include <sstream>
 
 using namespace std;
 using namespace common;
@@ -30,7 +33,7 @@ UpdateStmt::~UpdateStmt() {
   }
 }
 
-RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt) {
+RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt) {
   // 拿到目标表格以及名称以及修改域
   const char *table_name = update.relation_name.c_str();
   Table *table = db->find_table(table_name);
@@ -67,6 +70,28 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt) {
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to create filter statement. rc=%d:%s", rc, strrc(rc));
     return rc;
+  }
+
+  // 创建子查询的 STMT 对象
+  for (int i = 0; i < (int)update.update_targets.size(); i++) {
+    if (update.update_targets[i].is_value == false) {
+      Stmt *temp;
+      SelectStmt::create(db, update.update_targets[i].sub_select->selection, temp);
+      vector<vector<Value>> tuple_list;
+      RC rc = OptimizeStage::handle_sub_stmt(temp, tuple_list);
+      if (rc != RC::SUCCESS) return RC::INVALID_ARGUMENT;
+      // 子查询为空值，等同于插入 NULL
+      if (tuple_list.empty()) {
+        update.update_targets[i].value.set_null(true);
+      }
+      // 子查询非法，等同于插入非法 Value，如果筛选出来没有更新目标，则无视，否则报错
+      else if (tuple_list.size() != 1 || tuple_list[0].size() != 1) {
+        update.update_targets[i].value.set_type(AttrType::UNDEFINED);
+      } else {
+        update.update_targets[i].value = tuple_list[0][0];
+      }
+      update.update_targets[i].is_value = true;
+    }
   }
 
   // check date validity

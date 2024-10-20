@@ -571,12 +571,56 @@ RC Table::drop() {
   return RC::SUCCESS;
 }
 
+// 检查所有更新字段是否全部有效
+RC Table::update_records(Record &record, std::vector<std::pair<Value, FieldMeta>> update_map_) {
+  // 遍历表格的全部域，找到目标域
+  const int sys_field_num = table_meta_.sys_field_num();
+  const int user_field_num = table_meta_.field_num() - sys_field_num;
+  FieldMeta *targetFiled = nullptr;
+
+  for (auto it : update_map_) {
+    for (int i = 0; i < user_field_num; i++) {
+      const FieldMeta *field_meta = table_meta_.field(sys_field_num + i);
+      const char *field_name = field_meta->name();
+
+      // 找到目标域
+      if (strcmp(field_name, it.second.name()) == 0) {
+        // 判断 NULL 值
+        if (it.first.get_null()) {
+          if (field_meta->can_be_null() == false) return RC::INVALID_ARGUMENT;
+        }
+        // 类型匹配检查
+        else if (field_meta->type() != it.first.attr_type()) {
+          Value real_value;
+          RC rc = Value::cast_to(it.first, field_meta->type(), real_value);
+          if (OB_FAIL(rc)) return rc;
+        }
+
+        // 拿到目标域
+        targetFiled = (FieldMeta *)field_meta;
+        break;
+      }
+    }
+
+    // 域存在检查
+    if (nullptr == targetFiled) {
+      return RC::SCHEMA_FIELD_NOT_EXIST;
+    }
+  }
+
+  // 所有字段均可更新
+  for (auto it : update_map_) {
+    RC rc = update_record(record, it.second.name(), &it.first);
+    if (rc != RC::SUCCESS) return rc;
+  }
+  return RC::SUCCESS;
+}
+
 // 更新一个字段
 RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   // 遍历表格的全部域，找到目标域
   const int sys_field_num = table_meta_.sys_field_num();
   const int user_field_num = table_meta_.field_num() - sys_field_num;
-  bool isIndex = false;
   FieldMeta *targetFiled = nullptr;
 
   for (int i = 0; i < user_field_num; i++) {
@@ -591,11 +635,11 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
       }
       // 类型匹配检查
       else if (field_meta->type() != value->attr_type()) {
-        return RC::SCHEMA_FIELD_TYPE_MISMATCH;
+        Value real_value;
+        RC rc = Value::cast_to(*value, field_meta->type(), real_value);
+        if (OB_FAIL(rc)) return rc;
+        *value = real_value;
       }
-
-      // 判断是否为索引列
-      isIndex = find_index_by_field(field_name) == nullptr ? false : true;
 
       // 拿到目标域
       targetFiled = (FieldMeta *)field_meta;
@@ -629,15 +673,6 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
     memcpy(old_data + field_offset, flag, 4);
   }
   record.set_data(old_data);
-
-  // 判断索引是否重复
-  if (isIndex) {
-    RC rc = insert_entry_of_indexes(record.data(), record.rid());
-    if (rc != RC::SUCCESS) {
-      // rc = delete_entry_of_indexes(record.data(), record.rid(), false);
-      return rc;
-    }
-  }
 
   record_handler_->update_record(&record);
   // delete old_data;

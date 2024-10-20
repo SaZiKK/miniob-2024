@@ -142,8 +142,10 @@ struct DeleteSqlNode {
 };
 
 struct UpdateTarget {
+  bool is_value;
   Value value;
   std::string attribute_name;
+  SubSelectSqlNode *sub_select;
 };
 
 /**

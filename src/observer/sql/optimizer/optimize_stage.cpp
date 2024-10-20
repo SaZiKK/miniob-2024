@@ -89,11 +89,11 @@ RC OptimizeStage::generate_physical_plan(unique_ptr<LogicalOperator> &logical_op
   if (session->get_execution_mode() == ExecutionMode::CHUNK_ITERATOR && LogicalOperator::can_generate_vectorized_operator(logical_operator->type())) {
     LOG_INFO("use chunk iterator");
     session->set_used_chunk_mode(true);
-    rc = physical_plan_generator_.create_vec(*logical_operator, physical_operator);
+    rc = PhysicalPlanGenerator::create_vec(*logical_operator, physical_operator);
   } else {
     LOG_INFO("use tuple iterator");
     session->set_used_chunk_mode(false);
-    rc = physical_plan_generator_.create(*logical_operator, physical_operator);
+    rc = PhysicalPlanGenerator::create(*logical_operator, physical_operator);
   }
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to create physical operator. rc=%s", strrc(rc));
@@ -107,7 +107,7 @@ RC OptimizeStage::rewrite(unique_ptr<LogicalOperator> &logical_operator) {
   bool change_made = false;
   do {
     change_made = false;
-    rc = rewriter_.rewrite(logical_operator, change_made);
+    rc = Rewriter::rewrite(logical_operator, change_made);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to do expression rewrite on logical plan. rc=%s", strrc(rc));
       return rc;
@@ -123,5 +123,98 @@ RC OptimizeStage::create_logical_plan(SQLStageEvent *sql_event, unique_ptr<Logic
     return RC::UNIMPLEMENTED;
   }
 
-  return logical_plan_generator_.create(stmt, logical_operator);
+  return LogicalPlanGenerator::create(stmt, logical_operator);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list) {
+  // 创建逻辑算子
+  unique_ptr<LogicalOperator> logical_operator;
+
+  RC rc = create_logical_plan(stmt, logical_operator);
+
+  // 查错
+  if (rc != RC::SUCCESS) {
+    if (rc != RC::UNIMPLEMENTED) {
+      LOG_WARN("failed to create logical plan. rc=%s", strrc(rc));
+    }
+    return rc;
+  }
+  ASSERT(logical_operator, "logical operator is null");
+
+  // rc = rewrite(logical_operator);
+
+  // 查错
+  // if (rc != RC::SUCCESS)
+  // {
+  //   LOG_WARN("failed to rewrite plan. rc=%s", strrc(rc));
+  //   return rc;
+  // }
+
+  rc = optimize(logical_operator);
+
+  // 查错
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to optimize plan. rc=%s", strrc(rc));
+    return rc;
+  }
+
+  unique_ptr<PhysicalOperator> physical_operator;
+  rc = generate_physical_plan(logical_operator, physical_operator);
+
+  // 查错
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to generate physical plan. rc=%s", strrc(rc));
+    return rc;
+  }
+
+  get_tuple_list(physical_operator.get(), tuple_list);
+
+  return rc;
+}
+
+RC OptimizeStage::create_logical_plan(Stmt *stmt, unique_ptr<LogicalOperator> &logical_operator) {
+  if (nullptr == stmt) {
+    return RC::UNIMPLEMENTED;
+  }
+
+  return LogicalPlanGenerator::create(stmt, logical_operator);
+}
+
+RC OptimizeStage::generate_physical_plan(unique_ptr<LogicalOperator> &logical_operator, unique_ptr<PhysicalOperator> &physical_operator) {
+  RC rc = PhysicalPlanGenerator::create(*logical_operator, physical_operator);
+
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to create physical operator. rc=%s", strrc(rc));
+  }
+  return rc;
+}
+
+RC OptimizeStage::get_tuple_list(PhysicalOperator *physical_operator, std::vector<std::vector<Value>> &tuple_list) {
+  RC rc = physical_operator->open(nullptr);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to open sub physical operator. rc=%s", strrc(rc));
+    return rc;
+  }
+
+  // 将查表结果放入value_list
+  while (RC::SUCCESS == (rc = physical_operator->next())) {
+    Tuple *tuple = physical_operator->current_tuple();
+    std::vector<Value> single_tuple;
+    for (int i = 0; i < tuple->cell_num(); i++) {
+      Value value;
+      tuple->cell_at(0, value);
+      single_tuple.push_back(value);
+    }
+    tuple_list.push_back(single_tuple);
+  }
+
+  rc = physical_operator->close();
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to close sub physical operator. rc=%s", strrc(rc));
+    return rc;
+  }
+
+  return RC::SUCCESS;
 }

@@ -559,8 +559,16 @@ update_target:
       $$ = new UpdateTarget;
       $$->attribute_name = $1;
       $$->value = *$3;
+      $$->is_value = true;
 
       delete $3;
+    }
+    | ID EQ sub_select_stmt
+    {
+      $$ = new UpdateTarget;
+      $$->attribute_name = $1;
+      $$->sub_select = $3;
+      $$->is_value = false;
     }
     ;
 
@@ -573,6 +581,7 @@ update_target_list:
     {
       if($3 == nullptr)
         $$ = new std::vector<UpdateTarget>;
+      else $$ = $3;
       $$->emplace_back(*$2);
     }
     ;
@@ -616,7 +625,6 @@ select_stmt:        /*  select 语句的语法解析树*/
 sub_select_stmt:
     LBRACE select_stmt RBRACE
     {
-      LOG_DEBUG("parse sub_select_stmt");
       $$ = $2;
     }
     ;

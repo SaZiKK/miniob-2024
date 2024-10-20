@@ -33,7 +33,7 @@ class UpdateStmt : public Stmt {
   ~UpdateStmt() override;
 
  public:
-  static RC create(Db *db, const UpdateSqlNode &update_sql, Stmt *&stmt);
+  static RC create(Db *db, UpdateSqlNode &update_sql, Stmt *&stmt);
   StmtType type() const override { return StmtType::UPDATE; }
 
  public:
