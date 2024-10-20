@@ -328,9 +328,9 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
     RC rc = cmp_expr->check_value();
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to create comparison expression");
-    return RC::INVALID_ARGUMENT;
+      return RC::INVALID_ARGUMENT;
     }
-    
+
     cmp_exprs.emplace_back(cmp_expr);
   }
 
