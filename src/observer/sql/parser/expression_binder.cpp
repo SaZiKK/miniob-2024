@@ -176,7 +176,11 @@ RC ExpressionBinder::bind_unbound_field_expression(unique_ptr<Expression> &expr,
     // 通过表格和 FieldMeta 对象创建 Field 对象，进而创建 FieldExpr 表达式
     Field field(table, field_meta);
     FieldExpr *field_expr = new FieldExpr(field);
-    field_expr->set_name(field_name);
+    string all = string(table_name) + '.' + string(field_name);
+    if ((int)context_.query_tables().size() > 1)
+      field_expr->set_name(all.c_str());
+    else
+      field_expr->set_name(field_name);
     bound_expressions.emplace_back(field_expr);
   }
 
@@ -319,7 +323,7 @@ RC ExpressionBinder::bind_arithmetic_expression(unique_ptr<Expression> &expr, ve
     return rc;
   }
 
-  if (child_bound_expressions.size() != 1) {
+  if (left_expr != nullptr && child_bound_expressions.size() != 1) {
     LOG_WARN("invalid left children number of comparison expression: %d", child_bound_expressions.size());
     return RC::INVALID_ARGUMENT;
   }
@@ -335,7 +339,7 @@ RC ExpressionBinder::bind_arithmetic_expression(unique_ptr<Expression> &expr, ve
     return rc;
   }
 
-  if (child_bound_expressions.size() != 1) {
+  if (right_expr != nullptr && child_bound_expressions.size() != 1) {
     LOG_WARN("invalid right children number of comparison expression: %d", child_bound_expressions.size());
     return RC::INVALID_ARGUMENT;
   }

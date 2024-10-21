@@ -28,22 +28,34 @@ int IntegerType::compare(const Value &left, const Value &right) const {
 }
 
 RC IntegerType::add(const Value &left, const Value &right, Value &result) const {
-  result.set_int(left.get_int() + right.get_int());
+  if (left.get_null() || right.get_null())
+    result.set_null(true);
+  else
+    result.set_int(left.get_int() + right.get_int());
   return RC::SUCCESS;
 }
 
 RC IntegerType::subtract(const Value &left, const Value &right, Value &result) const {
-  result.set_int(left.get_int() - right.get_int());
+  if (left.get_null() || right.get_null())
+    result.set_null(true);
+  else
+    result.set_int(left.get_int() - right.get_int());
   return RC::SUCCESS;
 }
 
 RC IntegerType::multiply(const Value &left, const Value &right, Value &result) const {
-  result.set_int(left.get_int() * right.get_int());
+  if (left.get_null() || right.get_null())
+    result.set_null(true);
+  else
+    result.set_int(left.get_int() * right.get_int());
   return RC::SUCCESS;
 }
 
 RC IntegerType::negative(const Value &val, Value &result) const {
-  result.set_int(-val.get_int());
+  if (val.get_null())
+    result.set_null(true);
+  else
+    result.set_int(-val.get_int());
   return RC::SUCCESS;
 }
 
