@@ -17,6 +17,8 @@ See the Mulan PSL v2 for more details. */
 #pragma once
 
 #include <string.h>
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include "common/lang/comparator.h"
@@ -25,6 +27,8 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/functional.h"
 #include "common/log/log.h"
 #include "common/type/attr_type.h"
+#include "common/types.h"
+#include "gtest/gtest.h"
 #include "sql/parser/parse_defs.h"
 #include "storage/buffer/disk_buffer_pool.h"
 #include "storage/record/record_manager.h"
@@ -95,7 +99,7 @@ class KeyComparator {
   const std::vector<AttrComparator> &attr_comparators() const { return attr_comparators_; }
 
   int operator()(const char *v1, const char *v2) const {
-    for (int i = 0; i < attr_comparators_.size(); i++) {
+    for (size_t i = 0; i < attr_comparators_.size(); i++) {
       int result = attr_comparators_[i](v1, v2);
       if (result != 0) {
         return result;
@@ -153,7 +157,7 @@ class KeyPrinter {
 
   string operator()(const char *v) const {
     stringstream ss;
-    for (int i = 0; i < attr_printers_.size(); i++) {
+    for (size_t i = 0; i < attr_printers_.size(); i++) {
       ss << "{key:" << attr_printers_[i](v) << ",";
       v += attr_printers_[i].attr_length();  // todo 这里的处理不确定是否正确
     }
@@ -167,6 +171,9 @@ class KeyPrinter {
   std::vector<AttrPrinter> attr_printers_;
 };
 
+/// 键值最大值：页数据大小减去IndexFileHeader的成员再除以每一个键值对的大小
+const int MAX_KEYS = (BP_PAGE_DATA_SIZE - sizeof(PageNum) - 4 * sizeof(int32_t) - sizeof(bool)) / (sizeof(int32_t) + sizeof(AttrType));
+
 /**
  * @brief the meta information of bplus tree
  * @ingroup BPlusTree
@@ -174,17 +181,18 @@ class KeyPrinter {
  * only one field can be supported, can you extend it to multi-fields? damn yes
  */
 struct IndexFileHeader {
-  IndexFileHeader() : root_page(BP_INVALID_PAGE_NUM), internal_max_size(0), leaf_max_size(0), key_length(0), keys_num(0), is_unique(false) {
-    // vectors are default-initialized to empty
+  IndexFileHeader() {
+    memset(this, 0, sizeof(IndexFileHeader));
+    root_page = BP_INVALID_PAGE_NUM;
   }
-  PageNum root_page;                  ///< 根节点在磁盘中的页号
-  int32_t internal_max_size;          ///< 内部节点最大的键值对数
-  int32_t leaf_max_size;              ///< 叶子节点最大的键值对数
-  std::vector<int32_t> attr_lengths;  ///< 各个键值的长度
-  int32_t key_length;                 ///< attr length + sizeof(RID) 总长
-  std::vector<AttrType> attr_types;   ///< 各个键值的类型
-  int keys_num;                       ///< 索引的键值数
-  bool is_unique;                     ///< 是否是唯一索引
+  PageNum root_page;               ///< 根节点在磁盘中的页号
+  int32_t internal_max_size;       ///< 内部节点最大的键值对数
+  int32_t leaf_max_size;           ///< 叶子节点最大的键值对数
+  int32_t key_length;              ///< attr length + sizeof(RID) 总长
+  int keys_num;                    ///< 索引的键值数
+  bool is_unique;                  ///< 是否是唯一索引
+  int32_t attr_lengths[MAX_KEYS];  ///< 各个键值的长度
+  AttrType attr_types[MAX_KEYS];   ///< 各个键值的类型
 
   const string to_string() const {
     stringstream ss;

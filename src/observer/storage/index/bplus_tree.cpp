@@ -12,6 +12,7 @@ See the Mulan PSL v2 for more details. */
 // Rewritten by Longda & Wangyunlai
 //
 
+#include <cstddef>
 #include <span>
 #include <vector>
 
@@ -827,9 +828,9 @@ RC BplusTreeHandler::create(LogHandler &log_handler, DiskBufferPool &buffer_pool
   // 向header中写入信息
   char *pdata = header_frame->data();
   IndexFileHeader *file_header = (IndexFileHeader *)pdata;
-  file_header->attr_lengths = attr_lengths;
+  std::copy(attr_lengths.begin(), attr_lengths.end(), file_header->attr_lengths);
   file_header->key_length = total_attr_length + sizeof(RID);
-  file_header->attr_types = attr_types;
+  std::copy(attr_types.begin(), attr_types.end(), file_header->attr_types);
   file_header->internal_max_size = internal_max_size;
   file_header->leaf_max_size = leaf_max_size;
   file_header->root_page = BP_INVALID_PAGE_NUM;
@@ -849,8 +850,8 @@ RC BplusTreeHandler::create(LogHandler &log_handler, DiskBufferPool &buffer_pool
     return RC::NOMEM;
   }
 
-  key_comparator_.init(file_header->attr_types, file_header->attr_lengths);
-  key_printer_.init(file_header->attr_types, file_header->attr_lengths);
+  key_comparator_.init(attr_types, attr_lengths);
+  key_printer_.init(attr_types, attr_lengths);
 
   /*
   虽然我们针对B+树记录了WAL，但是我们记录的都是逻辑日志，并没有记录某个页面如何修改的物理日志。
@@ -921,8 +922,12 @@ RC BplusTreeHandler::open(LogHandler &log_handler, DiskBufferPool &buffer_pool) 
   // close old page_handle
   buffer_pool.unpin_page(frame);
 
-  key_comparator_.init(file_header_.attr_types, file_header_.attr_lengths);
-  key_printer_.init(file_header_.attr_types, file_header_.attr_lengths);
+  // 将数组转化成vector
+  std::vector<AttrType> attr_types(file_header_.attr_types, file_header_.attr_types + sizeof(file_header_.attr_types) / sizeof(AttrType));
+  std::vector<int> attr_lengths(file_header_.attr_lengths, file_header_.attr_lengths + sizeof(file_header_.attr_lengths) / sizeof(int));
+
+  key_comparator_.init(attr_types, attr_lengths);
+  key_printer_.init(attr_types, attr_lengths);
   LOG_INFO("Successfully open index");
   return RC::SUCCESS;
 }
@@ -1383,8 +1388,12 @@ RC BplusTreeHandler::recover_init_header_page(BplusTreeMiniTransaction &mtr, Fra
   header_dirty_ = false;
   frame->mark_dirty();
 
-  key_comparator_.init(file_header_.attr_types, file_header_.attr_lengths);
-  key_printer_.init(file_header_.attr_types, file_header_.attr_lengths);
+  // 将数组转化成vector
+  std::vector<AttrType> attr_types(file_header_.attr_types, file_header_.attr_types + sizeof(file_header_.attr_types) / sizeof(AttrType));
+  std::vector<int> attr_lengths(file_header_.attr_lengths, file_header_.attr_lengths + sizeof(file_header_.attr_lengths) / sizeof(int));
+
+  key_comparator_.init(attr_types, attr_lengths);
+  key_printer_.init(attr_types, attr_lengths);
 
   return RC::SUCCESS;
 }
@@ -1782,7 +1791,7 @@ RC BplusTreeScanner::open(const std::vector<const char *> &left_user_keys, std::
   // 校验输入的键值是否是合法范围
   if (!left_user_keys.empty() && !right_user_keys.empty()) {
     const std::vector<AttrComparator> &attr_comparator = tree_handler_.key_comparator_.attr_comparators();
-    for (int i = 0; i < left_user_keys.size(); i++) {
+    for (size_t i = 0; i < left_user_keys.size(); i++) {
       const int result = attr_comparator[i](left_user_keys[i], right_user_keys[i]);
       if (result > 0 ||  // left < right
                          // left == right but is (left,right)/[left,right) or
@@ -1808,7 +1817,7 @@ RC BplusTreeScanner::open(const std::vector<const char *> &left_user_keys, std::
     iter_index_ = 0;
   } else {
     std::vector<const char *> fixed_left_keys;
-    for (int i = 0; i < left_user_keys.size(); i++) {
+    for (size_t i = 0; i < left_user_keys.size(); i++) {
       char *fixed_left_key = const_cast<char *>(left_user_keys[i]);
       if (tree_handler_.file_header_.attr_types[i] == AttrType::CHARS) {
         bool should_inclusive_after_fix = false;
@@ -1835,7 +1844,7 @@ RC BplusTreeScanner::open(const std::vector<const char *> &left_user_keys, std::
 
     const char *left_key = (const char *)left_pkey.get();
 
-    for (int i = 0; i < fixed_left_keys.size(); i++) {
+    for (size_t i = 0; i < fixed_left_keys.size(); i++) {
       // 如果fixed了，修复的内存需要释放
       if (fixed_left_keys[i] != nullptr && tree_handler_.file_header_.attr_types[i] == AttrType::CHARS) {
         delete[] fixed_left_keys[i];
@@ -1881,7 +1890,7 @@ RC BplusTreeScanner::open(const std::vector<const char *> &left_user_keys, std::
   } else {
     std::vector<const char *> fixed_right_keys;
     bool should_include_after_fix = false;
-    for (int i = 0; i < right_user_keys.size(); i++) {
+    for (size_t i = 0; i < right_user_keys.size(); i++) {
       char *fixed_right_key = const_cast<char *>(right_user_keys[i]);
       if (tree_handler_.file_header_.attr_types[i] == AttrType::CHARS) {
         rc = fix_user_key(right_user_keys[i], right_len[i], tree_handler_.file_header_.attr_lengths[i], false /*greater*/, &fixed_right_key,
@@ -1904,7 +1913,7 @@ RC BplusTreeScanner::open(const std::vector<const char *> &left_user_keys, std::
       right_key_ = tree_handler_.make_keys(fixed_right_keys, *RID::min());
     }
 
-    for (int i = 0; i < fixed_right_keys.size(); i++) {
+    for (size_t i = 0; i < fixed_right_keys.size(); i++) {
       // 如果fixed了，修复的内存需要释放
       if (fixed_right_keys[i] != nullptr && tree_handler_.file_header_.attr_types[i] == AttrType::CHARS) {
         delete[] fixed_right_keys[i];

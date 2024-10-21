@@ -121,6 +121,11 @@ IndexScanner *BplusTreeIndex::create_scanner(const std::vector<const char *> lef
   return index_scanner;
 }
 
+IndexScanner *create_scanner(const char *left_key, int left_len, bool left_inclusive, const char *right_key, int right_len, bool right_inclusive) {
+  // not implemented
+  return nullptr;
+}
+
 RC BplusTreeIndex::sync() { return index_handler_.sync(); }
 
 ////////////////////////////////////////////////////////////////////////////////
