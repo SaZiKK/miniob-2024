@@ -41,6 +41,10 @@ RC CreateIndexStmt::create(Db *db, const CreateIndexSqlNode &create_index, Stmt 
 
   for (const auto &field_name : create_index.attribute_names) {
     const FieldMeta *field_meta = table->table_meta().field(field_name.c_str());
+    if (nullptr == field_meta) {
+      LOG_WARN("no such field in table. db=%s, table=%s, field=%s", db->name(), table_name, field_name.c_str());
+      return RC::SCHEMA_FIELD_NOT_EXIST;
+    }
     field_metas.push_back(*field_meta);
   }
 
