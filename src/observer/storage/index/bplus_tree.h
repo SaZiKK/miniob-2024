@@ -17,12 +17,18 @@ See the Mulan PSL v2 for more details. */
 #pragma once
 
 #include <string.h>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 #include "common/lang/comparator.h"
 #include "common/lang/memory.h"
 #include "common/lang/sstream.h"
 #include "common/lang/functional.h"
 #include "common/log/log.h"
+#include "common/type/attr_type.h"
+#include "common/types.h"
+#include "gtest/gtest.h"
 #include "sql/parser/parse_defs.h"
 #include "storage/buffer/disk_buffer_pool.h"
 #include "storage/record/record_manager.h"
@@ -83,23 +89,32 @@ class AttrComparator {
  */
 class KeyComparator {
  public:
-  void init(AttrType type, int length) { attr_comparator_.init(type, length); }
+  void init(std::vector<AttrType> types, std::vector<int> lengths) {
+    for (size_t i = 0; i < types.size(); i++) {
+      attr_comparators_.emplace_back();
+      attr_comparators_[i].init(types[i], lengths[i]);
+    }
+  }
 
-  const AttrComparator &attr_comparator() const { return attr_comparator_; }
+  const std::vector<AttrComparator> &attr_comparators() const { return attr_comparators_; }
 
   int operator()(const char *v1, const char *v2) const {
-    int result = attr_comparator_(v1, v2);
-    if (result != 0) {
-      return result;
+    for (size_t i = 0; i < attr_comparators_.size(); i++) {
+      int result = attr_comparators_[i](v1, v2);
+      if (result != 0) {
+        return result;
+      }
+      v1 += attr_comparators_[i].attr_length();
+      v2 += attr_comparators_[i].attr_length();
     }
 
-    const RID *rid1 = (const RID *)(v1 + attr_comparator_.attr_length());
-    const RID *rid2 = (const RID *)(v2 + attr_comparator_.attr_length());
+    const RID *rid1 = (const RID *)(v1);
+    const RID *rid2 = (const RID *)(v2);
     return RID::compare(rid1, rid2);
   }
 
  private:
-  AttrComparator attr_comparator_;
+  std::vector<AttrComparator> attr_comparators_;
 };
 
 /**
@@ -131,47 +146,64 @@ class AttrPrinter {
  */
 class KeyPrinter {
  public:
-  void init(AttrType type, int length) { attr_printer_.init(type, length); }
+  void init(std::vector<AttrType> types, std::vector<int> lengths) {
+    for (size_t i = 0; i < types.size(); i++) {
+      attr_printers_.emplace_back();
+      attr_printers_[i].init(types[i], lengths[i]);
+    }
+  }
 
-  const AttrPrinter &attr_printer() const { return attr_printer_; }
+  const std::vector<AttrPrinter> &attr_printer() const { return attr_printers_; }
 
   string operator()(const char *v) const {
     stringstream ss;
-    ss << "{key:" << attr_printer_(v) << ",";
+    for (size_t i = 0; i < attr_printers_.size(); i++) {
+      ss << "{key:" << attr_printers_[i](v) << ",";
+      v += attr_printers_[i].attr_length();  // todo 这里的处理不确定是否正确
+    }
 
-    const RID *rid = (const RID *)(v + attr_printer_.attr_length());
+    const RID *rid = (const RID *)(v);
     ss << "rid:{" << rid->to_string() << "}}";
     return ss.str();
   }
 
  private:
-  AttrPrinter attr_printer_;
+  std::vector<AttrPrinter> attr_printers_;
 };
+
+/// 键值最大值：页数据大小减去IndexFileHeader的成员再除以每一个键值对的大小
+const int MAX_KEYS = (BP_PAGE_DATA_SIZE - sizeof(PageNum) - 4 * sizeof(int32_t) - sizeof(bool)) / (sizeof(int32_t) + sizeof(AttrType));
 
 /**
  * @brief the meta information of bplus tree
  * @ingroup BPlusTree
  * @details this is the first page of bplus tree.
- * only one field can be supported, can you extend it to multi-fields?
+ * only one field can be supported, can you extend it to multi-fields? damn yes
  */
 struct IndexFileHeader {
   IndexFileHeader() {
     memset(this, 0, sizeof(IndexFileHeader));
     root_page = BP_INVALID_PAGE_NUM;
   }
-  PageNum root_page;          ///< 根节点在磁盘中的页号
-  int32_t internal_max_size;  ///< 内部节点最大的键值对数
-  int32_t leaf_max_size;      ///< 叶子节点最大的键值对数
-  int32_t attr_length;        ///< 键值的长度
-  int32_t key_length;         ///< attr length + sizeof(RID)
-  AttrType attr_type;         ///< 键值的类型
+  PageNum root_page;               ///< 根节点在磁盘中的页号
+  int32_t internal_max_size;       ///< 内部节点最大的键值对数
+  int32_t leaf_max_size;           ///< 叶子节点最大的键值对数
+  int32_t key_length;              ///< attr length + sizeof(RID) 总长
+  int keys_num;                    ///< 索引的键值数
+  bool is_unique;                  ///< 是否是唯一索引
+  int32_t attr_lengths[MAX_KEYS];  ///< 各个键值的长度
+  AttrType attr_types[MAX_KEYS];   ///< 各个键值的类型
 
   const string to_string() const {
     stringstream ss;
 
-    ss << "attr_length:" << attr_length << ","
+    ss << "attr_length:"
+       << "todo"
+       << ","  // todo 在这里打印所有类型以及其长度
        << "key_length:" << key_length << ","
-       << "attr_type:" << attr_type_to_string(attr_type) << ","
+       << "attr_type:"
+       << "todo"
+       << ","
        << "root_page:" << root_page << ","
        << "internal_max_size:" << internal_max_size << ","
        << "leaf_max_size:" << leaf_max_size << ";";
@@ -438,10 +470,10 @@ class BplusTreeHandler {
    * @param internal_max_size 内部节点最大大小
    * @param leaf_max_size 叶子节点最大大小
    */
-  RC create(LogHandler &log_handler, BufferPoolManager &bpm, const char *file_name, AttrType attr_type, int attr_length, int internal_max_size = -1,
-            int leaf_max_size = -1);
-  RC create(LogHandler &log_handler, DiskBufferPool &buffer_pool, AttrType attr_type, int attr_length, int internal_max_size = -1,
-            int leaf_max_size = -1);
+  RC create(LogHandler &log_handler, BufferPoolManager &bpm, const char *file_name, std::vector<AttrType> attr_types, std::vector<int> attr_lengths,
+            int internal_max_size = -1, int leaf_max_size = -1);
+  RC create(LogHandler &log_handler, DiskBufferPool &buffer_pool, std::vector<AttrType> attr_types, std::vector<int> attr_lengths,
+            int internal_max_size = -1, int leaf_max_size = -1);
 
   /**
    * @brief 打开一个B+树
@@ -463,14 +495,14 @@ class BplusTreeHandler {
    * 即向索引中插入一个值为（user_key，rid）的键值对
    * @note 这里假设user_key的内存大小与attr_length 一致
    */
-  RC insert_entry(const char *user_key, const RID *rid);
+  RC insert_entry(const std::vector<const char *> &user_keys, const RID *rid);
 
   /**
    * @brief 从IndexHandle句柄对应的索引中删除一个值为（user_key，rid）的索引项
    * @return RECORD_INVALID_KEY 指定值不存在
    * @note 这里假设user_key的内存大小与attr_length 一致
    */
-  RC delete_entry(const char *user_key, const RID *rid);
+  RC delete_entry(const vector<const char *> &user_keys, const RID *rid);
 
   bool is_empty() const;
 
@@ -479,7 +511,7 @@ class BplusTreeHandler {
    * @param key_len user_key的长度
    * @param rid  返回值，记录记录所在的页面号和slot
    */
-  RC get_entry(const char *user_key, int key_len, list<RID> &rids);
+  RC get_entry(const vector<const char *> &user_keys, std::vector<int> key_len, list<RID> &rids);
 
   RC sync();
 
@@ -614,7 +646,7 @@ class BplusTreeHandler {
   RC adjust_root(BplusTreeMiniTransaction &mtr, Frame *root_frame);
 
  private:
-  common::MemPoolItem::item_unique_ptr make_key(const char *user_key, const RID &rid);
+  common::MemPoolItem::item_unique_ptr make_keys(const std::vector<const char *> user_key, const RID &rid);
 
  protected:
   LogHandler *log_handler_ = nullptr;           /// 日志处理器
@@ -655,7 +687,8 @@ class BplusTreeScanner {
    * @param right_inclusive 右边界的值是否包含在内
    * TODO 重构参数表示方法
    */
-  RC open(const char *left_user_key, int left_len, bool left_inclusive, const char *right_user_key, int right_len, bool right_inclusive);
+  RC open(const std::vector<const char *> &left_user_key, std::vector<int> &left_len, bool left_inclusive,
+          const std::vector<const char *> &right_user_key, std::vector<int> &right_len, bool right_inclusive);
 
   /**
    * @brief 获取下一条记录
@@ -678,7 +711,7 @@ class BplusTreeScanner {
   /**
    * 如果key的类型是CHARS, 扩展或缩减user_key的大小刚好是schema中定义的大小
    */
-  RC fix_user_key(const char *user_key, int key_len, bool want_greater, char **fixed_key, bool *should_inclusive);
+  RC fix_user_key(const char *user_key, int key_len, int attr_length, bool want_greater, char **fixed_key, bool *should_inclusive);
 
   void fetch_item(RID &rid);
 

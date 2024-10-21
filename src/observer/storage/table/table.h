@@ -13,6 +13,7 @@ See the Mulan PSL v2 for more details. */
 
 #pragma once
 
+#include "storage/field/field_meta.h"
 #include "storage/table/table_meta.h"
 #include "common/types.h"
 #include "common/lang/span.h"
@@ -87,7 +88,7 @@ class Table {
   RC recover_insert_record(Record &record);
 
   // TODO refactor
-  RC create_index(Trx *trx, const FieldMeta *field_meta, const char *index_name);
+  RC create_index(Trx *trx, const std::vector<FieldMeta> &fieldmetas, const char *index_name);
 
   RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, ReadWriteMode mode);
 
