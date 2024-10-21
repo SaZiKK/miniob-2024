@@ -128,6 +128,7 @@ GROUP                                   RETURN_TOKEN(GROUP);
 BY                                      RETURN_TOKEN(BY);
 LENGTH                                  RETURN_TOKEN(LENGTH);
 ROUND                                   RETURN_TOKEN(ROUND);
+UNIQUE                                  RETURN_TOKEN(UNIQUE);
 DATE_FORMAT                             RETURN_TOKEN(DATE_FORMAT);
 JOIN|INNER[ \t]+JOIN                    RETURN_TOKEN(INNER_JOIN);
 STORAGE                                 RETURN_TOKEN(STORAGE);
