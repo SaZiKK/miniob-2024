@@ -76,7 +76,8 @@ RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt) {
   for (int i = 0; i < (int)update.update_targets.size(); i++) {
     if (update.update_targets[i].is_value == false) {
       Stmt *temp;
-      SelectStmt::create(db, update.update_targets[i].sub_select->selection, temp);
+      rc = SelectStmt::create(db, update.update_targets[i].sub_select->selection, temp);
+      if (rc != RC::SUCCESS) return rc;
       vector<vector<Value>> tuple_list;
       RC rc = OptimizeStage::handle_sub_stmt(temp, tuple_list);
       if (rc != RC::SUCCESS) return RC::INVALID_ARGUMENT;
