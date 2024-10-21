@@ -177,13 +177,7 @@ class TinyTuple : public Tuple {
     return RC::SUCCESS;
   }
 
-  RC find_cell(const TupleCellSpec &spec, Value &cell) const override {
-    if (0 == strcmp(spec.field_name(), "value")) {
-      cell = value_;
-      return RC::SUCCESS;
-    }
-    return RC::NOTFOUND;
-  }
+  RC find_cell(const TupleCellSpec &spec, Value &cell) const override { return RC::SUCCESS; }
 
  private:
   Value value_;

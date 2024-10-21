@@ -88,6 +88,53 @@ RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::str
   return RC::SUCCESS;
 }
 
+RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, unique_ptr<Expression> &expr) {
+  if (expr == nullptr) return RC::INVALID_ARGUMENT;
+
+  /*
+  对于简单的 Value 表达式，不需要绑定，只需要检验日期合法性即可
+  对于简单的 SubQuery 表达式，不需要绑定
+  对于简单的 UnBoundField 表达式，将其绑定成 Field 表达式
+  对于算术表达式，递归绑定左右两侧的表达式
+  出现上述四种情况之外的情况均为非法情况
+  */
+
+  switch (expr->type()) {
+    case ExprType::VALUE: {
+      Value value;
+      expr->try_get_value(value);
+      if (value.attr_type() == AttrType::DATE && !DateType::check_date(&value)) {
+        return RC::INVALID_ARGUMENT;
+      }
+    } break;
+    case ExprType::SUBQUERY: {
+      return RC::SUCCESS;
+    } break;
+    case ExprType::UNBOUND_FIELD: {
+      Table *table;
+      const FieldMeta *field;
+      get_table_and_field(db, default_table, tables, expr.get(), table, field);
+      expr = std::make_unique<FieldExpr>(table, field);
+    } break;
+    case ExprType::ARITHMETIC: {
+      RC rc = RC::SUCCESS;
+      ArithmeticExpr *arith_expr = static_cast<ArithmeticExpr *>(expr.get());
+      if (arith_expr->left() != nullptr) {
+        rc = bind_filter_expr(db, default_table, tables, arith_expr->left());
+      }
+      if (rc != RC::SUCCESS) return rc;
+      if (arith_expr->right() != nullptr) {
+        rc = bind_filter_expr(db, default_table, tables, arith_expr->right());
+      }
+      if (rc != RC::SUCCESS) return rc;
+    } break;
+    default:
+      return RC::INVALID_ARGUMENT;
+      break;
+  }
+  return RC::SUCCESS;
+}
+
 RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const ConditionSqlNode &condition,
                                   FilterUnit *&filter_unit) {
   RC rc = RC::SUCCESS;
@@ -101,109 +148,26 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
 
   filter_unit = new FilterUnit;
 
-  Expression *left_expr = condition.left_expression;
-  Expression *right_expr = condition.right_expression;
+  std::unique_ptr<Expression> left_expr(condition.left_expression);
+  std::unique_ptr<Expression> right_expr(condition.right_expression);
 
-  Value left_value, right_value;
-  bool left_is_value = false, right_is_value = false;
+  // 构造子查询表达式
+  if (condition.left_is_sub_query) left_expr = make_unique<SubQueryExpr>(condition.left_sub_query_stmt);
+  if (condition.right_is_sub_query) right_expr = make_unique<SubQueryExpr>(condition.right_sub_query_stmt);
 
-  ///////////////////////////////////////////////////////////////////
-  // left_expr 为 UnboundFieldExpr 时，代表该表达式为属性
-  // 此时，try_get_value() 返回 RC::UNIMPLEMENTED
-  //
-  // left_expr 为 其他表达式 时，代表该表达式最终算出来的是一个 Value
-  // 此时，try_get_value() 可以拿到算出来的 Value 对象
-  ///////////////////////////////////////////////////////////////////
+  // 绑定表达式
+  rc = bind_filter_expr(db, default_table, tables, left_expr);
+  if (rc != RC::SUCCESS) return rc;
+  rc = bind_filter_expr(db, default_table, tables, right_expr);
+  if (rc != RC::SUCCESS) return rc;
 
-  // 左侧不是子查询
-  if (condition.left_is_sub_query == 0 && condition.left_expression != nullptr && condition.left_expression->type() != ExprType::VALUELIST) {
-    left_is_value = OB_SUCC(condition.left_expression->try_get_value(left_value));
-  }
+  FilterObj left_obj;
+  left_obj.init(std::move(left_expr));
+  FilterObj right_obj;
+  right_obj.init(std::move(right_expr));
 
-  // 右侧不是子查询
-  if (condition.right_is_sub_query == 0 && condition.right_expression->type() != ExprType::VALUELIST) {
-    right_is_value = OB_SUCC(right_expr->try_get_value(right_value));
-  }
-
-  // 判断日期合法性
-  if (left_is_value && left_value.attr_type() == AttrType::DATE) {
-    if (!DateType::check_date(left_value.get_date())) return RC::INVALID_ARGUMENT;
-  }
-  if (right_is_value && right_value.attr_type() == AttrType::DATE) {
-    if (!DateType::check_date(right_value.get_date())) return RC::INVALID_ARGUMENT;
-  }
-
-  // 创建左 filterObj
-  // sub_select
-  if (condition.left_is_sub_query) {
-    FilterObj filter_obj;
-    filter_obj.init_sub_query(condition.left_sub_query_stmt);
-    filter_unit->set_left(filter_obj);
-  }
-  // Value
-  else if (left_is_value) {
-    FilterObj filter_obj;
-    filter_obj.init_value(left_value);
-    filter_unit->set_left(filter_obj);
-  }
-  // list
-  else if (left_expr->type() == ExprType::VALUELIST) {
-    FilterObj filter_obj;
-    std::vector<Value> value_list;
-    condition.left_expression->get_value_list(value_list);
-    filter_obj.init_list(value_list);
-    filter_unit->set_left(filter_obj);
-  }
-  // Attribute
-  else {
-    Table *table = nullptr;
-    const FieldMeta *field = nullptr;
-    rc = get_table_and_field(db, default_table, tables, left_expr, table, field);
-    if (rc != RC::SUCCESS) {
-      LOG_WARN("cannot find attr");
-      return rc;
-    }
-
-    FilterObj filter_obj;
-    filter_obj.init_attr(Field(table, field));
-    filter_unit->set_left(filter_obj);
-  }
-
-  // 创建右 filterObj
-  // sub_select
-  if (condition.right_is_sub_query) {
-    FilterObj filter_obj;
-    filter_obj.init_sub_query(condition.right_sub_query_stmt);
-    filter_unit->set_right(filter_obj);
-  }
-  // Value
-  else if (right_is_value) {
-    FilterObj filter_obj;
-    filter_obj.init_value(right_value);
-    filter_unit->set_right(filter_obj);
-  }
-  // list
-  else if (right_expr->type() == ExprType::VALUELIST) {
-    FilterObj filter_obj;
-    std::vector<Value> value_list;
-    condition.right_expression->get_value_list(value_list);
-    filter_obj.init_list(value_list);
-    filter_unit->set_right(filter_obj);
-  }
-  // Attribute
-  else {
-    Table *table = nullptr;
-    const FieldMeta *field = nullptr;
-    rc = get_table_and_field(db, default_table, tables, right_expr, table, field);
-    if (rc != RC::SUCCESS) {
-      LOG_WARN("cannot find attr");
-      return rc;
-    }
-
-    FilterObj filter_obj;
-    filter_obj.init_attr(Field(table, field));
-    filter_unit->set_right(filter_obj);
-  }
+  filter_unit->set_left(left_obj);
+  filter_unit->set_right(right_obj);
 
   // 设置比较符
   filter_unit->set_comp(comp);

@@ -194,6 +194,7 @@ class UnboundFieldExpr : public Expression {
 class FieldExpr : public Expression {
  public:
   FieldExpr() = default;
+  FieldExpr(Table *table, const FieldMeta *field) : field_(table, field) {}
   FieldExpr(const Table *table, const FieldMeta *field) : field_(table, field) {}
   FieldExpr(const Field &field) : field_(field) {}
 
@@ -264,7 +265,7 @@ class SubQueryExpr : public Expression {
   virtual ~SubQueryExpr() = default;
 
   ExprType type() const override { return ExprType::SUBQUERY; }
-  AttrType value_type() const override { return AttrType::SUB_QUERY; }
+  AttrType value_type() const override { return AttrType::TUPLES; }
 
   RC get_value(const Tuple &tuple, Value &value) const override;
 

@@ -60,7 +60,7 @@ RC DateType::to_string(const Value &val, string &result) const {
   return RC::SUCCESS;
 }
 
-bool DateType::check_date(const Value *value) {
+bool DateType::check_date(Value *value) {
   if (value->attr_type() != AttrType::DATE) {
     return false;
   }

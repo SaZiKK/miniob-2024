@@ -112,6 +112,8 @@ RC CastExpr::try_get_value(Value &result) const {
   return cast(value, result);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 RC SubQueryExpr::get_value(const Tuple &tuple, Value &value) const {
   LOG_WARN("invalid operation. cannot get single value from subquery expression");
   return RC::INVALID_ARGUMENT;
@@ -439,7 +441,7 @@ RC ComparisonExpr::check_value() const {
   if (left_->type() == ExprType::VALUELIST) {
     rc = left_->get_value_list(left_values);
     left_type = 1;  // 1代表左边是list
-  } else if (left_->value_type() == AttrType::SUB_QUERY) {
+  } else if (left_->value_type() == AttrType::TUPLES) {
     rc = left_->get_tuple_list(left_tuples);
     left_type = 3;  // 3代表左边是tuplelist
   } else if (left_->type() == ExprType::FIELD || left_->type() == ExprType::CAST) {
@@ -458,7 +460,7 @@ RC ComparisonExpr::check_value() const {
   if (right_->type() == ExprType::VALUELIST) {
     rc = right_->get_value_list(right_values);
     right_type = 1;  // 1代表右边是list
-  } else if (right_->value_type() == AttrType::SUB_QUERY) {
+  } else if (right_->value_type() == AttrType::TUPLES) {
     rc = right_->get_tuple_list(right_tuples);
     right_type = 3;  // 3代表右边是tuplelist
   } else if (right_->type() == ExprType::FIELD) {
@@ -641,7 +643,7 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
   if (left_->type() == ExprType::VALUELIST) {
     rc = left_->get_value_list(left_values);
     left_type = 1;  // 1代表左边是list
-  } else if (left_->value_type() == AttrType::SUB_QUERY) {
+  } else if (left_->value_type() == AttrType::TUPLES) {
     rc = left_->get_tuple_list(left_tuples);
     left_type = 3;  // 3代表左边是tuplelist
   } else {
@@ -657,7 +659,7 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
   if (right_->type() == ExprType::VALUELIST) {
     rc = right_->get_value_list(right_values);
     right_type = 1;  // 1代表右边是list
-  } else if (right_->value_type() == AttrType::SUB_QUERY) {
+  } else if (right_->value_type() == AttrType::TUPLES) {
     rc = right_->get_tuple_list(right_tuples);
     right_type = 3;  // 3代表右边是tuplelist
   } else {
@@ -948,15 +950,19 @@ RC ArithmeticExpr::get_value(const Tuple &tuple, Value &value) const {
   Value left_value;
   Value right_value;
 
-  rc = left_->get_value(tuple, left_value);
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
-    return rc;
+  if (left_ != nullptr) {
+    rc = left_->get_value(tuple, left_value);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
+      return rc;
+    }
   }
-  rc = right_->get_value(tuple, right_value);
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
-    return rc;
+  if (right_ != nullptr) {
+    rc = right_->get_value(tuple, right_value);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
+      return rc;
+    }
   }
   return calc_value(left_value, right_value, value);
 }

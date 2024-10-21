@@ -17,7 +17,7 @@ class DateType : public DataType {
 
   RC to_string(const Value &val, string &result) const override;
 
-  static bool check_date(const Value *value);
+  static bool check_date(Value *value);
   static bool check_date(int date);
 
   static string get_year(string date);

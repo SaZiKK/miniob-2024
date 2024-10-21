@@ -26,46 +26,9 @@ class Table;
 class FieldMeta;
 
 struct FilterObj {
-  bool is_attr;
-  bool is_value;
-  bool is_sub_query;
-  bool is_list;
-  Field field;
-  Value value;
-  std::vector<Value> value_list;
-  SelectStmt *sub_query = nullptr;
-
-  void init_attr(const Field &field) {
-    is_attr = true;
-    is_value = false;
-    is_sub_query = false;
-    is_list = false;
-    this->field = field;
-  }
-
-  void init_value(const Value &value) {
-    is_attr = false;
-    is_value = true;
-    is_sub_query = false;
-    is_list = false;
-    this->value = value;
-  }
-
-  void init_sub_query(SelectStmt *sub_query) {
-    is_attr = false;
-    is_value = false;
-    is_sub_query = true;
-    is_list = false;
-    this->sub_query = sub_query;
-  }
-
-  void init_list(const std::vector<Value> &value_list) {
-    is_attr = false;
-    is_value = false;
-    is_sub_query = false;
-    is_list = true;
-    this->value_list = value_list;
-  }
+  std::unique_ptr<Expression> expr;
+  void operator=(FilterObj &obj) { this->expr = std::move(obj.expr); }
+  void init(std::unique_ptr<Expression> expr) { this->expr = std::move(expr); }
 };
 
 class FilterUnit {
@@ -77,11 +40,11 @@ class FilterUnit {
 
   CompOp comp() const { return comp_; }
 
-  void set_left(const FilterObj &obj) { left_ = obj; }
-  void set_right(const FilterObj &obj) { right_ = obj; }
+  void set_left(FilterObj &obj) { left_ = obj; }
+  void set_right(FilterObj &obj) { right_ = obj; }
 
-  const FilterObj &left() const { return left_; }
-  const FilterObj &right() const { return right_; }
+  FilterObj &left() { return left_; }
+  FilterObj &right() { return right_; }
 
  private:
   CompOp comp_ = NO_OP;
@@ -104,6 +67,8 @@ class FilterStmt {
  public:
   static RC create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const ConditionSqlNode *conditions,
                    int condition_num, FilterStmt *&stmt);
+
+  static RC bind_filter_expr(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, unique_ptr<Expression> &expr);
 
   static RC create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const ConditionSqlNode &condition,
                                FilterUnit *&filter_unit);

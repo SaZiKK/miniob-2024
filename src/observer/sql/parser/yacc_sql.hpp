@@ -144,7 +144,6 @@ union YYSTYPE
   UpdateTarget *                             update_target;
   Value *                                    value;
   enum CompOp                                comp;
-  RelAttrSqlNode *                           rel_attr;
   std::vector<AttrInfoSqlNode> *             attr_infos;
   AttrInfoSqlNode *                          attr_info;
   Expression *                               expression;
@@ -160,7 +159,7 @@ union YYSTYPE
   float                                      floats;
   bool                                       boolean;
 
-#line 164 "yacc_sql.hpp"
+#line 163 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
