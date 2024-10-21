@@ -36,7 +36,7 @@ class CreateIndexStmt : public Stmt {
   StmtType type() const override { return StmtType::CREATE_INDEX; }
 
   Table *table() const { return table_; }
-  const vector<FieldMeta> &field_metas() const { return field_metas_; }
+  const vector<FieldMeta> field_metas() const { return field_metas_; }
   const std::string &index_name() const { return index_name_; }
 
  public:

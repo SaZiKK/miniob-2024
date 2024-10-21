@@ -40,9 +40,6 @@ class Index {
   Index() = default;
   virtual ~Index() = default;
 
-  virtual RC create(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta) { return RC::UNSUPPORTED; }
-  virtual RC open(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta) { return RC::UNSUPPORTED; }
-
   virtual bool is_vector_index() { return false; }
 
   const IndexMeta &index_meta() const { return index_meta_; }
@@ -76,6 +73,10 @@ class Index {
   virtual IndexScanner *create_scanner(const char *left_key, int left_len, bool left_inclusive, const char *right_key, int right_len,
                                        bool right_inclusive) = 0;
 
+  // 重载一个multi-index的版本
+  virtual IndexScanner *create_scanner(const std::vector<const char *> left_keys, std::vector<int> left_lens, bool left_inclusive,
+                                       const std::vector<const char *> right_keys, std::vector<int> right_lens, bool right_inclusive) = 0;
+
   /**
    * @brief 同步索引数据到磁盘
    *
@@ -83,11 +84,11 @@ class Index {
   virtual RC sync() = 0;
 
  protected:
-  RC init(const IndexMeta &index_meta, const FieldMeta &field_meta);
+  RC init(const IndexMeta &index_meta, const std::vector<FieldMeta> &field_meta);
 
  protected:
   IndexMeta index_meta_;  ///< 索引的元数据
-  FieldMeta field_meta_;  ///< 当前实现仅考虑一个字段的索引
+  std::vector<FieldMeta> field_metas_;
 };
 
 /**
