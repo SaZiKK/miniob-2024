@@ -127,7 +127,7 @@ RC SubQueryExpr::get_tuple_list(std::vector<std::vector<Value>> &tuple_list) {
     RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list);
     if (rc == RC::SUCCESS) {
       tuple_list_ = tuple_list;
-      has_calculated = false;
+      has_calculated = true;
     }
     return rc;
   }
