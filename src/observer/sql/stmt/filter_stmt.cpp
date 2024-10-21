@@ -108,12 +108,15 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
       }
     } break;
     case ExprType::SUBQUERY: {
-      return RC::SUCCESS;
+      vector<vector<Value>> tuple_list;
+      RC rc = expr->get_tuple_list(tuple_list);
+      if (rc != RC::SUCCESS) return rc;
     } break;
     case ExprType::UNBOUND_FIELD: {
       Table *table;
       const FieldMeta *field;
-      get_table_and_field(db, default_table, tables, expr.get(), table, field);
+      RC rc = get_table_and_field(db, default_table, tables, expr.get(), table, field);
+      if (rc != RC::SUCCESS) return rc;
       expr = std::make_unique<FieldExpr>(table, field);
     } break;
     case ExprType::ARITHMETIC: {
