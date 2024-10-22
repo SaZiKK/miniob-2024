@@ -93,6 +93,10 @@ RC ExpressionBinder::bind_expression(unique_ptr<Expression> &expr, vector<unique
       return bind_func_expression(expr, bound_expressions);
     } break;
 
+    case ExprType::VECFUNC: {
+      return bind_vec_func_expression(expr, bound_expressions);
+    } break;
+
     default: {
       LOG_WARN("unknown expression type: %d", static_cast<int>(expr->type()));
       return RC::INTERNAL;
@@ -474,4 +478,36 @@ RC ExpressionBinder::bind_func_expression(unique_ptr<Expression> &expr, vector<u
   value_expr.get()->set_name(target.to_string());
 
   return bind_value_expression(value_expr, bound_expressions);
+}
+
+RC ExpressionBinder::bind_vec_func_expression(unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions) {
+  if (nullptr == expr) {
+    return RC::SUCCESS;
+  }
+  VecFuncExpr *vec_func_expr = static_cast<VecFuncExpr *>(expr.get());
+
+  vector<unique_ptr<Expression>> child_bound_expressions;
+  unique_ptr<Expression> &left_expr = vec_func_expr->child_left();
+  unique_ptr<Expression> &right_expr = vec_func_expr->child_right();
+
+  // left
+  RC rc = bind_expression(left_expr, child_bound_expressions);
+  if (rc != RC::SUCCESS) return rc;
+  if (left_expr != nullptr && child_bound_expressions.size() != 1) return RC::INVALID_ARGUMENT;
+
+  unique_ptr<Expression> &left = child_bound_expressions[0];
+  if (left.get() != left_expr.get()) left_expr.reset(left.release());
+
+  // right
+  child_bound_expressions.clear();
+  rc = bind_expression(right_expr, child_bound_expressions);
+  if (rc != RC::SUCCESS) return rc;
+
+  if (right_expr != nullptr && child_bound_expressions.size() != 1) return RC::INVALID_ARGUMENT;
+
+  unique_ptr<Expression> &right = child_bound_expressions[0];
+  if (right.get() != right_expr.get()) right_expr.reset(right.release());
+
+  bound_expressions.emplace_back(std::move(expr));
+  return RC::SUCCESS;
 }

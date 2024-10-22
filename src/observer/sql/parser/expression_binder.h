@@ -55,7 +55,8 @@ class ExpressionBinder {
   RC bind_conjunction_expression(std::unique_ptr<Expression> &conjunction_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
   RC bind_arithmetic_expression(std::unique_ptr<Expression> &arithmetic_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
   RC bind_aggregate_expression(std::unique_ptr<Expression> &aggregate_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
-  RC bind_func_expression(unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions);
+  RC bind_func_expression(unique_ptr<Expression> &func_expr, vector<unique_ptr<Expression>> &bound_expressions);
+  RC bind_vec_func_expression(unique_ptr<Expression> &vec_func_expr, vector<unique_ptr<Expression>> &bound_expressions);
 
  private:
   BinderContext &context_;

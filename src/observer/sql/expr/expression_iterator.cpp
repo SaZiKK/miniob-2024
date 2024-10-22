@@ -65,6 +65,12 @@ RC ExpressionIterator::iterate_child_expr(Expression &expr, function<RC(unique_p
       break;
     }
 
+    case ExprType::VECFUNC: {
+      auto &vec_func_expr = static_cast<VecFuncExpr &>(expr);
+      rc = callback(vec_func_expr.child_left());
+      rc = callback(vec_func_expr.child_right());
+    } break;
+
     case ExprType::NONE:
     case ExprType::STAR:
     case ExprType::UNBOUND_FIELD:
