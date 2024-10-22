@@ -67,6 +67,7 @@ RC VectorType::to_string(const Value &val, string &result) const {
   for (auto it : val.get_vector()) {
     it = FloatType::formatFloat(it, 2);
     string str = std::to_string(it);
+    str = FloatType::formatFloat_s(it, 2);
 
     // 去除后导零
     str.erase(str.find_last_not_of('0') + 1, std::string::npos);

@@ -149,3 +149,10 @@ float FloatType::formatFloat(float value, int num) {
   out << value;                                 // 将浮点数写入流
   return stof(out.str());                       // 返回格式化后的字符串
 }
+
+string FloatType::formatFloat_s(float value, int num) {
+  std::ostringstream out;
+  out << std::fixed << std::setprecision(num);  // 固定小数点格式，保留两位小数
+  out << value;                                 // 将浮点数写入流
+  return out.str();                             // 返回格式化后的字符串
+}
