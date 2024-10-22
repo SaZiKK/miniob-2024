@@ -19,6 +19,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/sstream.h"
 #include "common/lang/string.h"
 #include "common/log/log.h"
+#include "common/type/float_type.h"
 
 Value::Value(float val) { set_float(val); }
 
@@ -415,6 +416,9 @@ bool Value::isValidFormat(const char *input) {
   // 剔除 '[' 和 ']'，从第二个字符开始检查
   std::string content(input + 1, strlen(input) - 2);
 
+  // 删除多余的空格
+  content.erase(std::remove(content.begin(), content.end(), ' '), content.end());
+
   // 使用逗号分割内容
   std::istringstream ss(content);
   std::string token;
@@ -445,6 +449,9 @@ RC Value::string_to_vector(string str, vector<float> &result) {
   // 剔除 '[' 和 ']'，从第二个字符开始检查
   str = str.substr(1, (int)str.size() - 2);
 
+  // 去除多余空格
+  str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
+
   // 使用逗号分割内容
   std::istringstream ss(str);
   std::string token;
@@ -452,7 +459,7 @@ RC Value::string_to_vector(string str, vector<float> &result) {
 
   // 分割内容并检查每个部分
   while (std::getline(ss, token, ',')) {
-    result.push_back(std::stof(token));
+    result.push_back(FloatType::formatFloat(std::stof(token), 2));
   }
   return RC::SUCCESS;
 }
