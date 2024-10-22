@@ -48,6 +48,7 @@ class Value final {
   explicit Value(bool val);
   explicit Value(const char *s, int len = 0);
   explicit Value(int val, bool is_date = false);
+  explicit Value(std::vector<float> value_vector);
 
   explicit Value(string ckk, int num);
 
@@ -68,6 +69,8 @@ class Value final {
   }
 
   static RC multiply(const Value &left, const Value &right, Value &result) {
+    if (left.attr_type() == AttrType::VECTORS && right.attr_type() == AttrType::VECTORS)
+      return DataType::type_instance(AttrType::VECTORS)->multiply(left, right, result);
     return DataType::type_instance(result.attr_type())->multiply(left, right, result);
   }
 
@@ -133,4 +136,19 @@ class Value final {
 
   // 是否为空字段
   bool is_null_ = false;
+
+  ///////////////////////////////////////////////////////////////////////
+  // vector part
+ public:
+  static bool isValidFormat(const char *input);
+  static bool isValidNumber(const std::string &s);
+  static RC string_to_vector(string str, vector<float> &result);
+
+  // set and get
+  void set_vector(std::vector<float> value_vector);
+  vector<float> get_vector() const;
+  int get_vector_size() const;
+
+ private:
+  std::vector<float> value_vector_;
 };

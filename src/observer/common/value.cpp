@@ -24,7 +24,16 @@ Value::Value(float val) { set_float(val); }
 
 Value::Value(bool val) { set_boolean(val); }
 
-Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
+Value::Value(const char *s, int len /*= 0*/) {
+  vector<float> value_vector;
+  RC rc = Value::string_to_vector(s, value_vector);
+  if (rc == RC::SUCCESS)
+    set_vector(value_vector);
+  else
+    set_string(s, len);
+}
+
+Value::Value(std::vector<float> value_vector) { set_vector(value_vector); }
 
 Value::Value(string ckk, int num) { this->is_null_ = true; }
 
@@ -45,7 +54,9 @@ Value::Value(const Value &other) {
     case AttrType::CHARS: {
       set_string_from_other(other);
     } break;
-
+    case AttrType::VECTORS: {
+      set_vector(other.value_vector_);
+    } break;
     default: {
       this->value_ = other.value_;
     } break;
@@ -57,6 +68,7 @@ Value::Value(Value &&other) {
   this->length_ = other.length_;
   this->own_data_ = other.own_data_;
   this->value_ = other.value_;
+  this->value_vector_ = other.value_vector_;
   this->is_null_ = other.is_null_;
   other.own_data_ = false;
   other.length_ = 0;
@@ -75,7 +87,9 @@ Value &Value::operator=(const Value &other) {
     case AttrType::CHARS: {
       set_string_from_other(other);
     } break;
-
+    case AttrType::VECTORS: {
+      set_vector(other.value_vector_);
+    } break;
     default: {
       this->value_ = other.value_;
     } break;
@@ -92,6 +106,7 @@ Value &Value::operator=(Value &&other) {
   this->length_ = other.length_;
   this->own_data_ = other.own_data_;
   this->value_ = other.value_;
+  this->value_vector_ = other.value_vector_;
   this->is_null_ = other.is_null_;
   other.own_data_ = false;
   other.length_ = 0;
@@ -111,6 +126,8 @@ void Value::reset() {
   }
 
   attr_type_ = AttrType::UNDEFINED;
+  value_vector_.clear();
+  value_vector_.resize(0);
   length_ = 0;
   own_data_ = false;
   is_null_ = false;
@@ -135,6 +152,15 @@ void Value::set_data(char *data, int length) {
     } break;
     case AttrType::DATE: {
       value_.int_value_ = *(int *)data;
+      length_ = length;
+    } break;
+    case AttrType::VECTORS: {
+      size_t element_size = sizeof(int);
+      size_t num_elements = length / element_size;
+
+      // 使用 memcpy 将数据复制回 vector
+      value_vector_.resize(num_elements);
+      memcpy(value_vector_.data(), data, length);
       length_ = length;
     } break;
     default: {
@@ -209,6 +235,9 @@ void Value::set_value(const Value &value) {
     case AttrType::DATE: {
       set_date(value.get_date());
     } break;
+    case AttrType::VECTORS: {
+      set_vector(value.get_vector());
+    } break;
     default: {
       ASSERT(false, "got an invalid value type");
     } break;
@@ -229,6 +258,9 @@ const char *Value::data() const {
     case AttrType::CHARS: {
       return value_.pointer_value_;
     } break;
+    case AttrType::VECTORS: {
+      return (const char *)(value_vector_.data());
+    }
     default: {
       return (const char *)&value_;
     } break;
@@ -364,3 +396,74 @@ int Value::get_date() const {
 }
 
 bool Value::get_null() const { return is_null_; }
+
+///////////////////////////////////////////////////////////////////////////
+// vector part
+
+// 用于检查输入字符串是否符合 vector 的格式
+bool Value::isValidFormat(const char *input) {
+  // 检查是否为空或长度小于2（必须至少包含 "[]")
+  if (input == nullptr || strlen(input) < 2) {
+    return false;
+  }
+
+  // 检查首尾是否分别为 '[' 和 ']'
+  if (input[0] != '[' || input[strlen(input) - 1] != ']') {
+    return false;
+  }
+
+  // 剔除 '[' 和 ']'，从第二个字符开始检查
+  std::string content(input + 1, strlen(input) - 2);
+
+  // 使用逗号分割内容
+  std::istringstream ss(content);
+  std::string token;
+  std::vector<std::string> tokens;
+
+  // 分割内容并检查每个部分
+  while (std::getline(ss, token, ',')) {
+    if (!isValidNumber(token)) {
+      return false;  // 如果某个部分不是有效的数字，返回 false
+    }
+  }
+
+  return true;  // 所有部分都是有效的数字
+}
+
+// 用于检查一个字符串是否是整数或浮点数
+bool Value::isValidNumber(const std::string &s) {
+  std::istringstream stream(s);
+  float number;
+  stream >> number;
+  // 检查是否成功解析为数字，并且没有多余字符
+  return stream.eof() && !stream.fail();
+}
+
+RC Value::string_to_vector(string str, vector<float> &result) {
+  if (!Value::isValidFormat(str.c_str())) return RC::INVALID_ARGUMENT;
+
+  // 剔除 '[' 和 ']'，从第二个字符开始检查
+  str = str.substr(1, (int)str.size() - 2);
+
+  // 使用逗号分割内容
+  std::istringstream ss(str);
+  std::string token;
+  std::vector<std::string> tokens;
+
+  // 分割内容并检查每个部分
+  while (std::getline(ss, token, ',')) {
+    result.push_back(std::stof(token));
+  }
+  return RC::SUCCESS;
+}
+
+void Value::set_vector(std::vector<float> value_vector) {
+  attr_type_ = AttrType::VECTORS;
+  is_null_ = false;
+  value_vector_ = value_vector;
+  length_ = value_vector.size() * sizeof(float);
+}
+
+vector<float> Value::get_vector() const { return value_vector_; }
+
+int Value::get_vector_size() const { return (int)value_vector_.size(); }

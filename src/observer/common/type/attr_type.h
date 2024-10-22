@@ -16,14 +16,15 @@ See the Mulan PSL v2 for more details. */
  */
 enum class AttrType {
   UNDEFINED,
-  CHARS,     ///< 字符串类型
-  INTS,      ///< 整数类型(4字节)
-  FLOATS,    ///< 浮点数类型(4字节)
-  VECTORS,   ///< 向量类型
-  DATE,      ///< 日期类型
-  BOOLEANS,  ///< boolean类型，当前不是由parser解析出来的，是程序内部使用的
-  TUPLES,    ///< 子查询类型
-  MAXTYPE,   ///< 请在 UNDEFINED 与 MAXTYPE 之间增加新类型
+  CHARS,       ///< 字符串类型
+  INTS,        ///< 整数类型(4字节)
+  FLOATS,      ///< 浮点数类型(4字节)
+  VECTORS,     ///< 向量类型
+  DATE,        ///< 日期类型
+  BOOLEANS,    ///< boolean类型，当前不是由parser解析出来的，是程序内部使用的
+  TUPLES,      ///< 子查询类型
+  VALUE_LIST,  ///< value_list 类型
+  MAXTYPE,     ///< 请在 UNDEFINED 与 MAXTYPE 之间增加新类型
 };
 
 const char *attr_type_to_string(AttrType type);

@@ -34,6 +34,7 @@ class FloatType : public DataType {
   RC set_value_from_str(Value &val, const string &data) const override;
 
   RC to_string(const Value &val, string &result) const override;
+  static float formatFloat(float value, int num);
 
   int cast_cost(AttrType type) override;
 };

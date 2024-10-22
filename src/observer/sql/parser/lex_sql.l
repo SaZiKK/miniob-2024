@@ -143,11 +143,17 @@ NOT[ \t]+NULL                           RETURN_TOKEN(UNNULLABLE);
 IS[ \t]+NULL                            RETURN_TOKEN(IS_NULL);
 IS[ \t]+NOT+[ \t]+NULL                  RETURN_TOKEN(IS_NOT_NULL);
 
+L2_DISTANCE                             RETURN_TOKEN(VEC_L2_DISTANCE);
+COSINE_DISTANCE                         RETURN_TOKEN(VEC_COSINE_DISTANCE_FUNC);
+INNER_PRODUCT                           RETURN_TOKEN(VEC_INNER_PRODUCT_FUNC);
+
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
 {QUOTE}[0-9]{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01]){QUOTE} yylval->string=strdup(yytext); RETURN_TOKEN(DATE_STR); 
 
 "("                                     RETURN_TOKEN(LBRACE);
 ")"                                     RETURN_TOKEN(RBRACE);
+"["                                     RETURN_TOKEN(LBRACKET);
+"]"                                     RETURN_TOKEN(RBRACKET);
 
 ","                                     RETURN_TOKEN(COMMA);
 "="                                     RETURN_TOKEN(EQ);

@@ -137,6 +137,18 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
       }
       if (rc != RC::SUCCESS) return rc;
     } break;
+    case ExprType::VECFUNC: {
+      RC rc = RC::SUCCESS;
+      VecFuncExpr *vec_func_expr = static_cast<VecFuncExpr *>(expr.get());
+      if (vec_func_expr->child_left() != nullptr) {
+        rc = bind_filter_expr(db, default_table, tables, vec_func_expr->child_left());
+      }
+      if (rc != RC::SUCCESS) return rc;
+      if (vec_func_expr->child_right() != nullptr) {
+        rc = bind_filter_expr(db, default_table, tables, vec_func_expr->child_right());
+      }
+      if (rc != RC::SUCCESS) return rc;
+    } break;
     default:
       return RC::INVALID_ARGUMENT;
       break;

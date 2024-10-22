@@ -126,6 +126,11 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         UNNULLABLE
         IS_NULL
         IS_NOT_NULL
+        VEC_L2_DISTANCE
+        VEC_COSINE_DISTANCE_FUNC
+        VEC_INNER_PRODUCT_FUNC
+        LBRACKET
+        RBRACKET
         EQ
         LT
         GT
@@ -409,6 +414,11 @@ attr_def:
       $$->name = $1;
       $$->length = $4;
       $$->can_be_null = $6;
+
+      if($$->type == AttrType::VECTORS){
+        $$->length = $4 * 4;
+      }
+
       free($1);
     }
     | ID type null_def
@@ -512,6 +522,17 @@ value:
       $$ = new Value(tmp, strlen(tmp));  
       free(tmp);
       free($1);
+    }
+    | LBRACKET value value_list RBRACKET {
+      std::vector<float> nums;
+      nums.emplace_back($2->get_float());
+      if($3 != nullptr) {
+        std::reverse($3->begin(), $3->end());
+        for (Value value : *$3) {
+          nums.emplace_back(value.get_float());
+        }
+      }
+      $$ = new Value(nums);
     }
     ;
 storage_format:
@@ -757,6 +778,18 @@ expression:
     }
     | DATE_FORMAT LBRACE expression COMMA expression RBRACE {
       $$ = new FuncExpr(FuncExpr::FuncType::DATE_FORMAT, nullptr, $5, $3);
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | VEC_INNER_PRODUCT_FUNC LBRACE expression COMMA expression RBRACE {
+      $$ = new VecFuncExpr(VecFuncExpr::VecFuncType::INNER_PRODUCT, $3, $5);
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | VEC_COSINE_DISTANCE_FUNC LBRACE expression COMMA expression RBRACE {
+      $$ = new VecFuncExpr(VecFuncExpr::VecFuncType::COSINE_DISTANCE, $3, $5);
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | VEC_L2_DISTANCE LBRACE expression COMMA expression RBRACE {
+      $$ = new VecFuncExpr(VecFuncExpr::VecFuncType::L2_DISTANCE, $3, $5);
       $$->set_name(token_name(sql_string, &@$));
     }
     ;

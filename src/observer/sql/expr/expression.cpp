@@ -27,7 +27,9 @@ See the Mulan PSL v2 for more details. */
 #include "storage/trx/trx.h"
 #include "common/type/date_type.h"
 #include "sql/optimizer/optimize_stage.h"
+#include "common/type/float_type.h"
 #include <cmath>
+#include <iomanip>
 
 using namespace std;
 
@@ -395,88 +397,43 @@ bool ComparisonExpr::likeMatch(const string &str, const string &pattern) {
 }
 
 RC ComparisonExpr::try_get_value(Value &cell) const {
-  if (left_->type() == ExprType::VALUE && right_->type() == ExprType::VALUE) {
-    ValueExpr *left_value_expr = static_cast<ValueExpr *>(left_.get());
-    ValueExpr *right_value_expr = static_cast<ValueExpr *>(right_.get());
-    const Value &left_cell = left_value_expr->get_value();
-    const Value &right_cell = right_value_expr->get_value();
-    std::vector<Value> left_list;
-    std::vector<Value> right_list;
-    std::vector<std::vector<Value>> left_tuple_list;
-    std::vector<std::vector<Value>> right_tuple_list;
-    // todo 这里暂时没考虑是list或者tuple的情况
+  // value
+  Value left_value;
+  Value right_value;
 
-    this->set_comp_type(CompType::VAL_VAL);
+  // value list
+  std::vector<Value> left_list;
+  std::vector<Value> right_list;
 
-    bool value = false;
-    RC rc = compare_value(left_cell, right_cell, left_list, right_list, value, left_tuple_list, right_tuple_list);
-    if (rc != RC::SUCCESS) {
-      LOG_WARN("failed to compare tuple cells. rc=%s", strrc(rc));
-    } else {
-      cell.set_boolean(value);
-    }
-    return rc;
-  }
+  // tuple_list
+  std::vector<std::vector<Value>> left_tuple_list;
+  std::vector<std::vector<Value>> right_tuple_list;
+
+  bool success_left = left_->try_get_value(left_value) == RC::SUCCESS || left_->get_value_list(left_list) == RC::SUCCESS ||
+                      left_->get_tuple_list(left_tuple_list) == RC::SUCCESS;
+  bool success_right = right_->try_get_value(right_value) == RC::SUCCESS || right_->get_value_list(right_list) == RC::SUCCESS ||
+                       right_->get_tuple_list(right_tuple_list) == RC::SUCCESS;
+
+  if (success_left == false || success_right == false) return RC::UNIMPLEMENTED;
+
+  set_comp_type_by_verilog();
+
+  bool result = false;
+  RC rc = compare_value(left_value, right_value, left_list, right_list, result, left_tuple_list, right_tuple_list);
+  if (rc != RC::SUCCESS) return rc;
+  cell.set_boolean(result);
+  return RC::SUCCESS;
 
   return RC::INVALID_ARGUMENT;
 }
 
-RC ComparisonExpr::check_value() const {
-  Value left_value;
-  Value right_value;
-  vector<Value> right_values;
-  vector<Value> left_values;
-  std::vector<std::vector<Value>> left_tuples;
-  std::vector<std::vector<Value>> right_tuples;
-  TinyTuple tuple(Value(1));
-  /*
-   * 0: value     00
-   * 1: list      01
-   * 2: tuple     10
-   * 3: tuplelist 11
-   */
-  int left_type = 0;
-  int right_type = 0;
-  RC rc = RC::SUCCESS;
+RC ComparisonExpr::set_comp_type_by_verilog() const {
+  AttrType left_type_ = left_->value_type();
+  AttrType right_type_ = right_->value_type();
 
-  // 特判子查询，进入特殊处理函数获取数据     // todo: 支持单元组tuple
-  if (left_->type() == ExprType::VALUELIST) {
-    rc = left_->get_value_list(left_values);
-    left_type = 1;  // 1代表左边是list
-  } else if (left_->value_type() == AttrType::TUPLES) {
-    rc = left_->get_tuple_list(left_tuples);
-    left_type = 3;  // 3代表左边是tuplelist
-  } else if (left_->type() == ExprType::FIELD || left_->type() == ExprType::CAST) {
-    rc = RC::SUCCESS;
-    left_type = 0;  // 0代表左边是value
-  } else {
-    rc = left_->get_value(tuple, left_value);
-    left_type = 0;  // 0代表左边是value
-  }
+  int left_type = left_type_ == AttrType::VALUE_LIST ? 1 : left_type_ == AttrType::TUPLES ? 3 : 0;
 
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
-    return rc;
-  }
-
-  if (right_->type() == ExprType::VALUELIST) {
-    rc = right_->get_value_list(right_values);
-    right_type = 1;  // 1代表右边是list
-  } else if (right_->value_type() == AttrType::TUPLES) {
-    rc = right_->get_tuple_list(right_tuples);
-    right_type = 3;  // 3代表右边是tuplelist
-  } else if (right_->type() == ExprType::FIELD) {
-    rc = RC::SUCCESS;
-    right_type = 0;  // 0代表左边是value
-  } else {
-    rc = right_->get_value(tuple, right_value);
-    right_type = 0;  // 0代表右边是value
-  }
-
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
-    return rc;
-  }
+  int right_type = right_type_ == AttrType::VALUE_LIST ? 1 : right_type_ == AttrType::TUPLES ? 3 : 0;
 
   switch (left_type << 2 | right_type) {
     case 0b0000:
@@ -528,10 +485,31 @@ RC ComparisonExpr::check_value() const {
       this->set_comp_type(CompType::TUPLES_TUPLES);
       break;
     default: {
-      LOG_WARN("unsupported comparison type. %d", left_type << 2 | right_type);
       return RC::INTERNAL;
     }
   }
+  return RC::SUCCESS;
+}
+
+RC ComparisonExpr::check_value() const {
+  Value left_value;
+  Value right_value;
+  vector<Value> right_list;
+  vector<Value> left_list;
+  std::vector<std::vector<Value>> left_tuples;
+  std::vector<std::vector<Value>> right_tuples;
+
+  left_->try_get_value(left_value);
+  left_->get_value_list(left_list);
+  left_->get_tuple_list(left_tuples);
+
+  right_->try_get_value(right_value);
+  right_->get_value_list(right_list);
+  right_->get_tuple_list(right_tuples);
+
+  RC rc = set_comp_type_by_verilog();
+
+  if (rc != RC::SUCCESS) return rc;
 
   // -------------------------处理比较是否合法----------------------
 
@@ -558,12 +536,12 @@ RC ComparisonExpr::check_value() const {
     case CompOp::GREAT_EQUAL: {
       // 列表只能有一个值
       if (type_ == CompType::VAL_LIST) {
-        if (right_values.size() > 1) {
+        if (right_list.size() > 1) {
           LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
       } else if (type_ == CompType::LIST_VAL) {
-        if (left_values.size() > 1) {
+        if (left_list.size() > 1) {
           LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
@@ -627,111 +605,25 @@ RC ComparisonExpr::check_value() const {
 RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
   Value left_value;
   Value right_value;
-  vector<Value> right_values;
-  vector<Value> left_values;
+  vector<Value> right_list;
+  vector<Value> left_list;
   std::vector<std::vector<Value>> left_tuples;
   std::vector<std::vector<Value>> right_tuples;
-  /*
-   * 0: value     00
-   * 1: list      01
-   * 2: tuple     10
-   * 3: tuplelist 11
-   */
-  int left_type = 0;
-  int right_type = 0;
-  RC rc = RC::EMPTY;
 
-  // 特判子查询，进入特殊处理函数获取数据     // todo: 支持单元组tuple
-  if (left_->type() == ExprType::VALUELIST) {
-    rc = left_->get_value_list(left_values);
-    left_type = 1;  // 1代表左边是list
-  } else if (left_->value_type() == AttrType::TUPLES) {
-    rc = left_->get_tuple_list(left_tuples);
-    left_type = 3;  // 3代表左边是tuplelist
-  } else {
-    rc = left_->get_value(tuple, left_value);
-    left_type = 0;  // 0代表左边是value
-  }
+  left_->get_value(tuple, left_value);
+  left_->get_value_list(left_list);
+  left_->get_tuple_list(left_tuples);
 
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
-    return rc;
-  }
+  right_->get_value(tuple, right_value);
+  right_->get_value_list(right_list);
+  right_->get_tuple_list(right_tuples);
 
-  if (right_->type() == ExprType::VALUELIST) {
-    rc = right_->get_value_list(right_values);
-    right_type = 1;  // 1代表右边是list
-  } else if (right_->value_type() == AttrType::TUPLES) {
-    rc = right_->get_tuple_list(right_tuples);
-    right_type = 3;  // 3代表右边是tuplelist
-  } else {
-    rc = right_->get_value(tuple, right_value);
-    right_type = 0;  // 0代表右边是value
-  }
-
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
-    return rc;
-  }
-
-  switch (left_type << 2 | right_type) {
-    case 0b0000:
-      this->set_comp_type(CompType::VAL_VAL);
-      break;
-    case 0b0001:
-      this->set_comp_type(CompType::VAL_LIST);
-      break;
-    case 0b0010:
-      this->set_comp_type(CompType::VAL_TUPLE);
-      break;
-    case 0b0011:
-      this->set_comp_type(CompType::VAL_TUPLES);
-      break;
-    case 0b0100:
-      this->set_comp_type(CompType::LIST_VAL);
-      break;
-    case 0b0101:
-      this->set_comp_type(CompType::LIST_LIST);
-      break;
-    case 0b0110:
-      this->set_comp_type(CompType::LIST_TUPLE);
-      break;
-    case 0b0111:
-      this->set_comp_type(CompType::LIST_TUPLES);
-      break;
-    case 0b1000:
-      this->set_comp_type(CompType::TUPLE_VAL);
-      break;
-    case 0b1001:
-      this->set_comp_type(CompType::TUPLE_LIST);
-      break;
-    case 0b1010:
-      this->set_comp_type(CompType::TUPLE_TUPLE);
-      break;
-    case 0b1011:
-      this->set_comp_type(CompType::TUPLE_TUPLES);
-      break;
-    case 0b1100:
-      this->set_comp_type(CompType::TUPLES_VAL);
-      break;
-    case 0b1101:
-      this->set_comp_type(CompType::TUPLES_LIST);
-      break;
-    case 0b1110:
-      this->set_comp_type(CompType::TUPLES_TUPLE);
-      break;
-    case 0b1111:
-      this->set_comp_type(CompType::TUPLES_TUPLES);
-      break;
-    default: {
-      LOG_WARN("unsupported comparison type. %d", left_type << 2 | right_type);
-      return RC::INTERNAL;
-    }
-  }
+  RC rc = set_comp_type_by_verilog();
+  if (rc != RC::SUCCESS) return rc;
 
   bool bool_value = false;
 
-  rc = compare_value(left_value, right_value, left_values, right_values, bool_value, left_tuples, right_tuples);
+  rc = compare_value(left_value, right_value, left_list, right_list, bool_value, left_tuples, right_tuples);
   if (rc == RC::SUCCESS) {
     value.set_boolean(bool_value);
   }
@@ -837,9 +729,15 @@ AttrType ArithmeticExpr::value_type() const {
     return left_->value_type();
   }
 
-  if (left_->value_type() == AttrType::INTS && right_->value_type() == AttrType::INTS && arithmetic_type_ != Type::DIV) {
-    return AttrType::INTS;
+  if (left_->value_type() == AttrType::INTS && right_->value_type() == AttrType::INTS) {
+    if (arithmetic_type_ != Type::DIV)
+      return AttrType::INTS;
+    else
+      return AttrType::FLOATS;
   }
+
+  if (left_->value_type() == AttrType::VECTORS && right_->value_type() == AttrType::VECTORS && arithmetic_type_ != Type::MUL)
+    return AttrType::VECTORS;
 
   return AttrType::FLOATS;
 }
@@ -1285,4 +1183,132 @@ RC FuncExpr::try_get_value(Value &value) const {
       break;
   }
   return rc;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+VecFuncExpr::VecFuncExpr(VecFuncType type, unique_ptr<Expression> child_left, unique_ptr<Expression> child_right)
+    : type_(type), child_left_(std::move(child_left)), child_right_(std::move(child_right)) {}
+VecFuncExpr::VecFuncExpr(VecFuncType type, Expression *child_left, Expression *child_right)
+    : type_(type), child_left_(child_left), child_right_(child_right) {}
+
+RC VecFuncExpr::get_value(const Tuple &tuple, Value &value) const {
+  RC rc = RC::SUCCESS;
+
+  if (child_left_ == nullptr || child_right_ == nullptr) return RC::INVALID_ARGUMENT;
+
+  Value left_value;
+  Value right_value;
+
+  rc = child_left_->get_value(tuple, left_value);
+  if (rc != RC::SUCCESS) return rc;
+
+  rc = child_right_->get_value(tuple, right_value);
+  if (rc != RC::SUCCESS) return rc;
+
+  // 为了迎合 ckk 的狗屎 check_value
+  if (left_value.attr_type() == AttrType::UNDEFINED && right_value.attr_type() == AttrType::UNDEFINED) return RC::SUCCESS;
+
+  switch (type_) {
+    case VecFuncType::L2_DISTANCE:
+      rc = VecFuncExpr::L2_DISTANCE_FUNC(left_value, right_value, value);
+      break;
+    case VecFuncType::COSINE_DISTANCE:
+      rc = VecFuncExpr::COSINE_DISTANCE_FUNC(left_value, right_value, value);
+      break;
+    case VecFuncType::INNER_PRODUCT:
+      rc = VecFuncExpr::INNER_PRODUCT_FUNC(left_value, right_value, value);
+      break;
+    default:
+      rc = RC::INVALID_ARGUMENT;
+      break;
+  }
+  return rc;
+}
+
+RC VecFuncExpr::try_get_value(Value &value) const {
+  RC rc = RC::SUCCESS;
+
+  if (child_left_ == nullptr || child_right_ == nullptr) return RC::INVALID_ARGUMENT;
+
+  Value left_value;
+  Value right_value;
+
+  rc = child_left_->try_get_value(left_value);
+  if (rc != RC::SUCCESS) return rc;
+
+  rc = child_right_->try_get_value(right_value);
+  if (rc != RC::SUCCESS) return rc;
+
+  switch (type_) {
+    case VecFuncType::L2_DISTANCE:
+      rc = VecFuncExpr::L2_DISTANCE_FUNC(left_value, right_value, value);
+      break;
+    case VecFuncType::COSINE_DISTANCE:
+      rc = VecFuncExpr::COSINE_DISTANCE_FUNC(left_value, right_value, value);
+      break;
+    case VecFuncType::INNER_PRODUCT:
+      rc = VecFuncExpr::INNER_PRODUCT_FUNC(left_value, right_value, value);
+      break;
+    default:
+      rc = RC::INVALID_ARGUMENT;
+      break;
+  }
+  return rc;
+}
+
+RC VecFuncExpr::L2_DISTANCE_FUNC(const Value left, const Value right, Value &result) {
+  if (left.attr_type() != AttrType::VECTORS || right.attr_type() != AttrType::VECTORS || left.get_vector_size() != right.get_vector_size())
+    return RC::INVALID_ARGUMENT;
+  float sum = 0;
+  int size = (int)left.get_vector_size();
+  vector<float> left_vec = left.get_vector();
+  vector<float> right_vec = right.get_vector();
+  for (int i = 0; i < size; i++) {
+    sum += pow((left_vec[i] - right_vec[i]), 2);
+  }
+  sum = sqrt(sum);
+  result.set_float(FloatType::formatFloat(sum, 2));
+  return RC::SUCCESS;
+}
+RC VecFuncExpr::COSINE_DISTANCE_FUNC(const Value left, const Value right, Value &result) {
+  if (left.attr_type() != AttrType::VECTORS || right.attr_type() != AttrType::VECTORS || left.get_vector_size() != right.get_vector_size())
+    return RC::INVALID_ARGUMENT;
+
+  int size = (int)left.get_vector_size();
+  vector<float> left_vec = left.get_vector();
+  vector<float> right_vec = right.get_vector();
+
+  // A * B
+  float sum_up = 0;
+  for (int i = 0; i < size; i++) sum_up += left_vec[i] * right_vec[i];
+
+  // A 平方和开根号
+  float sum_down_left = 0;
+  for (int i = 0; i < size; i++) sum_down_left += left_vec[i] * left_vec[i];
+  sum_down_left = sqrt(sum_down_left);
+
+  // B 平方和开根号
+  float sum_down_right = 0;
+  for (int i = 0; i < size; i++) sum_down_right += right_vec[i] * right_vec[i];
+  sum_down_right = sqrt(sum_down_right);
+
+  float sum = 1 - (sum_up) / (sum_down_left * sum_down_right);
+  result.set_float(FloatType::formatFloat(sum, 2));
+  return RC::SUCCESS;
+}
+RC VecFuncExpr::INNER_PRODUCT_FUNC(const Value left, const Value right, Value &result) {
+  if (left.attr_type() != AttrType::VECTORS || right.attr_type() != AttrType::VECTORS || left.get_vector_size() != right.get_vector_size())
+    return RC::INVALID_ARGUMENT;
+
+  int size = (int)left.get_vector_size();
+  vector<float> left_vec = left.get_vector();
+  vector<float> right_vec = right.get_vector();
+
+  // A * B
+  float sum = 0;
+  for (int i = 0; i < size; i++) sum += left_vec[i] * right_vec[i];
+
+  result.set_float(FloatType::formatFloat(sum, 2));
+  return RC::SUCCESS;
 }

@@ -54,7 +54,8 @@ enum class ExprType {
   ARITHMETIC,   ///< 算术运算
   AGGREGATION,  ///< 聚合运算
   SUBQUERY,     ///< 子查询
-  FUNC          ///< 函数运算
+  FUNC,         ///< 函数运算
+  VECFUNC,      ///< 向量函数运算
 };
 
 /**
@@ -290,7 +291,7 @@ class ValueListExpr : public Expression {
   virtual ~ValueListExpr() = default;
 
   ExprType type() const override { return ExprType::VALUELIST; }
-  AttrType value_type() const override { return values_.front().attr_type(); }
+  AttrType value_type() const override { return AttrType::VALUE_LIST; }
 
   RC get_value(const Tuple &tuple, Value &value) const override { return RC::INTERNAL; }
 
@@ -396,6 +397,7 @@ class ComparisonExpr : public Expression {
 
   // 设置表达式的比较类型
   void set_comp_type(CompType type) const { type_ = type; }
+  RC set_comp_type_by_verilog() const;
 
   // 获取表达式的比较类型
   CompType comp_type() const { return type_; }
@@ -587,4 +589,42 @@ class FuncExpr : public Expression {
   int target_num_;
   string target_format_;
   std::unique_ptr<Expression> child_;
+};
+
+/**
+ * @brief 函数表达式
+ * @ingroup Expression
+ */
+class VecFuncExpr : public Expression {
+ public:
+  enum class VecFuncType {
+    L2_DISTANCE,
+    COSINE_DISTANCE,
+    INNER_PRODUCT,
+  };
+
+  VecFuncExpr(VecFuncType type, unique_ptr<Expression> child_left, unique_ptr<Expression> child_right);
+  VecFuncExpr(VecFuncType type, Expression *left, Expression *right);
+  virtual ~VecFuncExpr() = default;
+
+  ExprType type() const override { return ExprType::VECFUNC; }
+
+  AttrType value_type() const override { return AttrType::FLOATS; };
+
+  RC get_value(const Tuple &tuple, Value &value) const override;
+  RC try_get_value(Value &value) const override;
+
+  VecFuncType func_type() const { return type_; }
+
+  std::unique_ptr<Expression> &child_left() { return child_left_; }
+  std::unique_ptr<Expression> &child_right() { return child_right_; }
+
+  static RC L2_DISTANCE_FUNC(const Value left, const Value right, Value &result);
+  static RC COSINE_DISTANCE_FUNC(const Value left, const Value right, Value &result);
+  static RC INNER_PRODUCT_FUNC(const Value left, const Value right, Value &result);
+
+ private:
+  VecFuncType type_;
+  std::unique_ptr<Expression> child_left_;
+  std::unique_ptr<Expression> child_right_;
 };

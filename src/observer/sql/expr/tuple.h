@@ -173,7 +173,6 @@ class TinyTuple : public Tuple {
     if (index != 0) {
       return RC::INVALID_ARGUMENT;
     }
-    spec = TupleCellSpec("value");
     return RC::SUCCESS;
   }
 

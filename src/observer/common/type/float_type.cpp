@@ -16,6 +16,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/limits.h"
 #include "common/value.h"
 #include <cmath>
+#include <iomanip>
 
 int FloatType::compare(const Value &left, const Value &right) const {
   ASSERT(left.attr_type() == AttrType::FLOATS, "left type is not integer");
@@ -140,4 +141,11 @@ int FloatType::cast_cost(AttrType type) {
       return INT32_MAX;
   }
   return INT32_MAX;
+}
+
+float FloatType::formatFloat(float value, int num) {
+  std::ostringstream out;
+  out << std::fixed << std::setprecision(num);  // 固定小数点格式，保留两位小数
+  out << value;                                 // 将浮点数写入流
+  return stof(out.str());                       // 返回格式化后的字符串
 }
