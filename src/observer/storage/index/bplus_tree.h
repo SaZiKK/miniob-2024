@@ -471,9 +471,9 @@ class BplusTreeHandler {
    * @param leaf_max_size 叶子节点最大大小
    */
   RC create(LogHandler &log_handler, BufferPoolManager &bpm, const char *file_name, std::vector<AttrType> attr_types, std::vector<int> attr_lengths,
-            int internal_max_size = -1, int leaf_max_size = -1);
+            bool is_unique = false, int internal_max_size = -1, int leaf_max_size = -1);
   RC create(LogHandler &log_handler, DiskBufferPool &buffer_pool, std::vector<AttrType> attr_types, std::vector<int> attr_lengths,
-            int internal_max_size = -1, int leaf_max_size = -1);
+            bool is_unique = false, int internal_max_size = -1, int leaf_max_size = -1);
 
   /**
    * @brief 打开一个B+树

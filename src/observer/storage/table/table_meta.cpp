@@ -141,8 +141,13 @@ const IndexMeta *TableMeta::index(const char *name) const {
 }
 
 const IndexMeta *TableMeta::find_index_by_field(const char *field) const {
+  if (field == nullptr) {
+    return nullptr;
+  }
+
   for (const IndexMeta &index : indexes_) {
-    if (0 == strcmp(index.field().c_str(), field)) {
+    const std::string& index_field = index.field();
+    if (index_field.find(field) != std::string::npos) {
       return &index;
     }
   }

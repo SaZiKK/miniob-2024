@@ -763,7 +763,8 @@ RC BplusTreeHandler::sync() {
 }
 
 RC BplusTreeHandler::create(LogHandler &log_handler, BufferPoolManager &bpm, const char *file_name, std::vector<AttrType> attr_types,
-                            std::vector<int> attr_lengths, int internal_max_size /* = -1*/, int leaf_max_size /* = -1 */) {
+                            std::vector<int> attr_lengths, bool is_unique /* default = false */, int internal_max_size /* = -1*/,
+                            int leaf_max_size /* = -1 */) {
   RC rc = bpm.create_file(file_name);
   if (OB_FAIL(rc)) {
     LOG_WARN("Failed to create file. file name=%s, rc=%d:%s", file_name, rc, strrc(rc));
@@ -780,7 +781,7 @@ RC BplusTreeHandler::create(LogHandler &log_handler, BufferPoolManager &bpm, con
   }
   LOG_INFO("Successfully open index file %s.", file_name);
 
-  rc = this->create(log_handler, *bp, attr_types, attr_lengths, internal_max_size, leaf_max_size);
+  rc = this->create(log_handler, *bp, attr_types, attr_lengths, internal_max_size, leaf_max_size, is_unique);
   if (OB_FAIL(rc)) {
     bpm.close_file(file_name);
     return rc;
@@ -791,7 +792,7 @@ RC BplusTreeHandler::create(LogHandler &log_handler, BufferPoolManager &bpm, con
 }
 
 RC BplusTreeHandler::create(LogHandler &log_handler, DiskBufferPool &buffer_pool, std::vector<AttrType> attr_types, std::vector<int> attr_lengths,
-                            int internal_max_size /* = -1 */, int leaf_max_size /* = -1 */) {
+                            bool is_unique /* default = false */, int internal_max_size /* = -1 */, int leaf_max_size /* = -1 */) {
   if (internal_max_size < 0) {
     internal_max_size = calc_internal_page_capacity(attr_lengths);
   }
@@ -834,6 +835,8 @@ RC BplusTreeHandler::create(LogHandler &log_handler, DiskBufferPool &buffer_pool
   file_header->internal_max_size = internal_max_size;
   file_header->leaf_max_size = leaf_max_size;
   file_header->root_page = BP_INVALID_PAGE_NUM;
+  file_header->is_unique = is_unique;
+  file_header->keys_num = attr_lengths.size();
 
   // 取消记录日志的原因请参考下面的sync调用的地方。
   // mtr.logger().init_header_page(header_frame, *file_header);
@@ -1444,11 +1447,17 @@ MemPoolItem::item_unique_ptr BplusTreeHandler::make_keys(const std::vector<const
     return nullptr;
   }
   int offset = 0;
+  // 创建字段与rid的键值对
   for (int i = 0; i < file_header_.keys_num; i++) {
     memcpy(static_cast<char *>(key.get()) + offset, user_keys[i], file_header_.attr_lengths[i]);
     offset += file_header_.attr_lengths[i];
   }
-  memcpy(static_cast<char *>(key.get()) + offset, &rid, sizeof(rid));
+  if (file_header_.is_unique) {
+    // 对于重复唯一索引，由于键值的比较机制，我们只要保证所有的rid都相等，那最后就会被查重掉，因此这里给rid赋值为固定值
+    memset(static_cast<char *>(key.get()) + offset, 114514, sizeof(rid));
+  } else {
+    memcpy(static_cast<char *>(key.get()) + offset, &rid, sizeof(rid));
+  }
   return key;
 }
 
@@ -1470,6 +1479,7 @@ RC BplusTreeHandler::insert_entry(const std::vector<const char *> &user_keys, co
 
   char *key = static_cast<char *>(pkey.get());
 
+  // 如果是空树，直接创建一个新的树
   if (is_empty()) {
     root_lock_.lock();
     if (is_empty()) {
@@ -1482,12 +1492,14 @@ RC BplusTreeHandler::insert_entry(const std::vector<const char *> &user_keys, co
 
   Frame *frame = nullptr;
 
+  // 找到叶子节点
   rc = find_leaf(mtr, BplusTreeOperationType::INSERT, key, frame);
   if (OB_FAIL(rc)) {
     LOG_WARN("Failed to find leaf %s. rc=%d:%s", rid->to_string().c_str(), rc, strrc(rc));
     return rc;
   }
 
+  // 尝试插入数据，这里如果数据重复，会返回错误
   rc = insert_entry_into_leaf_node(mtr, frame, key, rid);
   if (OB_FAIL(rc)) {
     LOG_TRACE("Failed to insert into leaf of index, rid:%s. rc=%s", rid->to_string().c_str(), strrc(rc));

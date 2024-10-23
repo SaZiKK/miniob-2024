@@ -21,7 +21,8 @@ See the Mulan PSL v2 for more details. */
 
 BplusTreeIndex::~BplusTreeIndex() noexcept { close(); }
 
-RC BplusTreeIndex::create(Table *table, const char *file_name, const IndexMeta &index_meta, const std::vector<FieldMeta> &field_metas) {
+RC BplusTreeIndex::create(Table *table, const char *file_name, const IndexMeta &index_meta, const std::vector<FieldMeta> &field_metas,
+                          bool is_unique) {
   if (inited_) {
     LOG_WARN(
         "Failed to create index due to the index has been created before. "
@@ -41,7 +42,7 @@ RC BplusTreeIndex::create(Table *table, const char *file_name, const IndexMeta &
   }
 
   BufferPoolManager &bpm = table->db()->buffer_pool_manager();
-  RC rc = index_handler_.create(table->db()->log_handler(), bpm, file_name, field_meta_types, field_meta_lens);
+  RC rc = index_handler_.create(table->db()->log_handler(), bpm, file_name, field_meta_types, field_meta_lens, is_unique);
   if (RC::SUCCESS != rc) {
     LOG_WARN(
         "Failed to create index_handler, file_name:%s, index:%s, field:%s, "

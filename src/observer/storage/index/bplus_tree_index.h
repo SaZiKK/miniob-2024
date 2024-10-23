@@ -26,7 +26,7 @@ class BplusTreeIndex : public Index {
   BplusTreeIndex() = default;
   virtual ~BplusTreeIndex() noexcept;
 
-  RC create(Table *table, const char *file_name, const IndexMeta &index_meta, const std::vector<FieldMeta> &field_metas);
+  RC create(Table *table, const char *file_name, const IndexMeta &index_meta, const std::vector<FieldMeta> &field_metas, bool is_unique);
   RC open(Table *table, const char *file_name, const IndexMeta &index_meta, const std::vector<FieldMeta> &field_metas);
   RC close();
 

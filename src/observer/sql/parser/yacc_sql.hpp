@@ -116,19 +116,20 @@ extern int yydebug;
     UNNULLABLE = 317,              /* UNNULLABLE  */
     IS_NULL = 318,                 /* IS_NULL  */
     IS_NOT_NULL = 319,             /* IS_NOT_NULL  */
-    EQ = 320,                      /* EQ  */
-    LT = 321,                      /* LT  */
-    GT = 322,                      /* GT  */
-    LE = 323,                      /* LE  */
-    GE = 324,                      /* GE  */
-    NE = 325,                      /* NE  */
-    NUMBER = 326,                  /* NUMBER  */
-    FLOAT = 327,                   /* FLOAT  */
-    ID = 328,                      /* ID  */
-    DATE_STR = 329,                /* DATE_STR  */
-    SSS = 330,                     /* SSS  */
-    HIGHER_THAN_EXPRESSION = 331,  /* HIGHER_THAN_EXPRESSION  */
-    UMINUS = 332                   /* UMINUS  */
+    UNIQUE = 320,                  /* UNIQUE  */
+    EQ = 321,                      /* EQ  */
+    LT = 322,                      /* LT  */
+    GT = 323,                      /* GT  */
+    LE = 324,                      /* LE  */
+    GE = 325,                      /* GE  */
+    NE = 326,                      /* NE  */
+    NUMBER = 327,                  /* NUMBER  */
+    FLOAT = 328,                   /* FLOAT  */
+    ID = 329,                      /* ID  */
+    DATE_STR = 330,                /* DATE_STR  */
+    SSS = 331,                     /* SSS  */
+    HIGHER_THAN_EXPRESSION = 332,  /* HIGHER_THAN_EXPRESSION  */
+    UMINUS = 333                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -137,7 +138,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 137 "yacc_sql.y"
+#line 138 "yacc_sql.y"
 
   ParsedSqlNode *                            sql_node;
   ConditionSqlNode *                         condition;
@@ -159,7 +160,7 @@ union YYSTYPE
   float                                      floats;
   bool                                       boolean;
 
-#line 163 "yacc_sql.hpp"
+#line 164 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

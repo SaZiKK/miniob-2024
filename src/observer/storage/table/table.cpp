@@ -359,7 +359,7 @@ RC Table::get_chunk_scanner(ChunkFileScanner &scanner, Trx *trx, ReadWriteMode m
   return rc;
 }
 
-RC Table::create_index(Trx *trx, const vector<FieldMeta> &fieldmetas, const char *index_name) {
+RC Table::create_index(Trx *trx, const vector<FieldMeta> &fieldmetas, const char *index_name, bool is_unique) {
   if (common::is_blank(index_name) || fieldmetas.empty()) {
     LOG_INFO(
         "Invalid input arguments, table name is %s, index_name is blank or "
@@ -380,7 +380,7 @@ RC Table::create_index(Trx *trx, const vector<FieldMeta> &fieldmetas, const char
   BplusTreeIndex *index = new BplusTreeIndex();
   string index_file = table_index_file(base_dir_.c_str(), name(), index_name);
 
-  rc = index->create(this, index_file.c_str(), new_index_meta, fieldmetas);
+  rc = index->create(this, index_file.c_str(), new_index_meta, fieldmetas, is_unique);
   if (rc != RC::SUCCESS) {
     delete index;
     LOG_ERROR("Failed to create bplus tree index. file name=%s, rc=%d:%s", index_file.c_str(), rc, strrc(rc));
@@ -400,6 +400,7 @@ RC Table::create_index(Trx *trx, const vector<FieldMeta> &fieldmetas, const char
 
   Record record;
   while (OB_SUCC(rc = scanner.next(record))) {
+    // 创建索引的时候，把原有的数据插入到索引中
     rc = index->insert_entry(record.data(), &record.rid());
     if (rc != RC::SUCCESS) {
       LOG_WARN(
@@ -659,6 +660,10 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   // 修改旧数据
   char *old_data = record.data();
 
+  // 暂时备份旧数据
+  char *backup_data = (char *)malloc(record.len());
+  memcpy(backup_data, old_data, record.len());
+
   // 对于 CHARS 这种不定长的记录，如果更新的元素大于原来的长度，需要截断
   if (value->length() > field_length) {
     memcpy(old_data + field_offset, value->data(), field_length);
@@ -674,6 +679,24 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
     memcpy(old_data + field_offset, flag, 4);
   }
   record.set_data(old_data);
+
+  if (this->find_index_by_field(targetFiled->name()) != nullptr) {
+    RC rc = this->insert_entry_of_indexes(record.data(), record.rid());
+    if (rc != RC::SUCCESS && strcmp(old_data, backup_data) != 0) {
+      RC rc2 = delete_entry_of_indexes(backup_data, record.rid(), false /*error_on_not_exists*/);
+      if (rc2 != RC::SUCCESS) {
+        LOG_ERROR(
+            "Failed to rollback index data when insert index entries failed. "
+            "table name=%s, rc=%d:%s",
+            name(), rc2, strrc(rc2));
+      }
+      LOG_ERROR("Failed to update data, recovering. table=%s, rc=%d:%s", name(), rc, strrc(rc));
+      // 恢复旧数据
+      record.set_data(backup_data);
+      record_handler_->update_record(&record);
+      return rc;
+    }
+  }
 
   record_handler_->update_record(&record);
   // delete old_data;
