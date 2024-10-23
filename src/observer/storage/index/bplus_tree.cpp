@@ -781,7 +781,7 @@ RC BplusTreeHandler::create(LogHandler &log_handler, BufferPoolManager &bpm, con
   }
   LOG_INFO("Successfully open index file %s.", file_name);
 
-  rc = this->create(log_handler, *bp, attr_types, attr_lengths, internal_max_size, leaf_max_size, is_unique);
+  rc = this->create(log_handler, *bp, attr_types, attr_lengths, is_unique, leaf_max_size, internal_max_size);
   if (OB_FAIL(rc)) {
     bpm.close_file(file_name);
     return rc;

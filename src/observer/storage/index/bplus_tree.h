@@ -100,6 +100,11 @@ class KeyComparator {
 
   int operator()(const char *v1, const char *v2) const {
     for (size_t i = 0; i < attr_comparators_.size(); i++) {
+      // 检查 v1 是否以 "NULL" 开头
+      if (strncmp(v1, "NULL", 4) == 0) return false;
+      // 检查 v2 是否以 "NULL" 开头
+      if (strncmp(v2, "NULL", 4) == 0) return false;
+
       int result = attr_comparators_[i](v1, v2);
       if (result != 0) {
         return result;

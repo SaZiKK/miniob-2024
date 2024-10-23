@@ -124,8 +124,15 @@ IndexScanner *BplusTreeIndex::create_scanner(const std::vector<const char *> lef
 
 IndexScanner *BplusTreeIndex::create_scanner(const char *left_key, int left_len, bool left_inclusive, const char *right_key, int right_len,
                                              bool right_inclusive) {
-  // not implemented
-  return nullptr;
+  // 创建左键和右键的 vector
+  std::vector<const char *> left_keys = {left_key};
+  std::vector<const char *> right_keys = {right_key};
+
+  // 创建左键长度和右键长度的 vector
+  std::vector<int> left_lens = {left_len};
+  std::vector<int> right_lens = {right_len};
+
+  return create_scanner(left_keys, left_lens, left_inclusive, right_keys, right_lens, right_inclusive);
 }
 
 RC BplusTreeIndex::sync() { return index_handler_.sync(); }
