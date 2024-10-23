@@ -24,13 +24,16 @@ class BinderContext {
   virtual ~BinderContext() = default;
 
   void add_table(Table *table) { query_tables_.push_back(table); }
+  void add_alias_and_name(pair<std::string, std::string> pair_) { alias_and_name_.insert(pair_); }
 
   Table *find_table(const char *table_name) const;
 
   const std::vector<Table *> &query_tables() const { return query_tables_; }
+  const std::unordered_map<std::string, std::string> alias_and_name() const { return alias_and_name_; }
 
  private:
   std::vector<Table *> query_tables_;
+  std::unordered_map<std::string, std::string> alias_and_name_;
 };
 
 /**

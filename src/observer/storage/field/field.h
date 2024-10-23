@@ -34,9 +34,16 @@ class Field {
 
   const char *table_name() const { return table_->name(); }
   const char *field_name() const { return field_->name(); }
+  const char *table_alias() const { return table_alias_.c_str(); }
+  const char *field_alias() const { return field_alias_.c_str(); }
 
   void set_table(const Table *table) { this->table_ = table; }
   void set_field(const FieldMeta *field) { this->field_ = field; }
+  void set_field_alias(string field_alias) { this->field_alias_ = field_alias; }
+  void set_table_alias(string table_alias) { this->table_alias_ = table_alias; }
+
+  bool has_table_alias() const { return !string(table_alias_).empty(); }
+  bool has_field_alias() const { return !string(field_alias_).empty(); }
 
   void set_int(Record &record, int value);
   int get_int(const Record &record);
@@ -46,4 +53,8 @@ class Field {
  private:
   const Table *table_ = nullptr;
   const FieldMeta *field_ = nullptr;
+
+  // alias part
+  std::string table_alias_;
+  std::string field_alias_;
 };

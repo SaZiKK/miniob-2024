@@ -43,9 +43,11 @@ enum class ExprType {
   NONE,
   STAR,                 ///< 星号，表示所有字段
   UNBOUND_FIELD,        ///< 未绑定的字段，需要在resolver阶段解析为FieldExpr
+  UNBOUND_TABLE,        ///< 未绑定的表明，需要在resolver阶段提取别名和原名
   UNBOUND_AGGREGATION,  ///< 未绑定的聚合函数，需要在resolver阶段解析为AggregateExpr
 
   FIELD,        ///< 字段。在实际执行时，根据行数据内容提取对应字段的值
+  JOINTABLE,    ///< join 字段
   VALUE,        ///< 常量值
   VALUELIST,    ///< 常量值列表
   CAST,         ///< 需要做类型转换的表达式
@@ -171,7 +173,10 @@ class StarExpr : public Expression {
 
 class UnboundFieldExpr : public Expression {
  public:
-  UnboundFieldExpr(const std::string &table_name, const std::string &field_name) : table_name_(table_name), field_name_(field_name) {}
+  UnboundFieldExpr(const std::string &table_name, const std::string &field_name, const std::string field_alias = "")
+      : table_name_(table_name), field_name_(field_name), field_alias_(field_alias) {
+    table_alias_ = "";
+  }
 
   virtual ~UnboundFieldExpr() = default;
 
@@ -179,13 +184,67 @@ class UnboundFieldExpr : public Expression {
   AttrType value_type() const override { return AttrType::UNDEFINED; }
 
   RC get_value(const Tuple &tuple, Value &value) const override { return RC::INTERNAL; }
+  void set_table_alias(string table_alias) { table_alias_ = table_alias; }
+  void set_table_name(string table_name) { table_name_ = table_name; }
 
   const char *table_name() const { return table_name_.c_str(); }
   const char *field_name() const { return field_name_.c_str(); }
+  const char *field_alias() const { return field_alias_.c_str(); }
+  const char *table_alias() const { return table_alias_.c_str(); }
+
+  bool has_table_alias() const { return !string(table_alias_).empty(); }
+  bool has_field_alias() const { return !string(field_alias_).empty(); }
 
  private:
   std::string table_name_;
   std::string field_name_;
+
+  // alias part
+  std::string field_alias_;
+  std::string table_alias_;
+};
+
+class UnboundTableExpr : public Expression {
+ public:
+  UnboundTableExpr(const std::string &table_name, const std::string table_alias = "") : table_name_(table_name), table_alias_(table_alias) {}
+
+  virtual ~UnboundTableExpr() = default;
+
+  ExprType type() const override { return ExprType::UNBOUND_TABLE; }
+  AttrType value_type() const override { return AttrType::UNDEFINED; }
+
+  RC get_value(const Tuple &tuple, Value &value) const override { return RC::INTERNAL; }
+
+  const char *table_name() const { return table_name_.c_str(); }
+  const char *table_alias() const { return table_alias_.c_str(); }
+
+  bool has_table_alias() const { return !string(table_alias_).empty(); }
+
+ private:
+  std::string table_name_;
+
+  // alias part
+  std::string table_alias_;
+};
+
+class JoinTableExpr : public Expression {
+ public:
+  JoinTableExpr(std::vector<ConditionSqlNode> conditions, unique_ptr<Expression> child) : conditions_(conditions), child_(std::move(child)) {}
+  JoinTableExpr(std::vector<ConditionSqlNode> conditions, Expression *child) : conditions_(conditions), child_(child) {}
+
+  virtual ~JoinTableExpr() = default;
+
+  ExprType type() const override { return ExprType::JOINTABLE; }
+  AttrType value_type() const override { return AttrType::UNDEFINED; }
+
+  RC get_value(const Tuple &tuple, Value &value) const override { return RC::INTERNAL; }
+
+  const std::vector<ConditionSqlNode> conditions() const { return conditions_; }
+  const std::unique_ptr<Expression> &child() const { return child_; }
+
+ private:
+  std::vector<ConditionSqlNode> conditions_;
+  std::unique_ptr<Expression> child_;
 };
 
 /**

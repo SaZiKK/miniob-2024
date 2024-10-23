@@ -142,6 +142,8 @@ NULL                                    RETURN_TOKEN(NULLABLE);
 NOT[ \t]+NULL                           RETURN_TOKEN(UNNULLABLE);
 IS[ \t]+NULL                            RETURN_TOKEN(IS_NULL);
 IS[ \t]+NOT+[ \t]+NULL                  RETURN_TOKEN(IS_NOT_NULL);
+AS                                      RETURN_TOKEN(AS);
+UNIQUE                                  RETURN_TOKEN(UNIQUE);
 
 L2_DISTANCE                             RETURN_TOKEN(VEC_L2_DISTANCE);
 COSINE_DISTANCE                         RETURN_TOKEN(VEC_COSINE_DISTANCE_FUNC);

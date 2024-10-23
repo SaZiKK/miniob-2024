@@ -39,12 +39,13 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
   BinderContext binder_context;
 
   // 将节点中的 join 添加到 conditions 以及 relations 当中
-  vector<JoinSqlNode> join;
-  for (auto it : select_sql.join) join.push_back(it);
-  std::reverse(join.begin(), join.end());
-  for (auto it : join) {
-    select_sql.relations.emplace_back(it.relation);
-    for (auto condition : it.conditions) select_sql.conditions.emplace_back(condition);
+  std::reverse(select_sql.join.begin(), select_sql.join.end());
+  for (int i = 0; i < (int)select_sql.join.size(); i++) {
+    JoinTableExpr *join_table_expr = static_cast<JoinTableExpr *>(select_sql.join[i].get());
+    UnboundTableExpr *table_expr = static_cast<UnboundTableExpr *>(join_table_expr->child().get());
+    std::unique_ptr<Expression> temp = make_unique<UnboundTableExpr>(table_expr->table_name(), table_expr->table_alias());
+    select_sql.relations.emplace_back(std::move(temp));
+    for (auto condition : join_table_expr->conditions()) select_sql.conditions.emplace_back(condition);
   }
 
   // 检测右侧子查询 STMT
@@ -92,11 +93,18 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
     }
   }
 
-  // 找到全部目标表格
+  /*
+  导入全部别名，并将别名还原成原名
+  别名的使用只会在 查询的表达式 expressions + 查询的表格 relations 中
+  relations 中的别名是表格的别名
+  expressions 中的别名是属性的别名
+  */
   vector<Table *> tables;
   unordered_map<string, Table *> table_map;
   for (size_t i = 0; i < select_sql.relations.size(); i++) {
-    const char *table_name = select_sql.relations[i].c_str();
+    UnboundTableExpr *expr = static_cast<UnboundTableExpr *>(select_sql.relations[i].get());
+    const char *table_name = expr->table_name();
+    const char *table_alias_name = expr->table_alias();
     if (nullptr == table_name) {
       LOG_WARN("invalid argument. relation name is null. index=%d", i);
       return RC::INVALID_ARGUMENT;
@@ -112,6 +120,20 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt) {
     binder_context.add_table(table);
     tables.push_back(table);
     table_map.insert({table_name, table});
+
+    // 存在别名
+    if (expr->has_table_alias()) {
+      // 如果有重复别名
+      unordered_map<string, string> alias_and_name = binder_context.alias_and_name();
+      if (alias_and_name.count(table_alias_name)) return RC::INVALID_ARGUMENT;
+      binder_context.add_alias_and_name(make_pair(table_alias_name, table_name));
+    }
+  }
+
+  unordered_map<string, string> alias_and_name = binder_context.alias_and_name();
+  // 如果别名和涉及的表名重复
+  for (auto it = alias_and_name.begin(); it != alias_and_name.end(); it++) {
+    if (table_map.count(it->first)) return RC::INVALID_ARGUMENT;
   }
 
   // 解析查询表达式，将其以及其子表达式统一加入 bound_expressions 中

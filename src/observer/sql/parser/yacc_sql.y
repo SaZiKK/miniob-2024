@@ -131,6 +131,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         VEC_INNER_PRODUCT_FUNC
         LBRACKET
         RBRACKET
+        UNIQUE
+        AS
         EQ
         LT
         GT
@@ -151,7 +153,6 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   std::vector<std::unique_ptr<Expression>> * expression_list;
   std::vector<Value> *                       value_list;
   std::vector<ConditionSqlNode> *            condition_list;
-  std::vector<JoinSqlNode> *                 join_list;
   std::vector<RelAttrSqlNode> *              rel_attr_list;
   std::vector<std::string> *                 relation_list;
   std::vector<UpdateTarget> *                update_target_list;
@@ -180,9 +181,10 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <condition_list>      where
 %type <condition_list>      condition_list
 %type <string>              storage_format
-%type <relation_list>       rel_list
+%type <expression>          relation
+%type <expression_list>     rel_list
 %type <boolean>             null_def
-%type <join_list>           join_list
+%type <expression_list>     join_list
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <expression_list>     group_by
@@ -333,6 +335,21 @@ create_index_stmt:    /*create index 语句的语法解析树*/
       free($3);
       free($5);
       free($7);
+    }
+    | CREATE UNIQUE INDEX ID ON ID LBRACE ID id_list RBRACE
+    {
+      $$ = new ParsedSqlNode(SCF_CREATE_INDEX);
+      CreateIndexSqlNode &create_index = $$->create_index;
+      create_index.index_name = $4;
+      create_index.relation_name = $6;
+      if ($9 != nullptr) {
+        create_index.attribute_names.swap(*$9);
+        delete $9;
+      }
+      create_index.attribute_names.emplace_back($8);
+      free($4);
+      free($6);
+      free($8);
     }
     ;
 
@@ -616,7 +633,7 @@ select_stmt:        /*  select 语句的语法解析树*/
       $$ = new ParsedSqlNode(SCF_SELECT);
       $$->selection.expressions.swap(*$2);
     }
-    | SELECT expression_list FROM ID rel_list join_list where group_by
+    | SELECT expression_list FROM relation rel_list join_list where group_by
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -686,6 +703,26 @@ expression:
     }
     | ID DOT ID {
       $$ = new UnboundFieldExpr($1, $3);
+      $$->set_name(token_name(sql_string, &@$));
+      free($1);
+    }
+    | ID ID {
+      $$ = new UnboundFieldExpr(string(), $1, $2);
+      $$->set_name(token_name(sql_string, &@$));
+      free($1);
+    }
+    | ID AS ID {
+      $$ = new UnboundFieldExpr(string(), $1, $3);
+      $$->set_name(token_name(sql_string, &@$));
+      free($1);
+    }
+    | ID DOT ID ID {
+      $$ = new UnboundFieldExpr($1, $3, $4);
+      $$->set_name(token_name(sql_string, &@$));
+      free($1);
+    }
+    | ID DOT ID AS ID {
+      $$ = new UnboundFieldExpr($1, $3, $5);
       $$->set_name(token_name(sql_string, &@$));
       free($1);
     }
@@ -794,19 +831,38 @@ expression:
     }
     ;
 
+relation:
+    ID {
+      $$ = new UnboundTableExpr($1, string());
+      $$->set_name(token_name(sql_string, &@$));
+      free($1);
+    }
+    | ID ID {
+      $$ = new UnboundTableExpr($1, $2);
+      $$->set_name(token_name(sql_string, &@$));
+      free($1);
+      free($2);
+    }
+    | ID AS ID {
+      $$ = new UnboundTableExpr($1, $3);
+      $$->set_name(token_name(sql_string, &@$));
+      free($1);
+      free($3);
+    }
+
+
 rel_list:
     {
       $$ = nullptr;
     }
-    | COMMA ID rel_list {
+    | COMMA relation rel_list {
       if ($3 != nullptr) {
         $$ = $3;
       } else {
-        $$ = new std::vector<std::string>;
+        $$ = new std::vector<std::unique_ptr<Expression>>;
       }
 
-      $$->insert($$->begin(), $2);
-      free($2);
+      $$->emplace_back($2);
     }
     ;
 
@@ -824,21 +880,13 @@ join_list:
     {
       $$ = nullptr;
     }
-    | INNER_JOIN ID ON condition_list join_list {
+    | INNER_JOIN relation ON condition_list join_list {
       if ($5 != nullptr) {
         $$ = $5;
       } else {
-        $$ = new std::vector<JoinSqlNode>;
+        $$ = new std::vector<std::unique_ptr<Expression>>;
       }
-
-      JoinSqlNode join;
-      join.relation = $2;
-      // std::reverse($4->begin(), $4->end());
-      if($4 != nullptr) {
-        join.conditions.insert(join.conditions.end(), $4->begin(), $4->end());
-        delete $4;
-      }
-      $$->emplace_back(join);
+      $$->emplace_back(new JoinTableExpr(*$4, $2));
     }
     ;
 
