@@ -54,9 +54,9 @@ RC VectorType::multiply(const Value &left, const Value &right, Value &result) co
   if (left.attr_type() != AttrType::VECTORS || right.attr_type() != AttrType::VECTORS || left.get_vector_size() != right.get_vector_size())
     return RC::INVALID_ARGUMENT;
   int size = (int)left.get_vector_size();
-  float sum = 0;
-  for (int i = 0; i < size; i++) sum += left.get_vector()[i] * right.get_vector()[i];
-  result.set_float(sum);
+  vector<float> answer(size, 0);
+  for (int i = 0; i < size; i++) answer[i] = left.get_vector()[i] * right.get_vector()[i];
+  result.set_vector(answer);
   return RC::SUCCESS;
 }
 
