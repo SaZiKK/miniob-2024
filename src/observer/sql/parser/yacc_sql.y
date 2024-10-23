@@ -326,6 +326,7 @@ create_index_stmt:    /*create index 语句的语法解析树*/
         delete $8;
       }
       create_index.attribute_names.emplace_back($7);
+      create_index.is_unique = false;
       free($3);
       free($5);
       free($7);
@@ -342,6 +343,7 @@ create_index_stmt:    /*create index 语句的语法解析树*/
         delete $9;
       }
       create_index.attribute_names.emplace_back($8);
+      create_index.is_unique = true;
       free($4);
       free($6);
       free($8);
