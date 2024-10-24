@@ -829,6 +829,7 @@ RC BplusTreeHandler::create(LogHandler &log_handler, DiskBufferPool &buffer_pool
   // 向header中写入信息
   char *pdata = header_frame->data();
   IndexFileHeader *file_header = (IndexFileHeader *)pdata;
+
   std::copy(attr_lengths.begin(), attr_lengths.end(), file_header->attr_lengths);
   file_header->key_length = total_attr_length + sizeof(RID);
   std::copy(attr_types.begin(), attr_types.end(), file_header->attr_types);
@@ -1449,7 +1450,12 @@ MemPoolItem::item_unique_ptr BplusTreeHandler::make_keys(const std::vector<const
   int offset = 0;
   // 创建字段与rid的键值对
   for (int i = 0; i < file_header_.keys_num; i++) {
-    memcpy(static_cast<char *>(key.get()) + offset, user_keys[i], file_header_.attr_lengths[i]);
+    // 如果Select语句没有指定该属性范围，则将该属性置为0
+    if (i < user_keys.size()) {
+      memcpy(static_cast<char *>(key.get()) + offset, user_keys[i], file_header_.attr_lengths[i]);
+    } else {
+      memset(static_cast<char *>(key.get()) + offset, 0, file_header_.attr_lengths[i]);
+    }
     offset += file_header_.attr_lengths[i];
   }
   if (file_header_.is_unique) {

@@ -39,6 +39,7 @@ class IndexMeta {
  public:
   const char *name() const;
   const std::string field() const;
+  const std::vector<std::string> &vec_fields() const;
 
   void desc(ostream &os) const;
 

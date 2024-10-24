@@ -364,3 +364,38 @@ int Value::get_date() const {
 }
 
 bool Value::get_null() const { return is_null_; }
+
+Value Value::max_value(AttrType type) {
+  switch (type) {
+    case AttrType::INTS: {
+      return Value(INT32_MAX);
+    }
+    case AttrType::FLOATS: {
+      return Value(float(3.40282e+038));
+    }
+    case AttrType::DATE: {
+      return Value(99991231, true);
+    }
+    default: {
+      LOG_WARN("unknown data type. type=%d", type);
+      return Value();
+    }
+  }
+}
+Value Value::min_value(AttrType type) {
+  switch (type) {
+    case AttrType::INTS: {
+      return Value(-INT32_MAX - 1);
+    }
+    case AttrType::FLOATS: {
+      return Value(float(-3.40282e+038));
+    }
+    case AttrType::DATE: {
+      return Value(10000101, true);
+    }
+    default: {
+      LOG_WARN("unknown data type. type=%d", type);
+      return Value();
+    }
+  }
+}
