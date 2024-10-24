@@ -30,7 +30,8 @@ SelectStmt::~SelectStmt() {
   }
 }
 
-RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unordered_map<string, string> father_alias) {
+RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unordered_map<string, string> father_alias,
+                      std::unordered_map<string, Table *> father_tables) {
   if (nullptr == db) {
     LOG_WARN("invalid argument. db is null");
     return RC::INVALID_ARGUMENT;
@@ -68,8 +69,11 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     // 根据表格名称找到表格，并且完成插入
     Table *table = db->find_table(table_name);
     if (nullptr == table) {
-      LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
-      return RC::SCHEMA_TABLE_NOT_EXIST;
+      // 如果找不到表格，可能是父查询中包含的
+      if (father_tables.count(table_name))
+        table = father_tables[table_name];
+      else
+        return RC::SCHEMA_TABLE_NOT_EXIST;
     }
 
     binder_context.add_table(table);
@@ -103,9 +107,14 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   }
 
   // 传给子查询的别名字典
-  std::unordered_map<string, string> for_son;
-  for (auto it : binder_context.alias_and_name()) for_son.insert(it);
-  for (auto it : father_alias) for_son.insert(it);
+  std::unordered_map<string, string> alias_for_son;
+  for (auto it : binder_context.alias_and_name()) alias_for_son.insert(it);
+  for (auto it : father_alias) alias_for_son.insert(it);
+
+  // 传给子查询的表格
+  std::unordered_map<string, Table *> tables_for_son;
+  for (auto it : table_map) tables_for_son.insert(it);
+  for (auto it : father_tables) tables_for_son.insert(it);
 
   // 检测右侧子查询 STMT
   for (size_t i = 0; i < select_sql.conditions.size(); i++) {
@@ -119,7 +128,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
       }
 
       Stmt *right_sub_query_stmt = nullptr;
-      RC rc = SelectStmt::create(db, right_sub_query->selection, right_sub_query_stmt, for_son);
+      RC rc = SelectStmt::create(db, right_sub_query->selection, right_sub_query_stmt, alias_for_son, tables_for_son);
       if (rc != RC::SUCCESS) {
         LOG_WARN("failed to create right sub query stmt. index=%d", i);
         return rc;
@@ -140,7 +149,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
       }
 
       Stmt *left_sub_query_stmt = nullptr;
-      RC rc = SelectStmt::create(db, left_sub_query->selection, left_sub_query_stmt, for_son);
+      RC rc = SelectStmt::create(db, left_sub_query->selection, left_sub_query_stmt, alias_for_son, tables_for_son);
       if (rc != RC::SUCCESS) {
         LOG_WARN("failed to create right sub query stmt. index=%d", i);
         return rc;
@@ -182,8 +191,8 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
 
   // 创建筛选对应的 STMT 对象
   FilterStmt *filter_stmt = nullptr;
-  RC rc =
-      FilterStmt::create(db, default_table, &table_map, select_sql.conditions.data(), static_cast<int>(select_sql.conditions.size()), filter_stmt);
+  RC rc = FilterStmt::create(db, default_table, &table_map, select_sql.conditions.data(), static_cast<int>(select_sql.conditions.size()), filter_stmt,
+                             alias_for_son, tables_for_son);
   if (rc != RC::SUCCESS) {
     LOG_WARN("cannot construct filter stmt");
     return rc;

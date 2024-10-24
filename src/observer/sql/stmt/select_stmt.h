@@ -39,7 +39,8 @@ class SelectStmt : public Stmt {
 
  public:
   static RC create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt,
-                   std::unordered_map<string, string> father_alias = std::unordered_map<string, string>());
+                   std::unordered_map<string, string> father_alias = std::unordered_map<string, string>(),
+                   std::unordered_map<string, Table *> father_tables = std::unordered_map<string, Table *>());
 
  public:
   const std::vector<Table *> &tables() const { return tables_; }
