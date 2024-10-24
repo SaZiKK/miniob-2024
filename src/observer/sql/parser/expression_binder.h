@@ -25,15 +25,21 @@ class BinderContext {
 
   void add_table(Table *table) { query_tables_.push_back(table); }
   void add_alias_and_name(pair<std::string, std::string> pair_) { alias_and_name_.insert(pair_); }
+  void add_father_alias_and_name(pair<std::string, std::string> pair_) { father_alias_and_name_.insert(pair_); }
 
   Table *find_table(const char *table_name) const;
 
   const std::vector<Table *> &query_tables() const { return query_tables_; }
   const std::unordered_map<std::string, std::string> alias_and_name() const { return alias_and_name_; }
+  const std::unordered_map<std::string, std::string> father_alias_and_name() const { return father_alias_and_name_; }
 
  private:
   std::vector<Table *> query_tables_;
+
+  // 当层别名起了就不能用原名
+  // 上层起的别名下层用不用均可
   std::unordered_map<std::string, std::string> alias_and_name_;
+  std::unordered_map<std::string, std::string> father_alias_and_name_;
 };
 
 /**

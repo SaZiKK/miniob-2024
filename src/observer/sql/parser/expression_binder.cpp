@@ -160,13 +160,18 @@ RC ExpressionBinder::bind_unbound_field_expression(unique_ptr<Expression> &expr,
   // 不为空，此时如果目标表格中不存在 table_name 则返回错误结果
   else {
     std::unordered_map<std::string, std::string> alias_map = context_.alias_and_name();
+    std::unordered_map<std::string, std::string> father_alias_map = context_.father_alias_and_name();
     // table_name 实际上是别名，需要还原
     if (alias_map.count(table_name)) {
       unbound_field_expr->set_table_alias(table_name);
       unbound_field_expr->set_table_name(alias_map[table_name]);
       table_name = unbound_field_expr->table_name();
+    } else if (father_alias_map.count(table_name)) {
+      unbound_field_expr->set_table_alias(table_name);
+      unbound_field_expr->set_table_name(father_alias_map[table_name]);
+      table_name = unbound_field_expr->table_name();
     } else {
-      // 如果有别名但是不用，返回错误
+      // 如果当前层有别名但是不用，返回错误
       for (auto it = alias_map.begin(); it != alias_map.end(); it++)
         if (it->second == table_name) return RC::INVALID_ARGUMENT;
     }
