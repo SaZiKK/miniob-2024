@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include <vector>
 
 #include "common/type/attr_type.h"
+#include "event/sql_debug.h"
 #include "storage/index/bplus_tree.h"
 #include "common/lang/lower_bound.h"
 #include "common/log/log.h"
@@ -1464,7 +1465,7 @@ MemPoolItem::item_unique_ptr BplusTreeHandler::make_keys(const std::vector<const
   }
   if (file_header_.is_unique) {
     // 对于重复唯一索引，由于键值的比较机制，我们只要保证所有的rid都相等，那最后就会被查重掉，因此这里给rid赋值为固定值
-    memset(static_cast<char *>(key.get()) + offset, 114514, sizeof(rid));
+    memset(static_cast<char *>(key.get()) + offset, 0, sizeof(rid));
   } else {
     memcpy(static_cast<char *>(key.get()) + offset, &rid, sizeof(rid));
   }
