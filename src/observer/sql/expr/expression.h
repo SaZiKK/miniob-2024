@@ -92,7 +92,7 @@ class Expression {
   virtual RC get_value_list(std::vector<Value> &value) { return RC::UNIMPLEMENTED; }
 
   // 针对子查询
-  virtual RC get_tuple_list(std::vector<std::vector<Value>> &tuple) { return RC::UNIMPLEMENTED; }
+  virtual RC try_get_tuple_list(std::vector<std::vector<Value>> &tuple) { return RC::UNIMPLEMENTED; }
 
   /**
    * @brief
@@ -320,7 +320,7 @@ class ValueExpr : public Expression {
 class SubQueryExpr : public Expression {
  public:
   SubQueryExpr() = default;
-  explicit SubQueryExpr(SelectStmt *sub_query) : sub_query_(sub_query) { init(); };
+  explicit SubQueryExpr(SelectStmt *sub_query, bool father_sub_mode = false) : sub_query_(sub_query), father_sub_mode_(father_sub_mode) { init(); };
 
   virtual ~SubQueryExpr() = default;
 
@@ -329,15 +329,18 @@ class SubQueryExpr : public Expression {
 
   RC get_value(const Tuple &tuple, Value &value) const override;
 
-  RC get_tuple_list(std::vector<std::vector<Value>> &tuple) override;
+  RC try_get_tuple_list(std::vector<std::vector<Value>> &tuple) override;
 
   RC init();
 
   SelectStmt *sub_query() { return sub_query_; }
+  bool father_sub_mode() { return father_sub_mode_; }
+  void set_father_sub_mode(bool flag) { father_sub_mode_ = flag; }
 
  private:
   SelectStmt *sub_query_;
   bool has_calculated = false;
+  bool father_sub_mode_ = false;
   std::vector<std::vector<Value>> tuple_list_;
 };
 
@@ -461,7 +464,7 @@ class ComparisonExpr : public Expression {
   // 获取表达式的比较类型
   CompType comp_type() const { return type_; }
 
-  RC check_value() const;
+  RC check_value(bool father_sub_mode = false) const;
 
  private:
   mutable CompType type_;

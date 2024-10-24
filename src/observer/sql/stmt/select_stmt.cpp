@@ -77,10 +77,10 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     table_map.insert({table_name, table});
   }
 
-  // 将父查询的表格导入
-  for (auto it : father_tables) {
-    table_map.insert(it);
-    tables.push_back(it.second);
+  // 设置主表格？
+  Table *default_table = nullptr;
+  if (tables.size() == 1) {
+    default_table = tables[0];
   }
 
   for (size_t i = 0; i < select_sql.relations.size(); i++) {
@@ -183,12 +183,6 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
       LOG_INFO("bind expression failed. rc=%s", strrc(rc));
       return rc;
     }
-  }
-
-  // 设置主表格？
-  Table *default_table = nullptr;
-  if (tables.size() == 1) {
-    default_table = tables[0];
   }
 
   // 创建筛选对应的 STMT 对象

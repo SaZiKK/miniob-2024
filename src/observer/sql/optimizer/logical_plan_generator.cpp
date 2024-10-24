@@ -255,7 +255,17 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
 
     ComparisonExpr *cmp_expr = new ComparisonExpr(filter_unit->comp(), std::move(left), std::move(right));
 
-    RC rc = cmp_expr->check_value();
+    bool father_sub_mode = false;
+    if (cmp_expr->left()->type() == ExprType::SUBQUERY) {
+      SubQueryExpr *left_sub = static_cast<SubQueryExpr *>(cmp_expr->left().get());
+      father_sub_mode = father_sub_mode || left_sub->father_sub_mode();
+    }
+    if (cmp_expr->right()->type() == ExprType::SUBQUERY) {
+      SubQueryExpr *right_sub = static_cast<SubQueryExpr *>(cmp_expr->right().get());
+      father_sub_mode = father_sub_mode || right_sub->father_sub_mode();
+    }
+
+    RC rc = cmp_expr->check_value(father_sub_mode);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to create comparison expression");
       return RC::INVALID_ARGUMENT;

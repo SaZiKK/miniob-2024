@@ -59,7 +59,8 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
 }
 
 RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, Expression *expression, Table *&table,
-                       const FieldMeta *&field, std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
+                       const FieldMeta *&field, bool &from_father,
+                       std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
                        std::unordered_map<string, Table *> table_map = std::unordered_map<string, Table *>()) {
   UnboundFieldExpr *field_expr = static_cast<UnboundFieldExpr *>(expression);
   string relation_name = field_expr->table_name();
@@ -84,9 +85,12 @@ RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::str
   }
   if (nullptr == table) {
     // 没找到表格，试图从父查询中寻找
-    if (table_map.count(relation_name))
+    if (table_map.count(relation_name)) {
       table = table_map[relation_name];
-    else
+
+      // 表格是从父查询传下来的，需要转化成子查询
+      from_father = true;
+    } else
       return RC::SCHEMA_TABLE_NOT_EXIST;
   }
 
@@ -128,15 +132,27 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
     } break;
     case ExprType::SUBQUERY: {
       vector<vector<Value>> tuple_list;
-      RC rc = expr->get_tuple_list(tuple_list);
+      RC rc = expr->try_get_tuple_list(tuple_list);
       if (rc != RC::SUCCESS) return rc;
     } break;
     case ExprType::UNBOUND_FIELD: {
       Table *table = nullptr;
       const FieldMeta *field = nullptr;
-      RC rc = get_table_and_field(db, default_table, tables, expr.get(), table, field, alias_map, table_map);
+      bool from_father = false;
+      RC rc = get_table_and_field(db, default_table, tables, expr.get(), table, field, from_father, alias_map, table_map);
       if (rc != RC::SUCCESS) return rc;
-      expr = std::make_unique<FieldExpr>(table, field);
+      // 需要转化成子查询
+      if (from_father == true) {
+        SelectSqlNode select_sql_node;
+        select_sql_node.relations.emplace_back(make_unique<UnboundTableExpr>(table->name()));
+        select_sql_node.expressions.emplace_back(make_unique<UnboundFieldExpr>(table->name(), field->name()));
+        Stmt *sub_query_stmt = nullptr;
+        rc = SelectStmt::create(db, select_sql_node, sub_query_stmt);
+        if (rc != RC::SUCCESS) return rc;
+        auto *sub_select_stmt = dynamic_cast<SelectStmt *>(sub_query_stmt);
+        expr = std::make_unique<SubQueryExpr>(sub_select_stmt, true);
+      } else
+        expr = std::make_unique<FieldExpr>(table, field);
     } break;
     case ExprType::ARITHMETIC: {
       RC rc = RC::SUCCESS;
