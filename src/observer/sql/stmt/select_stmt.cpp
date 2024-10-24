@@ -40,6 +40,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   BinderContext binder_context;
 
   // 将节点中的 join 添加到 conditions 以及 relations 当中
+  std::reverse(select_sql.relations.begin(), select_sql.relations.end());
   std::reverse(select_sql.join.begin(), select_sql.join.end());
   for (int i = 0; i < (int)select_sql.join.size(); i++) {
     JoinTableExpr *join_table_expr = static_cast<JoinTableExpr *>(select_sql.join[i].get());
