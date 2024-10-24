@@ -69,16 +69,18 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     // 根据表格名称找到表格，并且完成插入
     Table *table = db->find_table(table_name);
     if (nullptr == table) {
-      // 如果找不到表格，可能是父查询中包含的
-      if (father_tables.count(table_name))
-        table = father_tables[table_name];
-      else
-        return RC::SCHEMA_TABLE_NOT_EXIST;
+      return RC::SCHEMA_TABLE_NOT_EXIST;
     }
 
     binder_context.add_table(table);
     tables.push_back(table);
     table_map.insert({table_name, table});
+  }
+
+  // 将父查询的表格导入
+  for (auto it : father_tables) {
+    table_map.insert(it);
+    tables.push_back(it.second);
   }
 
   for (size_t i = 0; i < select_sql.relations.size(); i++) {
