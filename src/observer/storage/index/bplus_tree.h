@@ -100,6 +100,11 @@ class KeyComparator {
 
   int operator()(const char *v1, const char *v2) const {
     for (size_t i = 0; i < attr_comparators_.size(); i++) {
+      // 检查 v1 是否以 "NULL" 开头
+      if (strncmp(v1, "NULL", 4) == 0) return -1;
+      // 检查 v2 是否以 "NULL" 开头
+      if (strncmp(v2, "NULL", 4) == 0) return 1;
+
       int result = attr_comparators_[i](v1, v2);
       if (result != 0) {
         return result;
@@ -471,9 +476,9 @@ class BplusTreeHandler {
    * @param leaf_max_size 叶子节点最大大小
    */
   RC create(LogHandler &log_handler, BufferPoolManager &bpm, const char *file_name, std::vector<AttrType> attr_types, std::vector<int> attr_lengths,
-            int internal_max_size = -1, int leaf_max_size = -1);
+            bool is_unique = false, int internal_max_size = -1, int leaf_max_size = -1);
   RC create(LogHandler &log_handler, DiskBufferPool &buffer_pool, std::vector<AttrType> attr_types, std::vector<int> attr_lengths,
-            int internal_max_size = -1, int leaf_max_size = -1);
+            bool is_unique = false, int internal_max_size = -1, int leaf_max_size = -1);
 
   /**
    * @brief 打开一个B+树

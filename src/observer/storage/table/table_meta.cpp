@@ -141,9 +141,43 @@ const IndexMeta *TableMeta::index(const char *name) const {
   return nullptr;
 }
 
-const IndexMeta *TableMeta::find_index_by_field(const char *field) const {
+const IndexMeta *TableMeta::find_index_by_fields(const std::vector<const char *> field) const {
+  if (field.empty()) {
+    return nullptr;
+  }
+
   for (const IndexMeta &index : indexes_) {
-    if (0 == strcmp(index.field().c_str(), field)) {
+    const std::vector<std::string> &index_fields = index.vec_fields();
+
+    // 检查长度
+    if (field.size() > index_fields.size()) {
+      continue;  // field 比 index_fields 长，不可能匹配或成为前缀
+    }
+
+    bool is_match = true;
+    for (size_t i = 0; i < field.size(); ++i) {
+      if (std::strcmp(field[i], index_fields[i].c_str()) != 0) {
+        is_match = false;
+        break;
+      }
+    }
+
+    if (is_match) {
+      return &index;  // 找到匹配或前缀
+    }
+  }
+
+  return nullptr;  // 没有找到匹配
+}
+
+const IndexMeta *TableMeta::find_index_by_field(const char *field) const {
+  if (field == nullptr) {
+    return nullptr;
+  }
+
+  for (const IndexMeta &index : indexes_) {
+    const std::string &index_field = index.field();
+    if (index_field.find(field) != std::string::npos) {
       return &index;
     }
   }

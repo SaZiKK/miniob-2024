@@ -99,6 +99,8 @@ const std::string IndexMeta::field() const {
   return json_stream.str();
 }
 
+const std::vector<std::string> &IndexMeta::vec_fields() const { return fields_; }
+
 void IndexMeta::desc(ostream &os) const {
   os << "index name=" << name_ << ", fields=[";
 

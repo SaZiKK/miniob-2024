@@ -118,6 +118,8 @@ class Value final {
   void set_string(const char *s, int len = 0);
   void set_string_from_other(const Value &other);
   void set_null(bool flag);
+  static Value max_value(AttrType type);
+  static Value min_value(AttrType type);
 
  private:
   AttrType attr_type_ = AttrType::UNDEFINED;

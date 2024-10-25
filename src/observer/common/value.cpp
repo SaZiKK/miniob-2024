@@ -474,3 +474,38 @@ void Value::set_vector(std::vector<float> value_vector) {
 vector<float> Value::get_vector() const { return value_vector_; }
 
 int Value::get_vector_size() const { return (int)value_vector_.size(); }
+
+Value Value::max_value(AttrType type) {
+  switch (type) {
+    case AttrType::INTS: {
+      return Value(INT32_MAX);
+    }
+    case AttrType::FLOATS: {
+      return Value(float(3.40282e+038));
+    }
+    case AttrType::DATE: {
+      return Value(99991231, true);
+    }
+    default: {
+      LOG_WARN("unknown data type. type=%d", type);
+      return Value();
+    }
+  }
+}
+Value Value::min_value(AttrType type) {
+  switch (type) {
+    case AttrType::INTS: {
+      return Value(-INT32_MAX - 1);
+    }
+    case AttrType::FLOATS: {
+      return Value(float(-3.40282e+038));
+    }
+    case AttrType::DATE: {
+      return Value(10000101, true);
+    }
+    default: {
+      LOG_WARN("unknown data type. type=%d", type);
+      return Value();
+    }
+  }
+}

@@ -21,7 +21,8 @@ See the Mulan PSL v2 for more details. */
 
 BplusTreeIndex::~BplusTreeIndex() noexcept { close(); }
 
-RC BplusTreeIndex::create(Table *table, const char *file_name, const IndexMeta &index_meta, const std::vector<FieldMeta> &field_metas) {
+RC BplusTreeIndex::create(Table *table, const char *file_name, const IndexMeta &index_meta, const std::vector<FieldMeta> &field_metas,
+                          bool is_unique) {
   if (inited_) {
     LOG_WARN(
         "Failed to create index due to the index has been created before. "
@@ -41,7 +42,7 @@ RC BplusTreeIndex::create(Table *table, const char *file_name, const IndexMeta &
   }
 
   BufferPoolManager &bpm = table->db()->buffer_pool_manager();
-  RC rc = index_handler_.create(table->db()->log_handler(), bpm, file_name, field_meta_types, field_meta_lens);
+  RC rc = index_handler_.create(table->db()->log_handler(), bpm, file_name, field_meta_types, field_meta_lens, is_unique);
   if (RC::SUCCESS != rc) {
     LOG_WARN(
         "Failed to create index_handler, file_name:%s, index:%s, field:%s, "
@@ -123,8 +124,15 @@ IndexScanner *BplusTreeIndex::create_scanner(const std::vector<const char *> lef
 
 IndexScanner *BplusTreeIndex::create_scanner(const char *left_key, int left_len, bool left_inclusive, const char *right_key, int right_len,
                                              bool right_inclusive) {
-  // not implemented
-  return nullptr;
+  // 创建左键和右键的 vector
+  std::vector<const char *> left_keys = {left_key};
+  std::vector<const char *> right_keys = {right_key};
+
+  // 创建左键长度和右键长度的 vector
+  std::vector<int> left_lens = {left_len};
+  std::vector<int> right_lens = {right_len};
+
+  return create_scanner(left_keys, left_lens, left_inclusive, right_keys, right_lens, right_inclusive);
 }
 
 RC BplusTreeIndex::sync() { return index_handler_.sync(); }

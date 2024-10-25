@@ -332,12 +332,14 @@ create_index_stmt:    /*create index 语句的语法解析树*/
         delete $8;
       }
       create_index.attribute_names.emplace_back($7);
+      create_index.is_unique = false;
       free($3);
       free($5);
       free($7);
     }
     | CREATE UNIQUE INDEX ID ON ID LBRACE ID id_list RBRACE
     {
+      LOG_DEBUG("parse create_index_stmt");
       $$ = new ParsedSqlNode(SCF_CREATE_INDEX);
       CreateIndexSqlNode &create_index = $$->create_index;
       create_index.index_name = $4;
@@ -347,6 +349,7 @@ create_index_stmt:    /*create index 语句的语法解析树*/
         delete $9;
       }
       create_index.attribute_names.emplace_back($8);
+      create_index.is_unique = true;
       free($4);
       free($6);
       free($8);

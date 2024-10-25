@@ -130,13 +130,17 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator &table_get_oper, u
 
   Index *index = nullptr;
   ValueExpr *value_expr = nullptr;
+  FieldExpr *field_expr = nullptr;
+  vector<const char *> fields;
+  std::vector<Value> left_bound_values, right_bound_values;
+  bool left_inclusive = false, right_inclusive = false;
   for (auto &expr : predicates) {
     if (expr->type() == ExprType::COMPARISON) {
       auto comparison_expr = static_cast<ComparisonExpr *>(expr.get());
-      // 简单处理，就找等值查询
-      if (comparison_expr->comp() != EQUAL_TO) {
-        continue;
-      }
+      // // 简单处理，就找等值查询
+      // if (comparison_expr->comp() != EQUAL_TO) { //todo: 意义不明
+      //   continue;
+      // }
 
       unique_ptr<Expression> &left_expr = comparison_expr->left();
       unique_ptr<Expression> &right_expr = comparison_expr->right();
@@ -145,7 +149,6 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator &table_get_oper, u
         continue;
       }
 
-      FieldExpr *field_expr = nullptr;
       if (left_expr->type() == ExprType::FIELD) {
         ASSERT(right_expr->type() == ExprType::VALUE, "right expr should be a value expr while left is field expr");
         field_expr = static_cast<FieldExpr *>(left_expr.get());
@@ -160,20 +163,72 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator &table_get_oper, u
         continue;
       }
 
-      const Field &field = field_expr->field();
-      index = table->find_index_by_field(field.field_name());
-      if (nullptr != index) {
-        break;
+      fields.push_back(field_expr->field().field_name());
+
+      // 根据不同运算处理不同的搜索范围，生成索引扫描物理算子要用
+      switch (comparison_expr->comp()) {
+        case EQUAL_TO: {  // l == r
+          left_bound_values.push_back(value_expr->value());
+          right_bound_values.push_back(value_expr->value());
+          left_inclusive = true;
+          right_inclusive = true;
+          break;
+        }
+        case LESS_EQUAL: {  // l <= r
+          left_bound_values.push_back(Value::min_value(value_expr->value_type()));
+          right_bound_values.push_back(value_expr->value());
+          left_inclusive = false;
+          right_inclusive = true;
+          break;
+        }
+        case NOT_EQUAL: {  // l != r
+          left_bound_values.push_back(Value::min_value(value_expr->value_type()));
+          right_bound_values.push_back(Value::max_value(value_expr->value_type()));
+          left_inclusive = false;
+          right_inclusive = false;
+          break;
+        }
+        case LESS_THAN: {  // l < r
+          left_bound_values.push_back(Value::min_value(value_expr->value_type()));
+          right_bound_values.push_back(value_expr->value());
+          left_inclusive = false;
+          right_inclusive = false;
+          break;
+        }
+        case GREAT_EQUAL: {  // l >= r
+          left_bound_values.push_back(value_expr->value());
+          right_bound_values.push_back(Value::max_value(value_expr->value_type()));
+          left_inclusive = true;
+          right_inclusive = false;
+          break;
+        }
+        case GREAT_THAN: {  // l > r
+          left_bound_values.push_back(value_expr->value());
+          right_bound_values.push_back(Value::max_value(value_expr->value_type()));
+          left_inclusive = false;
+          right_inclusive = false;
+          break;
+        }
+        default: {
+          LOG_WARN("unsupported comparison type %d", comparison_expr->comp());
+          break;
+        }
       }
     }
   }
-
+  if (field_expr != nullptr) {
+    // find_index_by_field的搜索匹配逻辑有问题，只能用来检查是否是索引域，还好这里够用
+    index = table->find_index_by_fields(fields);
+  }
   if (index != nullptr) {
     ASSERT(value_expr != nullptr, "got an index but value expr is null ?");
 
-    const Value &value = value_expr->get_value();
-    IndexScanPhysicalOperator *index_scan_oper = new IndexScanPhysicalOperator(table, index, table_get_oper.read_write_mode(), &value,
-                                                                               true /*left_inclusive*/, &value, true /*right_inclusive*/);
+    right_inclusive = true;
+    left_inclusive = true;  // todo;: 这里的逻辑有问题，这俩也应该是vector，暂时能用偷懒一下
+
+    IndexScanPhysicalOperator *index_scan_oper =
+        new IndexScanPhysicalOperator(table, index, table_get_oper.read_write_mode(), &left_bound_values, left_inclusive /*left_inclusive*/,
+                                      &right_bound_values, right_inclusive /*right_inclusive*/);
 
     index_scan_oper->set_predicates(std::move(predicates));
     oper = unique_ptr<PhysicalOperator>(index_scan_oper);
