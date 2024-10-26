@@ -229,8 +229,21 @@ const char *Value::data() const {
     case AttrType::CHARS: {
       return value_.pointer_value_;
     } break;
+    case AttrType::INTS: {
+      return (const char *)&value_.int_value_;
+    } break;
+    case AttrType::FLOATS: {
+      return (const char *)&value_.float_value_;
+    } break;
+    case AttrType::BOOLEANS: {
+      return (const char *)&value_.bool_value_;
+    } break;
+    case AttrType::DATE: {
+      return (const char *)&value_.int_value_;
+    } break;
     default: {
-      return (const char *)&value_;
+      LOG_WARN("unknown data type. type=%d", attr_type_);
+      return nullptr;
     } break;
   }
 }

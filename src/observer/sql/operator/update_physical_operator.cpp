@@ -31,6 +31,10 @@ RC UpdatePhysicalOperator::open(Trx *trx) {
 
   child->close();
 
+  if (records_.empty()) {
+    LOG_WARN("no records to update");
+  }
+
   // 先收集记录再更新
   // 记录的有效性由事务来保证，如果事务不保证更新的有效性，那说明此事务类型不支持并发控制，比如VacuousTrx
   for (Record &record : records_) {

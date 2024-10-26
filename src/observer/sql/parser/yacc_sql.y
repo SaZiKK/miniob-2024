@@ -338,12 +338,15 @@ create_index_stmt:    /*create index 语句的语法解析树*/
       CreateIndexSqlNode &create_index = $$->create_index;
       create_index.index_name = $4;
       create_index.relation_name = $6;
+      create_index.is_unique = true;
+      std::vector<std::string> attribute_names;
+      attribute_names.emplace_back($8);
       if ($9 != nullptr) {
-        create_index.attribute_names.swap(*$9);
+        attribute_names.insert(attribute_names.end(), $9->begin(), $9->end());
         delete $9;
       }
-      create_index.attribute_names.emplace_back($8);
-      create_index.is_unique = true;
+      create_index.attribute_names = std::move(attribute_names);
+
       free($4);
       free($6);
       free($8);
