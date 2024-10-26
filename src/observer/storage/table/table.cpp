@@ -13,6 +13,7 @@ See the Mulan PSL v2 for more details. */
 
 #include <limits.h>
 #include <string.h>
+#include <vector>
 
 #include "common/defs.h"
 #include "common/lang/string.h"
@@ -623,11 +624,33 @@ RC Table::update_records(Record &record, std::vector<std::pair<Value, FieldMeta>
     }
   }
 
-  // 所有字段均可更新
+  // 暂时备份旧数据
+  char *old_data = record.data();
+  char *backup_data = (char *)malloc(record.len());
+  memcpy(backup_data, old_data, record.len());
+
+  // 所有字段均可更新，开始更新
   for (auto it : update_map_) {
     RC rc = update_record(record, it.second.name(), &it.first);
     if (rc != RC::SUCCESS) return rc;
   }
+
+  // 如果有索引，更新索引，顺便检查如果是唯一索引，那么是否有重复
+  std::vector<const char *> update_fields;
+  for (auto &it : update_map_) {
+    update_fields.push_back(it.second.name());
+  }
+  if (this->find_index_by_fields(update_fields) != nullptr) {
+    RC rc = this->insert_entry_of_indexes(record.data(), record.rid());
+    if (rc != RC::SUCCESS && strcmp(old_data, backup_data) != 0) {
+      LOG_ERROR("Failed to update data, recovering. table=%s, rc=%d:%s", name(), rc, strrc(rc));
+      // 恢复旧数据
+      record.set_data(backup_data);
+      record_handler_->update_record(&record);
+      return rc;
+    }
+  }
+
   return RC::SUCCESS;
 }
 
@@ -673,10 +696,6 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   // 修改旧数据
   char *old_data = record.data();
 
-  // 暂时备份旧数据
-  char *backup_data = (char *)malloc(record.len());
-  memcpy(backup_data, old_data, record.len());
-
   // 对于 CHARS 这种不定长的记录，如果更新的元素大于原来的长度，需要截断
   if (value->length() > field_length) {
     memcpy(old_data + field_offset, value->data(), field_length);
@@ -692,24 +711,6 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
     memcpy(old_data + field_offset, flag, 4);
   }
   record.set_data(old_data);
-
-  if (this->find_index_by_field(targetFiled->name()) != nullptr) {
-    RC rc = this->insert_entry_of_indexes(record.data(), record.rid());
-    if (rc != RC::SUCCESS && strcmp(old_data, backup_data) != 0) {
-      RC rc2 = delete_entry_of_indexes(backup_data, record.rid(), false /*error_on_not_exists*/);
-      if (rc2 != RC::SUCCESS) {
-        LOG_ERROR(
-            "Failed to rollback index data when insert index entries failed. "
-            "table name=%s, rc=%d:%s",
-            name(), rc2, strrc(rc2));
-      }
-      LOG_ERROR("Failed to update data, recovering. table=%s, rc=%d:%s", name(), rc, strrc(rc));
-      // 恢复旧数据
-      record.set_data(backup_data);
-      record_handler_->update_record(&record);
-      return rc;
-    }
-  }
 
   record_handler_->update_record(&record);
   // delete old_data;
