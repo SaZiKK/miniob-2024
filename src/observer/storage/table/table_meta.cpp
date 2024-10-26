@@ -170,14 +170,15 @@ const IndexMeta *TableMeta::find_index_by_fields(const std::vector<const char *>
   return nullptr;  // 没有找到匹配
 }
 
+// 单个字段的索引查找
 const IndexMeta *TableMeta::find_index_by_field(const char *field) const {
   if (field == nullptr) {
     return nullptr;
   }
 
   for (const IndexMeta &index : indexes_) {
-    const std::string &index_field = index.field();
-    if (index_field.find(field) != std::string::npos) {
+    const std::vector<std::string> &index_field = index.vec_fields();
+    if (index_field.size() == 1 && index_field[0] == field) {
       return &index;
     }
   }
