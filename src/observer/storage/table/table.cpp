@@ -640,13 +640,11 @@ RC Table::update_records(Record &record, std::vector<std::pair<Value, FieldMeta>
   for (auto &it : update_map_) {
     update_fields.push_back(it.second.name());
   }
-  if (this->find_index_by_fields(update_fields) != nullptr) {
-    RC rc = this->insert_entry_of_indexes(record.data(), record.rid());
+  Index *index = this->find_index_by_fields(update_fields);
+  if (index != nullptr) {
+    RC rc = index->insert_entry(record.data(), &record.rid());
     if (rc != RC::SUCCESS && strcmp(old_data, backup_data) != 0) {
       LOG_ERROR("Failed to update data, recovering. table=%s, rc=%d:%s", name(), rc, strrc(rc));
-      // 恢复旧数据
-      record.set_data(backup_data);
-      record_handler_->update_record(&record);
       return rc;
     }
   }
@@ -716,21 +714,13 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   }
   record.set_data(old_data);
 
+  Index *index = this->find_index_by_field(targetFiled->name());
+
   // 单字段索引更新和检查
-  if (this->find_index_by_field(targetFiled->name()) != nullptr) {
-    RC rc = this->insert_entry_of_indexes(record.data(), record.rid());
+  if (index != nullptr) {
+    RC rc = index->insert_entry(record.data(), &record.rid());
     if (rc != RC::SUCCESS && strcmp(old_data, backup_data) != 0) {
-      RC rc2 = delete_entry_of_indexes(backup_data, record.rid(), false /*error_on_not_exists*/);
-      if (rc2 != RC::SUCCESS) {
-        LOG_ERROR(
-            "Failed to rollback index data when insert index entries failed. "
-            "table name=%s, rc=%d:%s",
-            name(), rc2, strrc(rc2));
-      }
       LOG_ERROR("Failed to update data, recovering. table=%s, rc=%d:%s", name(), rc, strrc(rc));
-      // 恢复旧数据
-      record.set_data(backup_data);
-      record_handler_->update_record(&record);
       return rc;
     }
   }

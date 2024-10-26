@@ -51,6 +51,7 @@ RC UpdatePhysicalOperator::open(Trx *trx) {
   // 记录的有效性由事务来保证，如果事务不保证更新的有效性，那说明此事务类型不支持并发控制，比如VacuousTrx
   for (Record &record : records_) {
     rc = trx_->update_records(table_, record, update_map_);
+    ++update_num;
     if (rc != RC::SUCCESS) {
       // 如果更新失败，需要回滚
       assert(backup_datas.size() == records_.size());  // 确保两个 vector 长度相等
@@ -64,7 +65,6 @@ RC UpdatePhysicalOperator::open(Trx *trx) {
       LOG_WARN("failed to update record, recovering. table=%s, rc=%d:%s", table_->name(), rc, strrc(rc));
       return rc;
     }
-    ++update_num;
   }
 
   return RC::SUCCESS;
