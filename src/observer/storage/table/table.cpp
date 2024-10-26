@@ -641,7 +641,8 @@ RC Table::update_records(Record &record, std::vector<std::pair<Value, FieldMeta>
     update_fields.push_back(it.second.name());
   }
   Index *index = this->find_index_by_fields(update_fields);
-  if (index != nullptr) {
+  // 只检查多索引，单列索引交给 update_record 处理
+  if (index != nullptr && update_fields.size() > 1) {
     RC rc = index->insert_entry(record.data(), &record.rid());
     if (rc != RC::SUCCESS && strcmp(old_data, backup_data) != 0) {
       LOG_ERROR("Failed to update data, recovering. table=%s, rc=%d:%s", name(), rc, strrc(rc));
