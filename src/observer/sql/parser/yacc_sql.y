@@ -75,6 +75,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         INDEX
         CALC
         SELECT
+        ASC
         DESC
         SHOW
         SYNC
@@ -132,6 +133,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         LBRACKET
         RBRACKET
         UNIQUE
+        ORDER_BY
         AS
         EQ
         LT
@@ -185,6 +187,9 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <expression_list>     rel_list
 %type <boolean>             null_def
 %type <expression_list>     join_list
+%type <expression_list>          order_by
+%type <expression_list>     order_by_list
+%type <number>              order_by_flag
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <expression_list>     group_by
@@ -668,6 +673,40 @@ select_stmt:        /*  select 语句的语法解析树*/
         delete $8;
       }
     }
+    | SELECT expression_list FROM relation rel_list join_list where group_by order_by_list
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($5 != nullptr) {
+        $$->selection.relations.swap(*$5);
+        delete $5;
+      }
+      $$->selection.relations.emplace_back($4);
+
+      if ($6 != nullptr) {
+        $$->selection.join.swap(*$6);
+        delete $6;
+      }
+
+      if ($7 != nullptr) {
+        $$->selection.conditions.swap(*$7);
+        delete $7;
+      }
+
+      if ($8 != nullptr) {
+        $$->selection.group_by.swap(*$8);
+        delete $8;
+      }
+
+      if($9 != nullptr) {
+        $$->selection.order_by.swap(*$9);
+        delete $9;
+      }
+    }
     ;
 sub_select_stmt:
     LBRACE select_stmt RBRACE
@@ -881,6 +920,7 @@ where:
       $$ = $2;  
     }
     ;
+
 join_list:
     /* empty */
     {
@@ -893,6 +933,53 @@ join_list:
         $$ = new std::vector<std::unique_ptr<Expression>>;
       }
       $$->emplace_back(new JoinTableExpr(*$4, $2));
+    }
+    ;
+
+order_by_list:
+    /* empty */
+    {
+      $$ = nullptr;
+    }
+    | ORDER_BY expression order_by_flag order_by
+    {
+       if ($4 != nullptr) {
+        $$ = $4;
+      } else {
+        $$ = new std::vector<std::unique_ptr<Expression>>;
+      }
+      $$->emplace_back(make_unique<OrderByExpr>($2, $3));
+    }
+    ;
+
+order_by:
+    /* nullptr */
+    {
+      $$ = nullptr;
+    }
+    | COMMA expression order_by_flag order_by
+    {
+      if ($4 != nullptr) {
+        $$ = $4;
+      } else {
+        $$ = new std::vector<std::unique_ptr<Expression>>;
+      }
+      $$->emplace_back(make_unique<OrderByExpr>($2, $3));
+    }
+    ;
+
+order_by_flag:
+    /* nullptr */
+    {
+      $$ = 1;
+    }
+    | ASC 
+    {
+      $$ = 1;
+    }
+    | DESC
+    {
+      $$ = -1;
     }
     ;
 

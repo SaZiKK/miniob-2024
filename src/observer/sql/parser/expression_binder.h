@@ -18,28 +18,34 @@ See the Mulan PSL v2 for more details. */
 
 #include "sql/expr/expression.h"
 
-class BinderContext {
- public:
+class BinderContext
+{
+public:
   BinderContext() = default;
   virtual ~BinderContext() = default;
 
   void add_table(Table *table) { query_tables_.push_back(table); }
   void add_alias_and_name(pair<std::string, std::string> pair_) { alias_and_name_.insert(pair_); }
   void add_father_alias_and_name(pair<std::string, std::string> pair_) { father_alias_and_name_.insert(pair_); }
+  void add_fields_alias_and_name(pair<std::string, std::string> pair_) { fields_alias_and_name_.insert(pair_); }
 
   Table *find_table(const char *table_name) const;
 
   const std::vector<Table *> &query_tables() const { return query_tables_; }
   const std::unordered_map<std::string, std::string> alias_and_name() const { return alias_and_name_; }
   const std::unordered_map<std::string, std::string> father_alias_and_name() const { return father_alias_and_name_; }
+  const std::unordered_map<std::string, std::string> fields_alias_and_name() const { return fields_alias_and_name_; }
 
- private:
+private:
   std::vector<Table *> query_tables_;
 
   // 当层别名起了就不能用原名
   // 上层起的别名下层用不用均可
   std::unordered_map<std::string, std::string> alias_and_name_;
   std::unordered_map<std::string, std::string> father_alias_and_name_;
+
+  // 传出的属性别名
+  std::unordered_map<std::string, std::string> fields_alias_and_name_;
 };
 
 /**
@@ -47,14 +53,16 @@ class BinderContext {
  * @details
  * 绑定表达式，就是在SQL解析后，得到文本描述的表达式，将表达式解析为具体的数据库对象
  */
-class ExpressionBinder {
- public:
+class ExpressionBinder
+{
+public:
   ExpressionBinder(BinderContext &context) : context_(context) {}
   virtual ~ExpressionBinder() = default;
 
   RC bind_expression(std::unique_ptr<Expression> &expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
+  BinderContext context() const { return context_; }
 
- private:
+private:
   RC bind_star_expression(std::unique_ptr<Expression> &star_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
   RC bind_unbound_field_expression(std::unique_ptr<Expression> &unbound_field_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
   RC bind_field_expression(std::unique_ptr<Expression> &field_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
@@ -67,6 +75,6 @@ class ExpressionBinder {
   RC bind_func_expression(unique_ptr<Expression> &func_expr, vector<unique_ptr<Expression>> &bound_expressions);
   RC bind_vec_func_expression(unique_ptr<Expression> &vec_func_expr, vector<unique_ptr<Expression>> &bound_expressions);
 
- private:
+private:
   BinderContext &context_;
 };

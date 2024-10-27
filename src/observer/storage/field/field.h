@@ -45,6 +45,9 @@ class Field {
   bool has_table_alias() const { return !string(table_alias_).empty(); }
   bool has_field_alias() const { return !string(field_alias_).empty(); }
 
+  int is_asc() const { return is_asc_; }
+  void set_asc_or_desc(int flag) { is_asc_ = flag ? (flag > 0 ? 1 : -1) : 0; }
+
   void set_int(Record &record, int value);
   int get_int(const Record &record);
 
@@ -57,4 +60,8 @@ class Field {
   // alias part
   std::string table_alias_;
   std::string field_alias_;
+
+  // order by part
+  // {-1, 0, 1} <=> {desc, not need order, asc}
+  int is_asc_ = 0;
 };

@@ -57,6 +57,9 @@ class Value final {
 
   Value &operator=(const Value &other);
   Value &operator=(Value &&other);
+  // 重载比较运算符
+  bool operator<(const Value &other) const;
+  bool operator>(const Value &other) const;
 
   void reset();
 

@@ -48,6 +48,7 @@ enum class ExprType {
 
   FIELD,        ///< 字段。在实际执行时，根据行数据内容提取对应字段的值
   JOINTABLE,    ///< join 字段
+  ORDERBY,      ///< order 字段
   VALUE,        ///< 常量值
   VALUELIST,    ///< 常量值列表
   CAST,         ///< 需要做类型转换的表达式
@@ -195,6 +196,9 @@ class UnboundFieldExpr : public Expression {
   bool has_table_alias() const { return !string(table_alias_).empty(); }
   bool has_field_alias() const { return !string(field_alias_).empty(); }
 
+  int is_asc() const { return is_asc_; }
+  void set_asc_or_desc(int flag) { is_asc_ = flag ? (flag > 0 ? 1 : -1) : 0; }
+
  private:
   std::string table_name_;
   std::string field_name_;
@@ -202,6 +206,10 @@ class UnboundFieldExpr : public Expression {
   // alias part
   std::string field_alias_;
   std::string table_alias_;
+
+  // order by part
+  // {-1, 0, 1} <=> {desc, not need order, asc}
+  int is_asc_ = 0;
 };
 
 class UnboundTableExpr : public Expression {
@@ -225,6 +233,26 @@ class UnboundTableExpr : public Expression {
 
   // alias part
   std::string table_alias_;
+};
+
+class OrderByExpr : public Expression {
+ public:
+  OrderByExpr(std::unique_ptr<Expression> child, int flag) : child_(std::move(child)), flag_(flag) {}
+  OrderByExpr(Expression *child, int flag) : child_(child), flag_(flag) {}
+
+  virtual ~OrderByExpr() = default;
+
+  ExprType type() const override { return ExprType::ORDERBY; }
+  AttrType value_type() const override { return AttrType::UNDEFINED; }
+
+  RC get_value(const Tuple &tuple, Value &value) const override { return RC::INTERNAL; }
+
+  const std::unique_ptr<Expression> &child() const { return child_; }
+  const int flag() const { return flag_; }
+
+ private:
+  std::unique_ptr<Expression> child_;
+  int flag_;
 };
 
 class JoinTableExpr : public Expression {

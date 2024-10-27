@@ -151,37 +151,6 @@ class Tuple {
   }
 };
 
-// 测试用例
-class TinyTuple : public Tuple {
- public:
-  TinyTuple(Value value) : value_(value) {}
-  virtual ~TinyTuple() = default;
-
-  void set_value(const Value &value) { value_ = value; }
-
-  int cell_num() const override { return 1; }
-
-  RC cell_at(int index, Value &cell) const override {
-    if (index != 0) {
-      return RC::INVALID_ARGUMENT;
-    }
-    cell = value_;
-    return RC::SUCCESS;
-  }
-
-  RC spec_at(int index, TupleCellSpec &spec) const override {
-    if (index != 0) {
-      return RC::INVALID_ARGUMENT;
-    }
-    return RC::SUCCESS;
-  }
-
-  RC find_cell(const TupleCellSpec &spec, Value &cell) const override { return RC::SUCCESS; }
-
- private:
-  Value value_;
-};
-
 /**
  * @brief 一行数据的元组
  * @ingroup Tuple

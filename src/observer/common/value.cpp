@@ -114,6 +114,10 @@ Value &Value::operator=(Value &&other) {
   return *this;
 }
 
+bool Value::operator<(const Value &other) const { return compare(other) < 0; }
+
+bool Value::operator>(const Value &other) const { return compare(other) > 0; }
+
 void Value::reset() {
   switch (attr_type_) {
     case AttrType::CHARS:
@@ -279,7 +283,11 @@ string Value::to_string() const {
   return res;
 }
 
-int Value::compare(const Value &other) const { return DataType::type_instance(this->attr_type_)->compare(*this, other); }
+int Value::compare(const Value &other) const {
+  if (is_null_) return -1;
+  if (other.get_null()) return 1;
+  return DataType::type_instance(this->attr_type_)->compare(*this, other);
+}
 
 int Value::get_int() const {
   switch (attr_type_) {

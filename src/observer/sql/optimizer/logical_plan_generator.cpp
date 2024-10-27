@@ -30,6 +30,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/project_logical_operator.h"
 #include "sql/operator/table_get_logical_operator.h"
 #include "sql/operator/group_by_logical_operator.h"
+#include "sql/operator/sort_logical_operator.h"
 
 #include "sql/optimizer/physical_plan_generator.h"
 #include "sql/stmt/calc_stmt.h"
@@ -154,6 +155,17 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
     }
 
     last_oper = &group_by_oper;
+  }
+
+  // 创建 OrderBy 逻辑算子
+  unique_ptr<LogicalOperator> order_by_oper;
+  rc = create_order_by_plan(select_stmt, order_by_oper);
+  if (order_by_oper) {
+    if (*last_oper) {
+      order_by_oper->add_child(std::move(*last_oper));
+    }
+
+    last_oper = &order_by_oper;
   }
 
   // 创建 Projection 逻辑算子
@@ -447,5 +459,19 @@ RC LogicalPlanGenerator::create_group_by_plan(SelectStmt *select_stmt, unique_pt
 
   auto group_by_oper = make_unique<GroupByLogicalOperator>(std::move(group_by_expressions), std::move(aggregate_expressions));
   logical_operator = std::move(group_by_oper);
+  return RC::SUCCESS;
+}
+
+RC LogicalPlanGenerator::create_order_by_plan(SelectStmt *select_stmt, std::unique_ptr<LogicalOperator> &logical_operator) {
+  std::vector<Field> order_by_fields;
+  for (auto &it : select_stmt->order_by()) {
+    FieldExpr *field_expr = static_cast<FieldExpr *>(it.get());
+    order_by_fields.emplace_back(field_expr->field());
+  }
+  auto order_by_oper = make_unique<SortLogicalOperator>(order_by_fields);
+  if (order_by_fields.empty())
+    logical_operator = nullptr;
+  else
+    logical_operator = std::move(order_by_oper);
   return RC::SUCCESS;
 }
