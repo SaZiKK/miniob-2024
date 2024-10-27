@@ -23,20 +23,16 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
-SelectStmt::~SelectStmt()
-{
-  if (nullptr != filter_stmt_)
-  {
+SelectStmt::~SelectStmt() {
+  if (nullptr != filter_stmt_) {
     delete filter_stmt_;
     filter_stmt_ = nullptr;
   }
 }
 
 RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unordered_map<string, string> father_alias,
-                      std::unordered_map<string, Table *> father_tables)
-{
-  if (nullptr == db)
-    return RC::INVALID_ARGUMENT;
+                      std::unordered_map<string, Table *> father_tables) {
+  if (nullptr == db) return RC::INVALID_ARGUMENT;
 
   // * 将节点中的 join 反转并添加到 conditions 以及 relations 当中
   // *    在之后的处理中，如果查询的表格有多个，就会计算全部表格的笛卡尔积
@@ -44,14 +40,12 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   // *    所以需要将选择条件也加进 conditions 中(目前全是 AND 运算，所以可以这么处理)
   std::reverse(select_sql.relations.begin(), select_sql.relations.end());
   std::reverse(select_sql.join.begin(), select_sql.join.end());
-  for (int i = 0; i < (int)select_sql.join.size(); i++)
-  {
+  for (int i = 0; i < (int)select_sql.join.size(); i++) {
     JoinTableExpr *join_table_expr = static_cast<JoinTableExpr *>(select_sql.join[i].get());
     UnboundTableExpr *table_expr = static_cast<UnboundTableExpr *>(join_table_expr->child().get());
     std::unique_ptr<Expression> temp = make_unique<UnboundTableExpr>(table_expr->table_name(), table_expr->table_alias());
     select_sql.relations.emplace_back(std::move(temp));
-    for (auto condition : join_table_expr->conditions())
-      select_sql.conditions.emplace_back(condition);
+    for (auto condition : join_table_expr->conditions()) select_sql.conditions.emplace_back(condition);
   }
 
   // * 将 relatinos 中的全部表格信息录入
@@ -62,17 +56,14 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   vector<Table *> tables;
   unordered_map<string, Table *> table_map;
   BinderContext binder_context;
-  for (size_t i = 0; i < select_sql.relations.size(); i++)
-  {
+  for (size_t i = 0; i < select_sql.relations.size(); i++) {
     UnboundTableExpr *expr = static_cast<UnboundTableExpr *>(select_sql.relations[i].get());
     const char *table_name = expr->table_name();
-    if (nullptr == table_name)
-      return RC::INVALID_ARGUMENT;
+    if (nullptr == table_name) return RC::INVALID_ARGUMENT;
 
     // 根据表格名称找到表格，并且完成插入
     Table *table = db->find_table(table_name);
-    if (nullptr == table)
-      return RC::SCHEMA_TABLE_NOT_EXIST;
+    if (nullptr == table) return RC::SCHEMA_TABLE_NOT_EXIST;
 
     binder_context.add_table(table);
     tables.push_back(table);
@@ -81,27 +72,23 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
 
   // 设置主表格
   Table *default_table = nullptr;
-  if (tables.size() == 1)
-    default_table = tables[0];
+  if (tables.size() == 1) default_table = tables[0];
 
   // * 将 relatinos 中的全部表格别名录入
   // *
   // *
   // *
 
-  for (size_t i = 0; i < select_sql.relations.size(); i++)
-  {
+  for (size_t i = 0; i < select_sql.relations.size(); i++) {
     UnboundTableExpr *expr = static_cast<UnboundTableExpr *>(select_sql.relations[i].get());
     const char *table_name = expr->table_name();
     const char *table_alias_name = expr->table_alias();
 
     // 存在别名
-    if (expr->has_table_alias())
-    {
+    if (expr->has_table_alias()) {
       // 如果有重复别名
       unordered_map<string, string> alias_and_name = binder_context.alias_and_name();
-      if (alias_and_name.count(table_alias_name))
-        return RC::INVALID_ARGUMENT;
+      if (alias_and_name.count(table_alias_name)) return RC::INVALID_ARGUMENT;
       binder_context.add_alias_and_name(make_pair(table_alias_name, table_name));
     }
   }
@@ -113,17 +100,13 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
 
   unordered_map<string, string> alias_and_name = binder_context.alias_and_name();
   // 导入父亲别名 <alias, name>
-  for (auto it : father_alias)
-  {
+  for (auto it : father_alias) {
     // 如果父查询的表格原名出现在子查询当中，并且子查询没有单独起别名
-    if (table_map.count(it.second) && !alias_and_name.count(it.first))
-      binder_context.add_father_alias_and_name(it);
+    if (table_map.count(it.second) && !alias_and_name.count(it.first)) binder_context.add_father_alias_and_name(it);
   }
   // 如果别名和涉及的表名重复
-  for (auto it = alias_and_name.begin(); it != alias_and_name.end(); it++)
-  {
-    if (table_map.count(it->first))
-      return RC::INVALID_ARGUMENT;
+  for (auto it = alias_and_name.begin(); it != alias_and_name.end(); it++) {
+    if (table_map.count(it->first)) return RC::INVALID_ARGUMENT;
   }
 
   // * 处理传递给子查询的 表格别名字典 + Table 字典
@@ -133,37 +116,29 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
 
   // 传给子查询的别名字典
   std::unordered_map<string, string> alias_for_son;
-  for (auto it : binder_context.alias_and_name())
-    alias_for_son.insert(it);
-  for (auto it : father_alias)
-    alias_for_son.insert(it);
+  for (auto it : binder_context.alias_and_name()) alias_for_son.insert(it);
+  for (auto it : father_alias) alias_for_son.insert(it);
 
   // 传给子查询的表格
   std::unordered_map<string, Table *> tables_for_son;
-  for (auto it : table_map)
-    tables_for_son.insert(it);
-  for (auto it : father_tables)
-    tables_for_son.insert(it);
+  for (auto it : table_map) tables_for_son.insert(it);
+  for (auto it : father_tables) tables_for_son.insert(it);
 
   // * 构建子查询(如果有)的 STMT 对象
   // *
   // *
   // *
   // 检测右侧子查询 STMT
-  for (size_t i = 0; i < select_sql.conditions.size(); i++)
-  {
-    if (select_sql.conditions[i].right_is_sub_query)
-    {
+  for (size_t i = 0; i < select_sql.conditions.size(); i++) {
+    if (select_sql.conditions[i].right_is_sub_query) {
       auto right_sub_query = select_sql.conditions[i].right_sub_query;
 
       // 右子查询目前必须是 SELECT 节点
-      if (right_sub_query->flag != SCF_SELECT)
-        return RC::INVALID_ARGUMENT;
+      if (right_sub_query->flag != SCF_SELECT) return RC::INVALID_ARGUMENT;
 
       Stmt *right_sub_query_stmt = nullptr;
       RC rc = SelectStmt::create(db, right_sub_query->selection, right_sub_query_stmt, alias_for_son, tables_for_son);
-      if (rc != RC::SUCCESS)
-        return rc;
+      if (rc != RC::SUCCESS) return rc;
 
       // 把生成的stmt回传给上一级ConditonSqlNode
       auto *sub_select_stmt = dynamic_cast<SelectStmt *>(right_sub_query_stmt);
@@ -171,17 +146,14 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     }
 
     // 检测左侧子查询 STMT
-    if (select_sql.conditions[i].left_is_sub_query)
-    {
+    if (select_sql.conditions[i].left_is_sub_query) {
       auto left_sub_query = select_sql.conditions[i].left_sub_query;
       // 左子查询目前必须是select
-      if (left_sub_query->flag != SCF_SELECT)
-        return RC::INVALID_ARGUMENT;
+      if (left_sub_query->flag != SCF_SELECT) return RC::INVALID_ARGUMENT;
 
       Stmt *left_sub_query_stmt = nullptr;
       RC rc = SelectStmt::create(db, left_sub_query->selection, left_sub_query_stmt, alias_for_son, tables_for_son);
-      if (rc != RC::SUCCESS)
-        return rc;
+      if (rc != RC::SUCCESS) return rc;
 
       // 把生成的stmt回传给上一级ConditonSqlNode
       auto *sub_select_stmt = dynamic_cast<SelectStmt *>(left_sub_query_stmt);
@@ -197,11 +169,9 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   vector<unique_ptr<Expression>> bound_expressions;
   ExpressionBinder expression_binder(binder_context);
 
-  for (unique_ptr<Expression> &expression : select_sql.expressions)
-  {
+  for (unique_ptr<Expression> &expression : select_sql.expressions) {
     RC rc = expression_binder.bind_expression(expression, bound_expressions);
-    if (rc != RC::SUCCESS)
-      return rc;
+    if (rc != RC::SUCCESS) return rc;
   }
 
   // * 绑定 group by 表达式
@@ -210,11 +180,9 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   // *
 
   vector<unique_ptr<Expression>> group_by_expressions;
-  for (unique_ptr<Expression> &expression : select_sql.group_by)
-  {
+  for (unique_ptr<Expression> &expression : select_sql.group_by) {
     RC rc = expression_binder.bind_expression(expression, group_by_expressions);
-    if (rc != RC::SUCCESS)
-      return rc;
+    if (rc != RC::SUCCESS) return rc;
   }
 
   // * 处理 order by 表达式
@@ -240,8 +208,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   // 绑定排序表达式中的 UnboundField 表达式
   std::reverse(select_sql.order_by.begin(), select_sql.order_by.end());
   std::unordered_map<string, string> fields_alias_map = expression_binder.context().fields_alias_and_name();
-  for (size_t i = 0; i < select_sql.order_by.size(); i++)
-  {
+  for (size_t i = 0; i < select_sql.order_by.size(); i++) {
     OrderByExpr *order_by_expr = static_cast<OrderByExpr *>(select_sql.order_by[i].get());
     UnboundFieldExpr *unbound_field_expr = static_cast<UnboundFieldExpr *>(order_by_expr->child().get());
 
@@ -249,10 +216,8 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     const char *table_name = unbound_field_expr->table_name();
     const char *field_name = unbound_field_expr->field_name();
 
-    if (is_blank(table_name))
-    {
-      if (tables.size() != 1)
-        return RC::SCHEMA_TABLE_NOT_EXIST;
+    if (is_blank(table_name)) {
+      if (tables.size() != 1) return RC::SCHEMA_TABLE_NOT_EXIST;
 
       table_name = tables[0]->name();
       unbound_field_expr->set_table_name(table_name);
@@ -260,21 +225,17 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
 
     Table *table = table_map[table_name];
 
-    if (table == nullptr)
-      return RC::INVALID_ARGUMENT;
+    if (table == nullptr) return RC::INVALID_ARGUMENT;
 
     const FieldMeta *field_meta = table->table_meta().field(field_name);
 
-    if (field_meta == nullptr)
-    {
+    if (field_meta == nullptr) {
       // 还原别名
-      if (fields_alias_map.count(field_name))
-      {
+      if (fields_alias_map.count(field_name)) {
         field_name = fields_alias_map[field_name].c_str();
         field_meta = table->table_meta().field(field_name);
       }
-      if (field_meta == nullptr)
-        return RC::INVALID_ARGUMENT;
+      if (field_meta == nullptr) return RC::INVALID_ARGUMENT;
     }
 
     Field *field = new Field(table, field_meta);
@@ -292,8 +253,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   FilterStmt *filter_stmt = nullptr;
   RC rc = FilterStmt::create(db, default_table, &table_map, select_sql.conditions.data(), static_cast<int>(select_sql.conditions.size()), filter_stmt,
                              alias_for_son, tables_for_son);
-  if (rc != RC::SUCCESS)
-    return rc;
+  if (rc != RC::SUCCESS) return rc;
 
   // * 创建最终的 Select STMT 对象
   // *

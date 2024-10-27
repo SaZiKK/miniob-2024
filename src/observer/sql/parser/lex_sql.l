@@ -144,7 +144,6 @@ NOT[ \t]+NULL                           RETURN_TOKEN(UNNULLABLE);
 IS[ \t]+NULL                            RETURN_TOKEN(IS_NULL);
 IS[ \t]+NOT+[ \t]+NULL                  RETURN_TOKEN(IS_NOT_NULL);
 AS                                      RETURN_TOKEN(AS);
-UNIQUE                                  RETURN_TOKEN(UNIQUE);
 ORDER[ \t]+BY                           RETURN_TOKEN(ORDER_BY);
 ASC                                     RETURN_TOKEN(ASC);
 

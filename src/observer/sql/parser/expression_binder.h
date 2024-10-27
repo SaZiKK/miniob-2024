@@ -18,9 +18,8 @@ See the Mulan PSL v2 for more details. */
 
 #include "sql/expr/expression.h"
 
-class BinderContext
-{
-public:
+class BinderContext {
+ public:
   BinderContext() = default;
   virtual ~BinderContext() = default;
 
@@ -36,7 +35,7 @@ public:
   const std::unordered_map<std::string, std::string> father_alias_and_name() const { return father_alias_and_name_; }
   const std::unordered_map<std::string, std::string> fields_alias_and_name() const { return fields_alias_and_name_; }
 
-private:
+ private:
   std::vector<Table *> query_tables_;
 
   // 当层别名起了就不能用原名
@@ -53,16 +52,15 @@ private:
  * @details
  * 绑定表达式，就是在SQL解析后，得到文本描述的表达式，将表达式解析为具体的数据库对象
  */
-class ExpressionBinder
-{
-public:
+class ExpressionBinder {
+ public:
   ExpressionBinder(BinderContext &context) : context_(context) {}
   virtual ~ExpressionBinder() = default;
 
   RC bind_expression(std::unique_ptr<Expression> &expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
   BinderContext context() const { return context_; }
 
-private:
+ private:
   RC bind_star_expression(std::unique_ptr<Expression> &star_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
   RC bind_unbound_field_expression(std::unique_ptr<Expression> &unbound_field_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
   RC bind_field_expression(std::unique_ptr<Expression> &field_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
@@ -75,6 +73,6 @@ private:
   RC bind_func_expression(unique_ptr<Expression> &func_expr, vector<unique_ptr<Expression>> &bound_expressions);
   RC bind_vec_func_expression(unique_ptr<Expression> &vec_func_expr, vector<unique_ptr<Expression>> &bound_expressions);
 
-private:
+ private:
   BinderContext &context_;
 };

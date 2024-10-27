@@ -644,35 +644,6 @@ select_stmt:        /*  select 语句的语法解析树*/
       $$ = new ParsedSqlNode(SCF_SELECT);
       $$->selection.expressions.swap(*$2);
     }
-    | SELECT expression_list FROM relation rel_list join_list where group_by
-    {
-      $$ = new ParsedSqlNode(SCF_SELECT);
-      if ($2 != nullptr) {
-        $$->selection.expressions.swap(*$2);
-        delete $2;
-      }
-
-      if ($5 != nullptr) {
-        $$->selection.relations.swap(*$5);
-        delete $5;
-      }
-      $$->selection.relations.emplace_back($4);
-
-      if ($6 != nullptr) {
-        $$->selection.join.swap(*$6);
-        delete $6;
-      }
-
-      if ($7 != nullptr) {
-        $$->selection.conditions.swap(*$7);
-        delete $7;
-      }
-
-      if ($8 != nullptr) {
-        $$->selection.group_by.swap(*$8);
-        delete $8;
-      }
-    }
     | SELECT expression_list FROM relation rel_list join_list where group_by order_by_list
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
