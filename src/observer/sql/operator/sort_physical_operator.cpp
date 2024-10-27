@@ -91,7 +91,19 @@ RC SortPhysicalOperator::next() {
     SortByPriority(valueList_tuples_, order_by_indexes_, order_by_flags_);
     has_collected = true;
   }
-  if (cur_index >= (int)valueList_tuples_.size()) return RC::INTERNAL;
+  if (cur_index >= (int)valueList_tuples_.size()) {
+    order_by_fields_.clear();
+    order_by_fields_.resize(0);
+    order_by_indexes_.clear();
+    order_by_indexes_.resize(0);
+    order_by_flags_.clear();
+    order_by_flags_.resize(0);
+    valueList_tuples_.clear();
+    valueList_tuples_.resize(0);
+    has_collected = false;
+    cur_index = -1;
+    return RC::RECORD_EOF;
+  }
   return RC::SUCCESS;
 }
 
