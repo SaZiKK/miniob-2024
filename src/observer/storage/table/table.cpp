@@ -280,7 +280,7 @@ RC Table::make_record(int value_num, const Value *values, Record &record) {
         LOG_WARN("failed to insert NULL to NOT_NULL field");
         return RC::INVALID_ARGUMENT;
       }
-      rc = set_value_to_record(record_data, value, field);
+      rc = set_value_to_record(record_data, value, field, i);
     } else if (field->type() != value.attr_type()) {
       Value real_value;
       rc = Value::cast_to(value, field->type(), real_value);
@@ -288,9 +288,9 @@ RC Table::make_record(int value_num, const Value *values, Record &record) {
         LOG_WARN("failed to cast value. table name:%s,field name:%s,value:%s ", table_meta_.name(), field->name(), value.to_string().c_str());
         break;
       }
-      rc = set_value_to_record(record_data, real_value, field);
+      rc = set_value_to_record(record_data, real_value, field, i);
     } else {
-      rc = set_value_to_record(record_data, value, field);
+      rc = set_value_to_record(record_data, value, field, i);
     }
   }
   if (OB_FAIL(rc)) {
@@ -303,7 +303,7 @@ RC Table::make_record(int value_num, const Value *values, Record &record) {
   return RC::SUCCESS;
 }
 
-RC Table::set_value_to_record(char *record_data, const Value &value, const FieldMeta *field) {
+RC Table::set_value_to_record(char *record_data, const Value &value, const FieldMeta *field, int index) {
   size_t copy_len = field->len();
   const size_t data_len = value.length();
 
@@ -315,8 +315,14 @@ RC Table::set_value_to_record(char *record_data, const Value &value, const Field
     }
   }
   memcpy(record_data + field->offset(), value.data(), copy_len);
+
+  // null bitmap
+  const char *bit = value.get_null() ? "0" : "1";
+  memcpy(record_data + index, bit, 1);
+
+  // TODO delete
   if (value.get_null()) {
-    const char *flag = "~";
+    const char *flag = "&";
     memcpy(record_data + field->offset(), flag, 1);
   }
   return RC::SUCCESS;
@@ -660,7 +666,8 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   const int user_field_num = table_meta_.field_num() - sys_field_num;
   FieldMeta *targetFiled = nullptr;
 
-  for (int i = 0; i < user_field_num; i++) {
+  int i = 0;
+  for (; i < user_field_num; i++) {
     const FieldMeta *field_meta = table_meta_.field(sys_field_num + i);
     const char *field_name = field_meta->name();
 
@@ -709,10 +716,16 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
     memcpy(old_data + field_offset, value->data(), value->length());
     memset(old_data + field_offset + value->length(), 0, field_length - value->length());
   }
+  // null part
+  const char *flag = value->get_null() ? "0" : "1";
+  memcpy(old_data + i, flag, 1);
+
+  // TODO delete
   if (value->get_null()) {
-    const char *flag = "~";
+    const char *flag = "&";
     memcpy(old_data + field_offset, flag, 1);
   }
+
   record.set_data(old_data);
 
   Index *index = this->find_index_by_field(targetFiled->name());
