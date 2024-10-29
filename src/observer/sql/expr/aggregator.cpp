@@ -97,14 +97,13 @@ RC AvgAggregator::accumulate(const Value &value) {
   Value::cast_to(value, AttrType::FLOATS, real_val);
 
   // 当前是第 num 个数
-  Value::multiply(value_, Value(num - 1), value_);
   Value::add(value_, real_val, value_);
-  Value::divide(value_, Value(num), value_);
 
   return RC::SUCCESS;
 }
 
 RC AvgAggregator::evaluate(Value &result) {
+  Value::divide(value_, Value(num), value_);
   result = value_;
   return RC::SUCCESS;
 }
