@@ -37,11 +37,13 @@ RC CreateTableStmt::create(Db *db, CreateTableSqlNode &create_table, Stmt *&stmt
   // 涉及到 create table 语句
   if (create_table.use_sub_select) {
     RC rc = SelectStmt::create(db, create_table.sub_select->selection, temp);
+    if (rc != RC::SUCCESS) return rc;
     if (temp != nullptr) {
       SelectStmt *select_stmt = dynamic_cast<SelectStmt *>(temp);
       for (auto &it : select_stmt->query_expressions()) {
         std::unique_ptr<Expression> expr;
         rc = Expression::copy_expr(it, expr);
+        if (rc != RC::SUCCESS) return rc;
         query_expressions_.emplace_back(std::move(expr));
       }
     }
