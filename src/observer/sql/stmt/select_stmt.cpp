@@ -190,7 +190,6 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   // *
   // *
 
-  for (auto &it : select_sql.having_conditions) select_sql.conditions.emplace_back(std::move(it));
   vector<unique_ptr<Expression>> group_by_expressions;
   for (unique_ptr<Expression> &expression : select_sql.group_by) {
     RC rc = expression_binder.bind_expression(expression, group_by_expressions);
@@ -265,8 +264,13 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   // *
 
   FilterStmt *filter_stmt = nullptr;
+  FilterStmt *having_fliter_stmt = nullptr;
   RC rc = FilterStmt::create(db, default_table, &table_map, select_sql.conditions.data(), static_cast<int>(select_sql.conditions.size()), filter_stmt,
                              alias_for_son, tables_for_son);
+  if (rc != RC::SUCCESS) return rc;
+
+  rc = FilterStmt::create(db, default_table, &table_map, select_sql.having_conditions.data(), static_cast<int>(select_sql.having_conditions.size()),
+                          having_fliter_stmt, alias_for_son, tables_for_son);
   if (rc != RC::SUCCESS) return rc;
 
   // *****************************************************************************
@@ -280,6 +284,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   select_stmt->tables_.swap(tables);
   select_stmt->query_expressions_.swap(bound_expressions);
   select_stmt->filter_stmt_ = filter_stmt;
+  select_stmt->having_filter_stmt_ = having_fliter_stmt;
   select_stmt->group_by_.swap(group_by_expressions);
   select_stmt->order_by_.swap(order_by_expressions);
   stmt = select_stmt;

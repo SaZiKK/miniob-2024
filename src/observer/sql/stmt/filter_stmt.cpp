@@ -175,6 +175,7 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
     case ExprType::UNBOUND_AGGREGATION: {
       RC rc = RC::SUCCESS;
       auto unbound_aggregate_expr = static_cast<UnboundAggregateExpr *>(expr.get());
+      string name = unbound_aggregate_expr->name();
       const char *aggregate_name = unbound_aggregate_expr->aggregate_name();
 
       AggregateExpr::Type aggregate_type;
@@ -195,6 +196,7 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
 
       // TODO 校验聚合表达式
       expr = make_unique<AggregateExpr>(aggregate_type, std::move(child_expr));
+      expr->set_name(name);
     } break;
     default:
       return RC::INVALID_ARGUMENT;
