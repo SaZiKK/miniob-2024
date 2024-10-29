@@ -449,6 +449,10 @@ attr_def:
         $$->length = $4 * 4;
       }
 
+      if($$->type == AttrType::TEXT){
+        $$->length = 40; //  页号 + 长度
+      }
+
       free($1);
     }
     | ID type null_def
@@ -458,6 +462,10 @@ attr_def:
       $$->name = $1;
       $$->length = 4;
       $$->can_be_null = $3;
+
+      if($$->type == AttrType::TEXT){
+        $$->length = 40; //  页号 + 长度
+      }
       free($1);
     }
     ;
