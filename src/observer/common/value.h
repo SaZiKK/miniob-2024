@@ -37,6 +37,7 @@ class Value final {
   friend class CharType;
   friend class VectorType;
   friend class DateType;
+  friend class TextType;
 
   Value() = default;
 
@@ -119,6 +120,7 @@ class Value final {
   void set_date(int val);
   void set_float(float val);
   void set_string(const char *s, int len = 0);
+  void set_text(const char *s);
   void set_string_from_other(const Value &other);
   void set_null(bool flag);
   static Value max_value(AttrType type);

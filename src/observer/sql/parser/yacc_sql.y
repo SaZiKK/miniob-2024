@@ -93,6 +93,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         STRING_T
         FLOAT_T
         VECTOR_T
+        TEXT_T
         HELP
         EXIT
         DOT //QUOTE
@@ -168,6 +169,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %token <floats> FLOAT
 %token <string> ID
 %token <string> DATE_STR //注意要在SSS之前定义，否则会被SSS匹配
+%token <string> TEXT_STR
 %token <string> SSS
 //非终结符
 
@@ -187,7 +189,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <expression_list>     rel_list
 %type <boolean>             null_def
 %type <expression_list>     join_list
-%type <expression_list>          order_by
+%type <expression_list>     order_by
 %type <expression_list>     order_by_list
 %type <number>              order_by_flag
 %type <expression>          expression
@@ -478,6 +480,7 @@ type:
     | FLOAT_T  { $$ = static_cast<int>(AttrType::FLOATS); }
     | DATE_T   { $$ = static_cast<int>(AttrType::DATE); }
     | VECTOR_T { $$ = static_cast<int>(AttrType::VECTORS); }
+    | TEXT_T   { $$ = static_cast<int>(AttrType::TEXT); }
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
     INSERT INTO ID VALUES LBRACE value value_list RBRACE 
@@ -542,6 +545,12 @@ value:
       sscanf(tmp, "%d-%d-%d", &year, &month, &day);    //sscanf会自动转换字符串中的数字，不用显式stoi
       int date_num = year * 10000 + month * 100 + day;
       $$ = new Value(date_num, true);
+      free(tmp);
+      free($1);
+    }
+    |TEXT_STR {
+      char *tmp = common::substr($1, 1, strlen($1)-2);
+      $$ = new Value(tmp, strlen(tmp));
       free(tmp);
       free($1);
     }
