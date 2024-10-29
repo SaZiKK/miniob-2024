@@ -141,6 +141,8 @@ class Expression {
    */
   virtual RC eval(Chunk &chunk, std::vector<uint8_t> &select) { return RC::UNIMPLEMENTED; }
 
+  static RC copy_expr(const std::unique_ptr<Expression> &expr_src, std::unique_ptr<Expression> &expr_dst);
+
  protected:
   /**
    * @brief 表达式在下层算子返回的 chunk 中的位置
@@ -569,6 +571,7 @@ class ArithmeticExpr : public Expression {
   RC try_get_value(Value &value) const override;
 
   Type arithmetic_type() const { return arithmetic_type_; }
+  string type_to_string() const;
 
   std::unique_ptr<Expression> &left() { return left_; }
   std::unique_ptr<Expression> &right() { return right_; }

@@ -356,6 +356,7 @@ RC ExpressionBinder::bind_arithmetic_expression(unique_ptr<Expression> &expr, ve
   vector<unique_ptr<Expression>> child_bound_expressions;
   unique_ptr<Expression> &left_expr = arithmetic_expr->left();
   unique_ptr<Expression> &right_expr = arithmetic_expr->right();
+  string op = arithmetic_expr->type_to_string();
 
   RC rc = bind_expression(left_expr, child_bound_expressions);
   if (OB_FAIL(rc)) {
@@ -387,6 +388,10 @@ RC ExpressionBinder::bind_arithmetic_expression(unique_ptr<Expression> &expr, ve
   if (right.get() != right_expr.get()) {
     right_expr.reset(right.release());
   }
+
+  string left_name = left_expr == nullptr ? "" : left_expr->name();
+  string right_name = right_expr == nullptr ? "" : right_expr->name();
+  expr->set_name(left_name + op + right_name);
 
   bound_expressions.emplace_back(std::move(expr));
   return RC::SUCCESS;

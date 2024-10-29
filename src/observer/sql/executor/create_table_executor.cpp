@@ -36,14 +36,22 @@ RC CreateTableExecutor::execute(SQLStageEvent *sql_event) {
     if (attr_infos.empty()) {
       for (size_t i = 0; i < create_table_stmt->query_expressions().size(); i++) {
         AttrInfoSqlNode attr_info;
-        if (create_table_stmt->query_expressions()[i]->type() != ExprType::FIELD) return RC::INTERNAL;
-        FieldExpr *field_expr = static_cast<FieldExpr *>(create_table_stmt->query_expressions()[i].get());
-        Field field = field_expr->field();
-        attr_info.can_be_null = field.meta()->can_be_null();
-        attr_info.name = field.meta()->name();
-        attr_info.type = field.meta()->type();
-        attr_info.length = field.meta()->len();
-        attr_infos.push_back(attr_info);
+        if (create_table_stmt->query_expressions()[i]->type() == ExprType::FIELD) {
+          FieldExpr *field_expr = static_cast<FieldExpr *>(create_table_stmt->query_expressions()[i].get());
+          Field field = field_expr->field();
+          attr_info.can_be_null = field.meta()->can_be_null();
+          attr_info.name = field.meta()->name();
+          attr_info.type = field.meta()->type();
+          attr_info.length = field.meta()->len();
+          attr_infos.push_back(attr_info);
+        } else {
+          attr_info.can_be_null = false;
+          attr_info.name = create_table_stmt->query_expressions()[i]->name();
+          attr_info.type = create_table_stmt->query_expressions()[i]->value_type();
+          // TODO 这是一段很危险的代码
+          attr_info.length = 4;
+          attr_infos.push_back(attr_info);
+        }
       }
     }
   }

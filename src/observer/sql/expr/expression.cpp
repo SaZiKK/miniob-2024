@@ -732,6 +732,24 @@ ArithmeticExpr::ArithmeticExpr(ArithmeticExpr::Type type, Expression *left, Expr
 ArithmeticExpr::ArithmeticExpr(ArithmeticExpr::Type type, unique_ptr<Expression> left, unique_ptr<Expression> right)
     : arithmetic_type_(type), left_(std::move(left)), right_(std::move(right)) {}
 
+string ArithmeticExpr::type_to_string() const {
+  switch (arithmetic_type_) {
+    case Type::ADD:
+      return "+";
+    case Type::SUB:
+      return "-";
+    case Type::MUL:
+      return "*";
+    case Type::DIV:
+      return "/";
+    case Type::NEGATIVE:
+      return "-";
+    default:
+      break;
+  }
+  return "invalid";
+}
+
 bool ArithmeticExpr::equal(const Expression &other) const {
   if (this == &other) {
     return true;
@@ -1327,5 +1345,29 @@ RC VecFuncExpr::INNER_PRODUCT_FUNC(const Value left, const Value right, Value &r
   for (int i = 0; i < size; i++) sum += left_vec[i] * right_vec[i];
 
   result.set_float(FloatType::formatFloat(sum, 2));
+  return RC::SUCCESS;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+RC Expression::copy_expr(const std::unique_ptr<Expression> &expr_src, std::unique_ptr<Expression> &expr_dst) {
+  RC rc = RC::SUCCESS;
+  switch (expr_src->type()) {
+    case ExprType::FIELD: {
+      FieldExpr *field_expr = static_cast<FieldExpr *>(expr_src.get());
+      expr_dst = make_unique<FieldExpr>(field_expr->field());
+    } break;
+    case ExprType::ARITHMETIC: {
+      ArithmeticExpr *arith_expr = static_cast<ArithmeticExpr *>(expr_src.get());
+      std::unique_ptr<Expression> left_expr;
+      std::unique_ptr<Expression> right_expr;
+      rc = Expression::copy_expr(arith_expr->left(), left_expr);
+      rc = Expression::copy_expr(arith_expr->right(), right_expr);
+      if (rc != RC::SUCCESS) return rc;
+      expr_dst = make_unique<ArithmeticExpr>(arith_expr->arithmetic_type(), std::move(left_expr), std::move(right_expr));
+    } break;
+    default:
+      return RC::INTERNAL;
+  }
+  expr_dst->set_name(expr_src->name());
   return RC::SUCCESS;
 }

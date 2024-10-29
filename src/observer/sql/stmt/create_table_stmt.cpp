@@ -40,8 +40,9 @@ RC CreateTableStmt::create(Db *db, CreateTableSqlNode &create_table, Stmt *&stmt
     if (temp != nullptr) {
       SelectStmt *select_stmt = dynamic_cast<SelectStmt *>(temp);
       for (auto &it : select_stmt->query_expressions()) {
-        FieldExpr *field_expr = static_cast<FieldExpr *>(it.get());
-        query_expressions_.emplace_back(make_unique<FieldExpr>(field_expr->field()));
+        std::unique_ptr<Expression> expr;
+        rc = Expression::copy_expr(it, expr);
+        query_expressions_.emplace_back(std::move(expr));
       }
     }
     rc = OptimizeStage::handle_sub_stmt(temp, tuple_list, tuple_schema);
