@@ -140,6 +140,10 @@ class Tuple {
         return rc;
       }
 
+      if (this_value.get_null() && other_value.get_null()) {
+        result = 0;
+        return rc;
+      }
       result = this_value.compare(other_value);
       if (0 != result) {
         return rc;

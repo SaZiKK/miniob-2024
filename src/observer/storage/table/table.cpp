@@ -710,8 +710,8 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
     memset(old_data + field_offset + value->length(), 0, field_length - value->length());
   }
   if (value->get_null()) {
-    const char *flag = "NULL";
-    memcpy(old_data + field_offset, flag, 4);
+    const char *flag = "~";
+    memcpy(old_data + field_offset, flag, 1);
   }
   record.set_data(old_data);
 
