@@ -77,9 +77,10 @@ class OptimizeStage {
 
   /////////////////////////////////////////////////////////////////////////////////////////////
  public:
-  static RC handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list);
+  static RC handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list, TupleSchema &tuple_schema);
   static RC optimize(std::unique_ptr<LogicalOperator> &logical_operator);
   static RC create_logical_plan(Stmt *stmt, std::unique_ptr<LogicalOperator> &logical_operator);
   static RC generate_physical_plan(std::unique_ptr<LogicalOperator> &logical_operator, std::unique_ptr<PhysicalOperator> &physical_operator);
+  static RC get_tuple_schema(PhysicalOperator *physical_operator, TupleSchema &tuple_schema);
   static RC get_tuple_list(PhysicalOperator *physical_operator, std::vector<std::vector<Value>> &tuple_list);
 };

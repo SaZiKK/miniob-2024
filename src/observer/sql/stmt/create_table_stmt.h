@@ -18,6 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include <vector>
 
 #include "sql/stmt/stmt.h"
+#include "sql/expr/tuple.h"
 
 class Db;
 
@@ -28,8 +29,14 @@ class Db;
  */
 class CreateTableStmt : public Stmt {
  public:
-  CreateTableStmt(const std::string &table_name, const std::vector<AttrInfoSqlNode> &attr_infos, StorageFormat storage_format)
-      : table_name_(table_name), attr_infos_(attr_infos), storage_format_(storage_format) {}
+  CreateTableStmt(const std::string &table_name, const std::vector<AttrInfoSqlNode> &attr_infos, StorageFormat storage_format,
+                  TupleSchema tuple_schema, std::vector<std::vector<Value>> tuple_list, bool use_select = false)
+      : table_name_(table_name),
+        attr_infos_(attr_infos),
+        storage_format_(storage_format),
+        tuple_schema_(tuple_schema),
+        tuple_list_(tuple_list),
+        use_select_(use_select) {}
   virtual ~CreateTableStmt() = default;
 
   StmtType type() const override { return StmtType::CREATE_TABLE; }
@@ -38,11 +45,22 @@ class CreateTableStmt : public Stmt {
   const std::vector<AttrInfoSqlNode> &attr_infos() const { return attr_infos_; }
   const StorageFormat storage_format() const { return storage_format_; }
 
-  static RC create(Db *db, const CreateTableSqlNode &create_table, Stmt *&stmt);
+  TupleSchema tuple_schema() const { return tuple_schema_; }
+  std::vector<std::vector<Value>> tuple_list() const { return tuple_list_; }
+  bool use_select() const { return use_select_; }
+  const std::vector<std::unique_ptr<Expression>> &query_expressions() const { return query_expressions_; }
+
+  static RC create(Db *db, CreateTableSqlNode &create_table, Stmt *&stmt);
   static StorageFormat get_storage_format(const char *format_str);
 
  private:
   std::string table_name_;
   std::vector<AttrInfoSqlNode> attr_infos_;
   StorageFormat storage_format_;
+
+  // create select 部分
+  TupleSchema tuple_schema_;
+  std::vector<std::vector<Value>> tuple_list_;
+  std::vector<std::unique_ptr<Expression>> query_expressions_;
+  bool use_select_ = false;
 };

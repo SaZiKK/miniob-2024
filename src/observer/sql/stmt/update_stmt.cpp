@@ -79,7 +79,8 @@ RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt) {
       rc = SelectStmt::create(db, update.update_targets[i].sub_select->selection, temp);
       if (rc != RC::SUCCESS) return rc;
       vector<vector<Value>> tuple_list;
-      RC rc = OptimizeStage::handle_sub_stmt(temp, tuple_list);
+      TupleSchema tuple_schema;
+      RC rc = OptimizeStage::handle_sub_stmt(temp, tuple_list, tuple_schema);
       if (rc != RC::SUCCESS) return RC::INVALID_ARGUMENT;
       // 子查询为空值，等同于插入 NULL
       if (tuple_list.empty()) {

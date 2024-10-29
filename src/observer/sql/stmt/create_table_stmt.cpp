@@ -13,11 +13,13 @@ See the Mulan PSL v2 for more details. */
 //
 
 #include "common/log/log.h"
+#include "common/lang/string.h"
 #include "common/types.h"
+#include "sql/optimizer/optimize_stage.h"
 #include "sql/stmt/create_table_stmt.h"
-#include "event/sql_debug.h"
+#include "sql/stmt/select_stmt.h"
 
-RC CreateTableStmt::create(Db *db, const CreateTableSqlNode &create_table, Stmt *&stmt) {
+RC CreateTableStmt::create(Db *db, CreateTableSqlNode &create_table, Stmt *&stmt) {
   StorageFormat storage_format = StorageFormat::UNKNOWN_FORMAT;
   if (create_table.storage_format.length() == 0) {
     storage_format = StorageFormat::ROW_FORMAT;
@@ -27,8 +29,32 @@ RC CreateTableStmt::create(Db *db, const CreateTableSqlNode &create_table, Stmt 
   if (storage_format == StorageFormat::UNKNOWN_FORMAT) {
     return RC::INVALID_ARGUMENT;
   }
-  stmt = new CreateTableStmt(create_table.relation_name, create_table.attr_infos, storage_format);
-  sql_debug("create table statement: table name %s", create_table.relation_name.c_str());
+
+  vector<vector<Value>> tuple_list;
+  TupleSchema tuple_schema;
+  Stmt *temp = nullptr;
+  std::vector<std::unique_ptr<Expression>> query_expressions_;
+  // 涉及到 create table 语句
+  if (create_table.use_sub_select) {
+    RC rc = SelectStmt::create(db, create_table.sub_select->selection, temp);
+    if (temp != nullptr) {
+      SelectStmt *select_stmt = dynamic_cast<SelectStmt *>(temp);
+      for (auto &it : select_stmt->query_expressions()) {
+        FieldExpr *field_expr = static_cast<FieldExpr *>(it.get());
+        query_expressions_.emplace_back(make_unique<FieldExpr>(field_expr->field()));
+      }
+    }
+    rc = OptimizeStage::handle_sub_stmt(temp, tuple_list, tuple_schema);
+    if (rc != RC::SUCCESS) return RC::INVALID_ARGUMENT;
+  }
+
+  CreateTableStmt *create_stmt =
+      new CreateTableStmt(create_table.relation_name, create_table.attr_infos, storage_format, tuple_schema, tuple_list, create_table.use_sub_select);
+
+  for (auto &it : query_expressions_) create_stmt->query_expressions_.emplace_back(std::move(it));
+
+  stmt = create_stmt;
+
   return RC::SUCCESS;
 }
 

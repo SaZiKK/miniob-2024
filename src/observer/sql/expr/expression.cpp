@@ -129,7 +129,8 @@ RC SubQueryExpr::try_get_tuple_list(std::vector<std::vector<Value>> &tuple_list)
   // 如果谓词中的表格来源于父查询，报错
 
   if (has_calculated == false) {
-    RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list);
+    TupleSchema tuple_schema;
+    RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list, tuple_schema);
     if (rc == RC::SUCCESS) {
       tuple_list_ = tuple_list;
       has_calculated = true;

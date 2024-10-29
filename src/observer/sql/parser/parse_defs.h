@@ -176,6 +176,8 @@ struct CreateTableSqlNode {
   std::string relation_name;                ///< Relation name
   std::vector<AttrInfoSqlNode> attr_infos;  ///< attributes
   std::string storage_format;               ///< storage format
+  bool use_sub_select;                      ///< if use select stmt
+  SubSelectSqlNode *sub_select;             ///< select sql node
 };
 
 /**

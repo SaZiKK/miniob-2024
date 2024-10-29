@@ -358,6 +358,7 @@ class SubQueryExpr : public Expression {
   RC get_value(const Tuple &tuple, Value &value) const override;
 
   RC try_get_tuple_list(std::vector<std::vector<Value>> &tuple) override;
+  // RC get_tuple_schema(TupleSchema tuple_schema);
 
   RC init();
 
