@@ -128,7 +128,7 @@ RC OptimizeStage::create_logical_plan(SQLStageEvent *sql_event, unique_ptr<Logic
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list) {
+RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list, TupleSchema &tuple_schema) {
   // 创建逻辑算子
   unique_ptr<LogicalOperator> logical_operator;
 
@@ -169,6 +169,7 @@ RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &t
     return rc;
   }
 
+  get_tuple_schema(physical_operator.get(), tuple_schema);
   get_tuple_list(physical_operator.get(), tuple_list);
 
   return rc;
@@ -191,6 +192,10 @@ RC OptimizeStage::generate_physical_plan(unique_ptr<LogicalOperator> &logical_op
   return rc;
 }
 
+RC OptimizeStage::get_tuple_schema(PhysicalOperator *physical_operator, TupleSchema &tuple_schema) {
+  return physical_operator->tuple_schema(tuple_schema);
+}
+
 RC OptimizeStage::get_tuple_list(PhysicalOperator *physical_operator, std::vector<std::vector<Value>> &tuple_list) {
   RC rc = physical_operator->open(nullptr);
   if (rc != RC::SUCCESS) {
@@ -204,7 +209,7 @@ RC OptimizeStage::get_tuple_list(PhysicalOperator *physical_operator, std::vecto
     std::vector<Value> single_tuple;
     for (int i = 0; i < tuple->cell_num(); i++) {
       Value value;
-      tuple->cell_at(0, value);
+      tuple->cell_at(i, value);
       single_tuple.push_back(value);
     }
     tuple_list.push_back(single_tuple);
