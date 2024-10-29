@@ -445,6 +445,30 @@ create_table_stmt:    /*create table 语句的语法解析树*/
       create_table.use_sub_select = true;
       create_table.sub_select = $10;
     }
+    | CREATE TABLE ID LBRACE attr_def attr_def_list RBRACE storage_format select_stmt
+    {
+      $$ = new ParsedSqlNode(SCF_CREATE_TABLE);
+      CreateTableSqlNode &create_table = $$->create_table;
+      create_table.relation_name = $3;
+      free($3);
+
+      std::vector<AttrInfoSqlNode> *src_attrs = $6;
+
+      if (src_attrs != nullptr) {
+        create_table.attr_infos.swap(*src_attrs);
+        delete src_attrs;
+      }
+      create_table.attr_infos.emplace_back(*$5);
+      std::reverse(create_table.attr_infos.begin(), create_table.attr_infos.end());
+      delete $5;
+      if ($8 != nullptr) {
+        create_table.storage_format = $8;
+        free($8);
+      }
+
+      create_table.use_sub_select = true;
+      create_table.sub_select = $9;
+    }
     | CREATE TABLE ID storage_format AS select_stmt
     {
       $$ = new ParsedSqlNode(SCF_CREATE_TABLE);
@@ -459,6 +483,21 @@ create_table_stmt:    /*create table 语句的语法解析树*/
 
       create_table.use_sub_select = true;
       create_table.sub_select = $6;
+    }
+    | CREATE TABLE ID storage_format select_stmt
+    {
+      $$ = new ParsedSqlNode(SCF_CREATE_TABLE);
+      CreateTableSqlNode &create_table = $$->create_table;
+      create_table.relation_name = $3;
+      free($3);
+
+      if ($4 != nullptr) {
+        create_table.storage_format = $4;
+        free($4);
+      }
+
+      create_table.use_sub_select = true;
+      create_table.sub_select = $5;
     }
     ;
 attr_def_list:
