@@ -316,8 +316,8 @@ RC Table::set_value_to_record(char *record_data, const Value &value, const Field
   }
   memcpy(record_data + field->offset(), value.data(), copy_len);
   if (value.get_null()) {
-    const char *flag = "NULL";
-    memcpy(record_data + field->offset(), flag, 4);
+    const char *flag = "~";
+    memcpy(record_data + field->offset(), flag, 1);
   }
   return RC::SUCCESS;
 }

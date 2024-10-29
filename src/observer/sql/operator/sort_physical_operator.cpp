@@ -21,6 +21,7 @@ void SortByPriority(std::vector<ValueListTuple> &nums, const std::vector<int> &i
       a.cell_at(index, left_value);
       b.cell_at(index, right_value);
 
+      if (left_value.get_null() && right_value.get_null()) continue;
       int result = left_value.compare(right_value);
       if (result != 0) return flags[i] ? (result == -1) : (result == 1);
     }

@@ -193,8 +193,7 @@ class RowTuple : public Tuple {
     FieldExpr *field_expr = speces_[index];
     const FieldMeta *field_meta = field_expr->field().meta();
     cell.set_type(field_meta->type());
-    if ((record_->data() + field_meta->offset())[0] == 'N' && (record_->data() + field_meta->offset())[1] == 'U' &&
-        (record_->data() + field_meta->offset())[2] == 'L' && (record_->data() + field_meta->offset())[3] == 'L')
+    if ((record_->data() + field_meta->offset())[0] == '~')
       cell.set_null(true);
     else
       cell.set_data(this->record_->data() + field_meta->offset(), field_meta->len());
