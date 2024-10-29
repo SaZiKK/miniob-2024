@@ -21,6 +21,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/algorithm.h"
 #include "common/log/log.h"
 #include "common/global_context.h"
+#include "storage/buffer/page.h"
 #include "storage/db/db.h"
 #include "storage/buffer/disk_buffer_pool.h"
 #include "storage/common/condition_filter.h"
@@ -272,7 +273,7 @@ RC Table::make_record(int value_num, const Value *values, Record &record) {
 
   for (int i = 0; i < value_num && OB_SUCC(rc); i++) {
     const FieldMeta *field = table_meta_.field(i + normal_field_start_index);
-    const Value &value = values[i];
+    Value value = values[i];
 
     // 当插入数据 NULL 时，做一次检验
     if (value.get_null()) {
@@ -303,17 +304,60 @@ RC Table::make_record(int value_num, const Value *values, Record &record) {
   return RC::SUCCESS;
 }
 
-RC Table::set_value_to_record(char *record_data, const Value &value, const FieldMeta *field) {
+RC Table::set_value_to_record(char *record_data, Value &value, const FieldMeta *field) {
   size_t copy_len = field->len();
-  const size_t data_len = value.length();
+  size_t data_len = value.length();
 
   if (value.attr_type() == AttrType::VECTORS && copy_len != (size_t)data_len) return RC::INVALID_ARGUMENT;
 
+  // 如果是 TEXT 类型，在这里就要写入页中
+  if (field->type() == AttrType::TEXT) {
+    int offset = 0;
+    vector<PageNum> page_nums;
+    for (int i = 0; i < BP_MAX_TEXT_PAGES && offset < value.length(); i++) {
+      Frame *frame = nullptr;
+      RC rc = RC::SUCCESS;
+      rc = data_buffer_pool_->allocate_page(&frame);
+      data_buffer_pool_->mark_text_page(frame->page_num(), true);
+      if (rc != RC::SUCCESS) {
+        LOG_ERROR("Failed to allocate page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), field->name(), rc, strrc(rc));
+        return rc;
+      }
+      auto data = frame->page().data;
+      memset(data, 0, BP_PAGE_DATA_SIZE);
+      int len = std::min(value.length() - offset, BP_PAGE_DATA_SIZE);
+      memcpy(data, value.data() + offset, len);
+      offset += len;
+      page_nums.push_back(frame->page_num());
+      frame->dirty();
+      data_buffer_pool_->unpin_page(frame);
+    }
+    char *data = new char[BP_MAX_TEXT_RECORD_SIZE];
+    memset(data, 0, BP_MAX_TEXT_RECORD_SIZE);
+    offset = 0;
+    int length = value.length();
+    memcpy(data, &length, 4);
+    offset += 4;
+    for (int i = 0; i < page_nums.size(); i++) {
+      memcpy(data + offset, &page_nums[i], 4);
+      offset += 4;
+    }
+    for (int i = page_nums.size(); i < BP_MAX_TEXT_PAGES; i++) {
+      memset(data + offset, 0, 4);
+      offset += 4;
+    }
+    value.set_type(AttrType::CHARS);
+    value.update_text_data(data, BP_MAX_TEXT_RECORD_SIZE);
+    delete[] data;
+  }
+
   if (field->type() == AttrType::CHARS) {
     if (copy_len > data_len) {
+      data_len = value.length();
       copy_len = data_len + 1;
     }
   }
+
   memcpy(record_data + field->offset(), value.data(), copy_len);
   if (value.get_null()) {
     const char *flag = "NULL";
