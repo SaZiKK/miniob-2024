@@ -389,8 +389,8 @@ RC ExpressionBinder::bind_arithmetic_expression(unique_ptr<Expression> &expr, ve
     right_expr.reset(right.release());
   }
 
-  string left_name = left_expr == nullptr ? "" : left_expr->name();
-  string right_name = right_expr == nullptr ? "" : right_expr->name();
+  string left_name = left_expr == nullptr ? "" : string(left_expr->name()) + " ";
+  string right_name = right_expr == nullptr ? "" : " " + string(right_expr->name());
   expr->set_name(left_name + op + right_name);
 
   bound_expressions.emplace_back(std::move(expr));
