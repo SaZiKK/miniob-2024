@@ -55,7 +55,7 @@ RC UpdatePhysicalOperator::open(Trx *trx) {
     if (rc != RC::SUCCESS) {
       // 如果更新失败，需要回滚
       assert(backup_datas.size() == records_.size());  // 确保两个 vector 长度相等
-      for (size_t i = 0; i < update_num; ++i) {
+      for (int i = 0; i < update_num; ++i) {
         char *backup_data = backup_datas[i];
         Record &record = records_[i];
 

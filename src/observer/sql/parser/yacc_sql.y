@@ -70,6 +70,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         DROP
         GROUP
         INNER_JOIN
+        HAVING
         TABLE
         TABLES
         INDEX
@@ -181,15 +182,17 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <attr_info>           attr_def
 %type <value_list>          value_list
 %type <condition_list>      where
+%type <condition_list>      having
 %type <condition_list>      condition_list
 %type <string>              storage_format
 %type <expression>          relation
 %type <expression_list>     rel_list
 %type <boolean>             null_def
 %type <expression_list>     join_list
-%type <expression_list>          order_by
+%type <expression_list>     order_by
 %type <expression_list>     order_by_list
 %type <number>              order_by_flag
+%type <expression_list>     group_by_unit
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <expression_list>     group_by
@@ -644,7 +647,7 @@ select_stmt:        /*  select 语句的语法解析树*/
       $$ = new ParsedSqlNode(SCF_SELECT);
       $$->selection.expressions.swap(*$2);
     }
-    | SELECT expression_list FROM relation rel_list join_list where group_by order_by_list
+    | SELECT expression_list FROM relation rel_list join_list where group_by having order_by_list
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -674,8 +677,13 @@ select_stmt:        /*  select 语句的语法解析树*/
       }
 
       if($9 != nullptr) {
-        $$->selection.order_by.swap(*$9);
+        $$->selection.having_conditions.swap(*$9);
         delete $9;
+      }
+
+      if($10 != nullptr) {
+        $$->selection.order_by.swap(*$10);
+        delete $10;
       }
     }
     ;
@@ -892,6 +900,15 @@ where:
     }
     ;
 
+having:
+    /* empty */
+    {
+      $$ = nullptr;
+    }
+    | HAVING condition_list {
+      $$ = $2;
+    }
+
 join_list:
     /* empty */
     {
@@ -1049,13 +1066,39 @@ comp_op:
     | EXISTS { $$ = XXX_EXISTS; }
     ;
 
-// your code here
 group_by:
     /* empty */
     {
       $$ = nullptr;
     }
+    | GROUP BY expression group_by_unit {
+      if($4 != nullptr) {
+        $$ = $4;
+      } else {
+        $$ = new std::vector<std::unique_ptr<Expression>>;
+      }
+
+      $$->emplace_back($3);
+    }
     ;
+
+group_by_unit:
+    /* empty */
+    {
+      $$ = nullptr;
+    }
+    | COMMA expression group_by_unit
+    {
+      if($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new std::vector<std::unique_ptr<Expression>>;
+      }
+
+      $$->emplace_back($2);
+    }
+    ;
+
 load_data_stmt:
     LOAD DATA INFILE SSS INTO TABLE ID 
     {

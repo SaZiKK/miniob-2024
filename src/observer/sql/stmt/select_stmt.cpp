@@ -30,14 +30,18 @@ SelectStmt::~SelectStmt() {
   }
 }
 
+// ? 相较于原本的 create 函数新增加了两个参数，father_alias 代表父查询中定义的别名，father_tables 代表父查询中包含的表格
+// ? 表格在父查询中定义和在子查询中定义是不一样的
 RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unordered_map<string, string> father_alias,
                       std::unordered_map<string, Table *> father_tables) {
   if (nullptr == db) return RC::INVALID_ARGUMENT;
 
+  // *****************************************************************************
   // * 将节点中的 join 反转并添加到 conditions 以及 relations 当中
   // *    在之后的处理中，如果查询的表格有多个，就会计算全部表格的笛卡尔积
   // *    join 等价于先求笛卡尔积，然后进行选择运算
   // *    所以需要将选择条件也加进 conditions 中(目前全是 AND 运算，所以可以这么处理)
+
   std::reverse(select_sql.relations.begin(), select_sql.relations.end());
   std::reverse(select_sql.join.begin(), select_sql.join.end());
   for (int i = 0; i < (int)select_sql.join.size(); i++) {
@@ -48,6 +52,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     for (auto condition : join_table_expr->conditions()) select_sql.conditions.emplace_back(condition);
   }
 
+  // *****************************************************************************
   // * 将 relatinos 中的全部表格信息录入
   // *
   // *
@@ -74,6 +79,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   Table *default_table = nullptr;
   if (tables.size() == 1) default_table = tables[0];
 
+  // *****************************************************************************
   // * 将 relatinos 中的全部表格别名录入
   // *
   // *
@@ -93,6 +99,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     }
   }
 
+  // *****************************************************************************
   // * 将父查询传递下来的全部表格别名录入
   // *
   // *
@@ -109,6 +116,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     if (table_map.count(it->first)) return RC::INVALID_ARGUMENT;
   }
 
+  // *****************************************************************************
   // * 处理传递给子查询的 表格别名字典 + Table 字典
   // *
   // *
@@ -124,6 +132,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   for (auto it : table_map) tables_for_son.insert(it);
   for (auto it : father_tables) tables_for_son.insert(it);
 
+  // *****************************************************************************
   // * 构建子查询(如果有)的 STMT 对象
   // *
   // *
@@ -161,6 +170,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     }
   }
 
+  // *****************************************************************************
   // * 绑定查询表达式 expression
   // *
   // *
@@ -174,17 +184,20 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     if (rc != RC::SUCCESS) return rc;
   }
 
+  // *****************************************************************************
   // * 绑定 group by 表达式
   // *
   // *
   // *
 
+  for (auto &it : select_sql.having_conditions) select_sql.conditions.emplace_back(std::move(it));
   vector<unique_ptr<Expression>> group_by_expressions;
   for (unique_ptr<Expression> &expression : select_sql.group_by) {
     RC rc = expression_binder.bind_expression(expression, group_by_expressions);
     if (rc != RC::SUCCESS) return rc;
   }
 
+  // *****************************************************************************
   // * 处理 order by 表达式
   // *    一开始的想法是，将 order by 的表达式视作 expressions 中的一员，在向父算子传递元组的时候额外做一步投影操作
   // *    但是发现目前阶段所有排序字段都是表格存在的属性，先简单写
@@ -192,7 +205,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
   // *    当然，如果发现同一表达式被指认多次排序，取最后的指定；如果表达式不合法，报错
   std::vector<std::unique_ptr<Expression>> order_by_expressions;
 
-  // 去除重复指定
+  // TODO 去除重复指定
   // std::unordered_map<string, int> check_order_by;
   // for (size_t i = 0; i < select_sql.order_by.size(); i++)
   // {
@@ -245,6 +258,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
     order_by_expressions.emplace_back(std::move(field_expr));
   }
 
+  // *****************************************************************************
   // * 创建选择运算的 Filter STMT 对象
   // *
   // *
@@ -255,6 +269,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, std::unord
                              alias_for_son, tables_for_son);
   if (rc != RC::SUCCESS) return rc;
 
+  // *****************************************************************************
   // * 创建最终的 Select STMT 对象
   // *
   // *

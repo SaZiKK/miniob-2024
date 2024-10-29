@@ -108,13 +108,7 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
                                 std::unordered_map<string, string> alias_map, std::unordered_map<string, Table *> table_map) {
   if (expr == nullptr) return RC::INVALID_ARGUMENT;
 
-  /*
-  对于简单的 Value ValueList 表达式，不需要绑定，只需要检验日期合法性即可
-  对于简单的 SubQuery 表达式，不需要绑定
-  对于简单的 UnBoundField 表达式，将其绑定成 Field 表达式
-  对于算术表达式，递归绑定左右两侧的表达式
-  出现上述四种情况之外的情况均为非法情况
-  */
+  // TODO 直接使用 expression_binder 中的函数进行
 
   switch (expr->type()) {
     case ExprType::VALUE: {
@@ -177,6 +171,30 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
         rc = bind_filter_expr(db, default_table, tables, vec_func_expr->child_right(), alias_map, table_map);
       }
       if (rc != RC::SUCCESS) return rc;
+    } break;
+    case ExprType::UNBOUND_AGGREGATION: {
+      RC rc = RC::SUCCESS;
+      auto unbound_aggregate_expr = static_cast<UnboundAggregateExpr *>(expr.get());
+      const char *aggregate_name = unbound_aggregate_expr->aggregate_name();
+
+      AggregateExpr::Type aggregate_type;
+      rc = AggregateExpr::type_from_string(aggregate_name, aggregate_type);
+      if (rc != RC::SUCCESS) return rc;
+
+      unique_ptr<Expression> &child_expr = unbound_aggregate_expr->child();
+
+      if (child_expr == nullptr) return RC::INVALID_ARGUMENT;
+
+      if (child_expr->type() == ExprType::STAR && aggregate_type == AggregateExpr::Type::COUNT) {
+        ValueExpr *value_expr = new ValueExpr(Value(1));
+        child_expr.reset(value_expr);
+      } else {
+        rc = bind_filter_expr(db, default_table, tables, child_expr, alias_map, table_map);
+        if (rc != RC::SUCCESS) return rc;
+      }
+
+      // TODO 校验聚合表达式
+      expr = make_unique<AggregateExpr>(aggregate_type, std::move(child_expr));
     } break;
     default:
       return RC::INVALID_ARGUMENT;

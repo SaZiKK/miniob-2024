@@ -146,6 +146,7 @@ IS[ \t]+NOT+[ \t]+NULL                  RETURN_TOKEN(IS_NOT_NULL);
 AS                                      RETURN_TOKEN(AS);
 ORDER[ \t]+BY                           RETURN_TOKEN(ORDER_BY);
 ASC                                     RETURN_TOKEN(ASC);
+HAVING                                  RETURN_TOKEN(HAVING);
 
 L2_DISTANCE                             RETURN_TOKEN(VEC_L2_DISTANCE);
 COSINE_DISTANCE                         RETURN_TOKEN(VEC_COSINE_DISTANCE_FUNC);
