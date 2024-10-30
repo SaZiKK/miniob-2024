@@ -747,6 +747,46 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   if (value->length() > field_length) {
     memcpy(old_data + field_offset, value->data(), field_length);
   }
+  else if (targetFiled->type() == AttrType::TEXT) {
+    int offset = 0;
+    vector<PageNum> page_nums;
+    for (int i = 0; i < BP_MAX_TEXT_PAGES && offset < value->length(); i++) {
+      Frame *frame = nullptr;
+      RC rc = RC::SUCCESS;
+      rc = data_buffer_pool_->allocate_page(&frame);
+      data_buffer_pool_->mark_text_page(frame->page_num(), true);
+      if (rc != RC::SUCCESS) {
+        LOG_ERROR("Failed to allocate page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc, strrc(rc));
+        return rc;
+      }
+      auto data = frame->page().data;
+      memset(data, 0, BP_PAGE_DATA_SIZE);
+      int len = std::min(value->length() - offset, BP_PAGE_DATA_SIZE);
+      memcpy(data, value->data() + offset, len);
+      offset += len;
+      page_nums.push_back(frame->page_num());
+      frame->dirty();
+      data_buffer_pool_->unpin_page(frame);
+    }
+    char *data = new char[BP_MAX_TEXT_RECORD_SIZE];
+    memset(data, 0, BP_MAX_TEXT_RECORD_SIZE);
+    offset = 0;
+    int length = value->length();
+    memcpy(data, &length, 4);
+    offset += 4;
+    for (int i = 0; i < page_nums.size(); i++) {
+      memcpy(data + offset, &page_nums[i], 4);
+      offset += 4;
+    }
+    for (int i = page_nums.size(); i < BP_MAX_TEXT_PAGES; i++) {
+      memset(data + offset, 0, 4);
+      offset += 4;
+    }
+    value->set_type(AttrType::CHARS);
+    value->update_text_data(data, BP_MAX_TEXT_RECORD_SIZE);
+    delete[] data;
+    memcpy(old_data + targetFiled->offset(), value->data(), value->length() + 1);
+  }
   // 对于 CHARS
   // 这种不定长的记录，如果更新的元素小于原来的长度，需要额外抹去原有元素
   else {
@@ -769,7 +809,7 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
       return rc;
     }
   }
-
+ 
   record_handler_->update_record(&record);
   // delete old_data;
   return RC::SUCCESS;
