@@ -703,6 +703,7 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   const int sys_field_num = table_meta_.sys_field_num();
   const int user_field_num = table_meta_.field_num() - sys_field_num;
   FieldMeta *targetFiled = nullptr;
+  Value real_value;
 
   for (int i = 0; i < user_field_num; i++) {
     const FieldMeta *field_meta = table_meta_.field(sys_field_num + i);
@@ -716,7 +717,6 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
       }
       // 类型匹配检查
       else if (field_meta->type() != value->attr_type()) {
-        Value real_value;
         RC rc = Value::cast_to(*value, field_meta->type(), real_value);
         if (OB_FAIL(rc)) return rc;
         *value = real_value;
@@ -746,8 +746,7 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   // 对于 CHARS 这种不定长的记录，如果更新的元素大于原来的长度，需要截断
   if (value->length() > field_length) {
     memcpy(old_data + field_offset, value->data(), field_length);
-  }
-  else if (targetFiled->type() == AttrType::TEXT) {
+  } else if (targetFiled->type() == AttrType::TEXT) {
     int offset = 0;
     vector<PageNum> page_nums;
     for (int i = 0; i < BP_MAX_TEXT_PAGES && offset < value->length(); i++) {
@@ -756,7 +755,8 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
       rc = data_buffer_pool_->allocate_page(&frame);
       data_buffer_pool_->mark_text_page(frame->page_num(), true);
       if (rc != RC::SUCCESS) {
-        LOG_ERROR("Failed to allocate page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc, strrc(rc));
+        LOG_ERROR("Failed to allocate page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc,
+                  strrc(rc));
         return rc;
       }
       auto data = frame->page().data;
@@ -809,7 +809,7 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
       return rc;
     }
   }
- 
+
   record_handler_->update_record(&record);
   // delete old_data;
   return RC::SUCCESS;

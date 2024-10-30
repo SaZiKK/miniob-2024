@@ -64,7 +64,7 @@ RC CharType::cast_to(const Value &val, AttrType type, Value &result) const {
       result = val;
     } break;
     case (AttrType::TEXT): {
-      result.set_string(val.get_string().c_str());
+      result = val;
       result.attr_type_ = AttrType::TEXT;
     } break;
     default:
