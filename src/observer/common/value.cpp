@@ -247,7 +247,11 @@ void Value::set_text(const char *s) {
     length_ = 0;
   } else {
     own_data_ = true;
-    length_ = strlen(s);
+    if (length_ > 0) {
+      length_ = strnlen(s, length_);
+    } else {
+      length_ = strlen(s);
+    }
     value_.pointer_value_ = new char[length_ + 1];
     memcpy(value_.pointer_value_, s, length_);
     value_.pointer_value_[length_] = '\0';
