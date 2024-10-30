@@ -703,7 +703,6 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   const int sys_field_num = table_meta_.sys_field_num();
   const int user_field_num = table_meta_.field_num() - sys_field_num;
   FieldMeta *targetFiled = nullptr;
-  Value real_value;
 
   for (int i = 0; i < user_field_num; i++) {
     const FieldMeta *field_meta = table_meta_.field(sys_field_num + i);
@@ -717,9 +716,10 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
       }
       // 类型匹配检查
       else if (field_meta->type() != value->attr_type()) {
+        Value real_value;
         RC rc = Value::cast_to(*value, field_meta->type(), real_value);
         if (OB_FAIL(rc)) return rc;
-        *value = real_value;
+        *value =std::move(real_value);
       }
 
       // 拿到目标域
