@@ -13,7 +13,11 @@ See the Mulan PSL v2 for more details. */
 //
 
 #include "sql/operator/table_scan_physical_operator.h"
+#include <cstring>
 #include "event/sql_debug.h"
+#include "storage/buffer/frame.h"
+#include "storage/buffer/page.h"
+#include "storage/field/field.h"
 #include "storage/table/table.h"
 
 using namespace std;

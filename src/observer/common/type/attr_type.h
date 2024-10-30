@@ -23,6 +23,7 @@ enum class AttrType {
   VECTORS,     ///< 向量类型
   DATE,        ///< 日期类型
   BOOLEANS,    ///< boolean类型，当前不是由parser解析出来的，是程序内部使用的
+  TEXT,        ///< 文本类型
   TUPLES,      ///< 子查询类型
   VALUE_LIST,  ///< value_list 类型
   MAXTYPE,     ///< 请在 UNDEFINED 与 MAXTYPE 之间增加新类型

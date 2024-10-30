@@ -60,6 +60,7 @@ extern int yydebug;
     DROP = 261,                    /* DROP  */
     GROUP = 262,                   /* GROUP  */
     INNER_JOIN = 263,              /* INNER_JOIN  */
+<<<<<<< HEAD
     HAVING = 264,                  /* HAVING  */
     TABLE = 265,                   /* TABLE  */
     TABLES = 266,                  /* TABLES  */
@@ -84,6 +85,32 @@ extern int yydebug;
     STRING_T = 285,                /* STRING_T  */
     FLOAT_T = 286,                 /* FLOAT_T  */
     VECTOR_T = 287,                /* VECTOR_T  */
+=======
+    TABLE = 264,                   /* TABLE  */
+    TABLES = 265,                  /* TABLES  */
+    INDEX = 266,                   /* INDEX  */
+    CALC = 267,                    /* CALC  */
+    SELECT = 268,                  /* SELECT  */
+    ASC = 269,                     /* ASC  */
+    DESC = 270,                    /* DESC  */
+    SHOW = 271,                    /* SHOW  */
+    SYNC = 272,                    /* SYNC  */
+    INSERT = 273,                  /* INSERT  */
+    DELETE = 274,                  /* DELETE  */
+    UPDATE = 275,                  /* UPDATE  */
+    LBRACE = 276,                  /* LBRACE  */
+    RBRACE = 277,                  /* RBRACE  */
+    COMMA = 278,                   /* COMMA  */
+    TRX_BEGIN = 279,               /* TRX_BEGIN  */
+    TRX_COMMIT = 280,              /* TRX_COMMIT  */
+    TRX_ROLLBACK = 281,            /* TRX_ROLLBACK  */
+    INT_T = 282,                   /* INT_T  */
+    DATE_T = 283,                  /* DATE_T  */
+    STRING_T = 284,                /* STRING_T  */
+    FLOAT_T = 285,                 /* FLOAT_T  */
+    VECTOR_T = 286,                /* VECTOR_T  */
+    TEXT_T = 287,                  /* TEXT_T  */
+>>>>>>> text
     HELP = 288,                    /* HELP  */
     EXIT = 289,                    /* EXIT  */
     DOT = 290,                     /* DOT  */
@@ -136,9 +163,16 @@ extern int yydebug;
     FLOAT = 337,                   /* FLOAT  */
     ID = 338,                      /* ID  */
     DATE_STR = 339,                /* DATE_STR  */
+<<<<<<< HEAD
     SSS = 340,                     /* SSS  */
     HIGHER_THAN_EXPRESSION = 341,  /* HIGHER_THAN_EXPRESSION  */
     UMINUS = 342                   /* UMINUS  */
+=======
+    TEXT_STR = 340,                /* TEXT_STR  */
+    SSS = 341,                     /* SSS  */
+    HIGHER_THAN_EXPRESSION = 342,  /* HIGHER_THAN_EXPRESSION  */
+    UMINUS = 343                   /* UMINUS  */
+>>>>>>> text
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -168,7 +202,11 @@ union YYSTYPE
   float                                      floats;
   bool                                       boolean;
 
+<<<<<<< HEAD
 #line 172 "yacc_sql.hpp"
+=======
+#line 173 "yacc_sql.hpp"
+>>>>>>> text
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -19,6 +19,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/sstream.h"
 #include "common/lang/string.h"
 #include "common/log/log.h"
+#include "common/type/attr_type.h"
 #include "common/type/float_type.h"
 
 Value::Value(float val) { set_float(val); }
@@ -126,6 +127,12 @@ void Value::reset() {
         value_.pointer_value_ = nullptr;
       }
       break;
+    case AttrType::TEXT:
+      if (own_data_ && value_.pointer_value_ != nullptr) {
+        delete[] value_.pointer_value_;
+        value_.pointer_value_ = nullptr;
+      }
+      break;
     default:
       break;
   }
@@ -167,6 +174,9 @@ void Value::set_data(char *data, int length) {
       value_vector_.resize(num_elements);
       memcpy(value_vector_.data(), data, length);
       length_ = length;
+    } break;
+    case AttrType::TEXT: {
+      set_text(data);
     } break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
@@ -211,6 +221,40 @@ void Value::set_string(const char *s, int len /*= 0*/) {
     length_ = len;
     memcpy(value_.pointer_value_, s, len);
     value_.pointer_value_[len] = '\0';
+  }
+}
+
+void Value::update_text_data(const char *s, int len) {
+  reset();
+  attr_type_ = AttrType::CHARS;
+  if (s == nullptr) {
+    value_.pointer_value_ = nullptr;
+    length_ = 0;
+  } else {
+    own_data_ = true;
+    value_.pointer_value_ = new char[len + 1];
+    length_ = len;
+    memcpy(value_.pointer_value_, s, length_);
+    value_.pointer_value_[length_] = '\0';
+  }
+}
+
+void Value::set_text(const char *s) {
+  reset();
+  attr_type_ = AttrType::TEXT;
+  if (s == nullptr) {
+    value_.pointer_value_ = nullptr;
+    length_ = 0;
+  } else {
+    own_data_ = true;
+    if (length_ > 0) {
+      length_ = strnlen(s, length_);
+    } else {
+      length_ = strlen(s);
+    }
+    value_.pointer_value_ = new char[length_ + 1];
+    memcpy(value_.pointer_value_, s, length_);
+    value_.pointer_value_[length_] = '\0';
   }
 }
 
@@ -260,6 +304,9 @@ void Value::set_string_from_other(const Value &other) {
 
 const char *Value::data() const {
   switch (attr_type_) {
+    case AttrType::TEXT: {
+      return value_.pointer_value_;
+    } break;
     case AttrType::CHARS: {
       return value_.pointer_value_;
     } break;

@@ -500,6 +500,10 @@ RC RecordFileHandler::init_free_pages() {
   while (bp_iterator.has_next()) {
     current_page_num = bp_iterator.next();
 
+    if (current_page_num == -1) {
+      break;
+    }
+
     rc = record_page_handler->init(*disk_buffer_pool_, *log_handler_, current_page_num, ReadWriteMode::READ_ONLY);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to init record page handler. page num=%d, rc=%d:%s", current_page_num, rc, strrc(rc));
@@ -724,6 +728,9 @@ RC RecordFileScanner::fetch_next_record() {
   // 上个页面遍历完了，或者还没有开始遍历某个页面，那么就从一个新的页面开始遍历查找
   while (bp_iterator_.has_next()) {
     PageNum page_num = bp_iterator_.next();
+    if (page_num == -1) {
+      break;
+    }
     record_page_handler_->cleanup();
     rc = record_page_handler_->init(*disk_buffer_pool_, *log_handler_, page_num, rw_mode_);
     if (OB_FAIL(rc)) {

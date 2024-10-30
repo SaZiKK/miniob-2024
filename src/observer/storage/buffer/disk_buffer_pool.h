@@ -176,6 +176,7 @@ class BufferPoolIterator {
  private:
   common::Bitmap bitmap_;
   PageNum current_page_num_ = -1;
+  DiskBufferPool *bp_ = nullptr;
 };
 
 /**
@@ -272,6 +273,8 @@ class DiskBufferPool final {
 
   const char *filename() const { return file_name_.c_str(); }
 
+  void mark_text_page(PageNum page_num, bool is_text_page);
+
  protected:
   RC allocate_frame(PageNum page_num, Frame **buf);
 
@@ -304,6 +307,8 @@ class DiskBufferPool final {
   Frame *hdr_frame_ = nullptr;           /// 文件头页面
   BPFileHeader *file_header_ = nullptr;  /// 文件头
   set<PageNum> disposed_pages_;          /// 已经释放的页面
+
+  unordered_map<PageNum, bool> is_text_page_;  /// 用于标识存储text的专用页
 
   string file_name_;  /// 文件名
 
