@@ -810,6 +810,11 @@ expression:
       $$->set_name(token_name(sql_string, &@$));
       free($1);
     }
+    | ID DOT '*' {
+      $$ = new StarExpr($1);
+      $$->set_name(token_name(sql_string, &@$));
+      free($1);
+    }
     | ID ID {
       $$ = new UnboundFieldExpr(string(), $1, $2);
       $$->set_name(token_name(sql_string, &@$));

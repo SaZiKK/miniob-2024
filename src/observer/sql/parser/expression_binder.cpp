@@ -118,8 +118,12 @@ RC ExpressionBinder::bind_star_expression(unique_ptr<Expression> &expr, vector<u
   if (!is_blank(table_name) && 0 != strcmp(table_name, "*")) {
     Table *table = context_.find_table(table_name);
     if (nullptr == table) {
-      LOG_INFO("no such table in from list: %s", table_name);
-      return RC::SCHEMA_TABLE_NOT_EXIST;
+      unordered_map<string, string> alias_map = context_.alias_and_name();
+      if (alias_map.count(table_name)) {
+        table_name = alias_map[table_name].c_str();
+        table = context_.find_table(table_name);
+        if (table == nullptr) return RC::SCHEMA_TABLE_NOT_EXIST;
+      }
     }
 
     tables_to_wildcard.push_back(table);
