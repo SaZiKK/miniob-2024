@@ -212,7 +212,11 @@ void Value::set_string(const char *s, int len /*= 0*/) {
     length_ = 0;
   } else {
     own_data_ = true;
-    len = strlen(s);
+    if (len > 0) {
+      len = strnlen(s, len);
+    } else {
+      len = strlen(s);
+    }
     value_.pointer_value_ = new char[len + 1];
     length_ = len;
     memcpy(value_.pointer_value_, s, len);

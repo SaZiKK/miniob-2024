@@ -98,9 +98,8 @@ int CharType::cast_cost(AttrType type) {
 }
 
 RC CharType::to_string(const Value &val, string &result) const {
-  if (val.value_.pointer_value_ == nullptr) {
-    return RC::INVALID_ARGUMENT;
-  }
-  result = string(static_cast<char *>(val.value_.pointer_value_));
+  stringstream ss;
+  ss << val.value_.pointer_value_;
+  result = ss.str();
   return RC::SUCCESS;
 }

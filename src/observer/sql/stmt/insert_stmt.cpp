@@ -52,7 +52,7 @@ RC InsertStmt::create(Db *db, const InsertSqlNode &inserts, Stmt *&stmt) {
         return RC::INVALID_ARGUMENT;
       }
     } else if (value.attr_type() == AttrType::CHARS) {
-      if (value.get_string().size() > 65535) {
+      if (value.get_string().size() > BP_MAX_TEXT_SIZE) {
         return RC::INVALID_ARGUMENT;
       }
     }
