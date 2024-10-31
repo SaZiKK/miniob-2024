@@ -29,8 +29,11 @@ See the Mulan PSL v2 for more details. */
 #include "common/metrics/metrics.h"
 #include "common/metrics/metrics_registry.h"
 
-#define MAX_MEM_BUFFER_SIZE 8192
+#define MAX_MEM_BUFFER_SIZE 8192 * 10 + 4096
 #define PORT_DEFAULT 6789
+
+char send_buf[MAX_MEM_BUFFER_SIZE] = {0};
+char recv_buf[MAX_MEM_BUFFER_SIZE] = {0};
 
 using namespace common;
 
@@ -45,8 +48,6 @@ void *test_server(void *param)
   int sockfd, sendbytes;
   // char send[MAXLINE];
 
-  char send_buf[MAX_MEM_BUFFER_SIZE] = {0};
-  char recv_buf[MAX_MEM_BUFFER_SIZE] = {0};
   snprintf(send_buf, sizeof(send_buf), "%s", "select count(*) from test");
   // char buf[MAXDATASIZE];
   struct hostent    *host;
