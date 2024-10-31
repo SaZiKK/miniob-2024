@@ -74,6 +74,9 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, bool &use_
 
       table_alias_name = alias_expr->alias_name();
       table_name = table_expr->table_name();
+
+      if (binder_context.t_alias().count(table_alias_name)) return RC::INVALID_ARGUMENT;
+      if (table_map.count(table_alias_name)) return RC::INVALID_ARGUMENT;
       binder_context.add_t_alias(make_pair(table_alias_name, table_name));
     } else if (expr->type() == ExprType::UNBOUND_TABLE) {
       UnboundTableExpr *table_expr = static_cast<UnboundTableExpr *>(select_sql.relations[i].get());
@@ -88,13 +91,6 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, bool &use_
     binder_context.add_table(table);
     tables.push_back(table);
     table_map.insert({table_name, table});
-
-    // ? 别名查重
-    if (!table_alias_name.empty()) {
-      unordered_map<string, string> alias_temp = binder_context.t_alias();
-      if (alias_temp.count(table_alias_name) > 1) return RC::INVALID_ARGUMENT;
-      if (table_map.count(table_alias_name)) return RC::INVALID_ARGUMENT;
-    }
   }
 
   Table *default_table = nullptr;
