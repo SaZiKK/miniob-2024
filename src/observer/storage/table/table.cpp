@@ -360,14 +360,9 @@ RC Table::set_value_to_record(char *record_data, Value &value, const FieldMeta *
 
   memcpy(record_data + field->offset(), value.data(), copy_len);
 
-  // null bitmap
-  const char *bit = value.get_null() ? "0" : "1";
-  memcpy(record_data + index, bit, 1);
-
-  // TODO delete
   if (value.get_null()) {
-    const char *flag = "ÿ";
-    memcpy(record_data + field->offset(), flag, 1);
+    const char *flag = "ÿÿÿÿ";
+    memcpy(record_data + field->offset(), flag, std::min(field->len(), 4));
   }
   return RC::SUCCESS;
 }
@@ -864,14 +859,10 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
     memcpy(old_data + field_offset, value->data(), value->length());
     memset(old_data + field_offset + value->length(), 0, field_length - value->length());
   }
-  // null part
-  const char *flag = value->get_null() ? "0" : "1";
-  memcpy(old_data + i, flag, 1);
 
-  // TODO delete
   if (value->get_null()) {
-    const char *flag = "ÿ";
-    memcpy(old_data + field_offset, flag, 1);
+    const char *flag = "ÿÿÿÿ";
+    memcpy(old_data + field_offset, flag, std::min(4, field_length));
   }
 
   record.set_data(old_data);

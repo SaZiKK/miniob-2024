@@ -256,12 +256,12 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
       }
       // 子查询结果（元组列）只能有一个值（一行一列）
       if (type_ == CompType::VAL_TUPLES) {
-        if (!right_tuple_list.empty() && right_tuple_list.front().size() > 1) {
+        if ((!right_tuple_list.empty() && right_tuple_list.front().size() > 1) || (!right_tuple_list.empty() && right_tuple_list.size() > 1)) {
           LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
       } else if (type_ == CompType::TUPLES_VAL) {
-        if (!left_tuple_list.empty() && left_tuple_list.front().size() > 1) {
+        if ((!left_tuple_list.empty() && left_tuple_list.front().size() > 1) || (!left_tuple_list.empty() && left_tuple_list.size() > 1)) {
           LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }

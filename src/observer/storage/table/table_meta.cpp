@@ -55,7 +55,7 @@ RC TableMeta::init(int32_t table_id, const char *name, const std::vector<FieldMe
 
   RC rc = RC::SUCCESS;
 
-  int field_offset = (int)attributes.size();
+  int field_offset = 0;
   int trx_field_num = 0;
 
   if (trx_fields != nullptr) {
