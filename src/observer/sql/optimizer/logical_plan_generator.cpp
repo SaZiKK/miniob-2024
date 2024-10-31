@@ -198,7 +198,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
 RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<LogicalOperator> &logical_operator) {
   RC rc = RC::SUCCESS;
   std::vector<unique_ptr<Expression>> cmp_exprs;
-  ConjunctionExpr::Type conjunction_types;
+  ConjunctionExpr::Type conjunction_types = ConjunctionExpr::Type::AND;
   const std::vector<FilterUnit *> &filter_units = filter_stmt->filter_units();
   for (FilterUnit *filter_unit : filter_units) {
     FilterObj &filter_obj_left = filter_unit->left();
