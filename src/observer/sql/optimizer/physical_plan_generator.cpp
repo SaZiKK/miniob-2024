@@ -224,7 +224,7 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator &table_get_oper, u
     // find_index_by_field的搜索匹配逻辑有问题，只能用来检查是否是索引域，还好这里够用
     index = table->find_index_by_fields(fields);
   }
-  if (index != nullptr) {
+  if (false) {
     ASSERT(value_expr != nullptr, "got an index but value expr is null ?");
 
     right_inclusive = true;

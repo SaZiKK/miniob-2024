@@ -862,6 +862,18 @@ expression:
       free(tmp);
       $$->set_name(token_name(sql_string, &@$));
     }
+    | LBRACKET value value_list RBRACKET {
+      std::vector<float> nums;
+      nums.emplace_back($2->get_float());
+      if($3 != nullptr) {
+        std::reverse($3->begin(), $3->end());
+        for (Value value : *$3) {
+          nums.emplace_back(value.get_float());
+        }
+      }
+      $$ = new ValueExpr(Value(nums));
+      $$->set_name(token_name(sql_string, &@$));
+    }
     | ID {
       $$ = new UnboundFieldExpr(string(), $1);
       $$->set_name(token_name(sql_string, &@$));

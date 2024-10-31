@@ -183,7 +183,7 @@ int basicCompare(CompType type_, const Value &left, const Value &right, const st
     cmp_result = value.compare(right);
   }
   if (type_ == CompType::VAL_VAL) {
-    cmp_result = left.compare(right);
+    if (!left.get_null() && !right.get_null()) cmp_result = left.compare(right);
   }
   return cmp_result;
 }

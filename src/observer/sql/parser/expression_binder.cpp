@@ -348,6 +348,7 @@ RC ExpressionBinder::bind_alias_expression(unique_ptr<Expression> &expr, vector<
       aggre_expr->set_aggre_alias(alias);
     } break;
     case ExprType::STAR: {
+      return RC::INVALID_ARGUMENT;
       StarExpr *star_expr = static_cast<StarExpr *>(child_expr.get());
       star_expr->set_star_alias(alias);
     } break;
