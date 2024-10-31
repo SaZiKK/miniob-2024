@@ -498,7 +498,7 @@ class BplusTreeHandler {
    * 即向索引中插入一个值为（user_key，rid）的键值对
    * @note 这里假设user_key的内存大小与attr_length 一致
    */
-  RC insert_entry(const std::vector<const char *> &user_keys, const RID *rid);
+  RC insert_entry(const std::vector<const char *> &user_keys, const RID *rid, const std::vector<const char *> &null_keys);
 
   /**
    * @brief 从IndexHandle句柄对应的索引中删除一个值为（user_key，rid）的索引项

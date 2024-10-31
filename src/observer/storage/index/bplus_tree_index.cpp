@@ -95,10 +95,14 @@ RC BplusTreeIndex::close() {
 RC BplusTreeIndex::insert_entry(const char *record, const RID *rid) {
   // 支持一次插入多字段的偏移量，即multi-index
   vector<const char *> user_keys;
+  vector<const char *> null_flags;
   for (const FieldMeta &field_meta : field_metas_) {
     user_keys.push_back(record + field_meta.offset());
   }
-  return index_handler_.insert_entry(user_keys, rid);
+  for (int i = 0; i < field_metas_.size(); i++) {
+    null_flags.push_back(record + i);
+  }
+  return index_handler_.insert_entry(user_keys, rid, null_flags);
 }
 
 RC BplusTreeIndex::delete_entry(const char *record, const RID *rid) {

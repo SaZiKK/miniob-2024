@@ -1470,7 +1470,7 @@ MemPoolItem::item_unique_ptr BplusTreeHandler::make_keys(const std::vector<const
   return key;
 }
 
-RC BplusTreeHandler::insert_entry(const std::vector<const char *> &user_keys, const RID *rid) {
+RC BplusTreeHandler::insert_entry(const std::vector<const char *> &user_keys, const RID *rid, const std::vector<const char *> &null_keys) {
   if (user_keys.empty() || rid == nullptr) {
     LOG_WARN("Invalid arguments, key is empty or rid is empty");
     return RC::INVALID_ARGUMENT;
