@@ -104,6 +104,10 @@ RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt) {
       if (!DateType::check_date(value.get_date())) {
         return RC::INVALID_ARGUMENT;
       }
+    } else if (value.attr_type() == AttrType::CHARS) {
+      if (value.get_string().size() > BP_MAX_TEXT_SIZE) {
+        return RC::INVALID_ARGUMENT;
+      }
     }
   }
 
