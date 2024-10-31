@@ -90,4 +90,5 @@ class OptimizeStage {
   }
   static unique_ptr<LogicalOperator> cur_logical_oper;
   static unique_ptr<PhysicalOperator> cur_physical_oper;
+  static SelectStmt *cur_select_stmt;
 };

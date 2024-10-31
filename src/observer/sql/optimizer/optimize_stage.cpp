@@ -34,6 +34,7 @@ using namespace common;
 
 unique_ptr<LogicalOperator> OptimizeStage::cur_logical_oper = nullptr;
 unique_ptr<PhysicalOperator> OptimizeStage::cur_physical_oper = nullptr;
+SelectStmt *OptimizeStage::cur_select_stmt = nullptr;
 
 RC OptimizeStage::handle_request(SQLStageEvent *sql_event) {
   // 创建逻辑算子
@@ -132,6 +133,24 @@ RC OptimizeStage::create_logical_plan(SQLStageEvent *sql_event, unique_ptr<Logic
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list, TupleSchema &tuple_schema, const Tuple *main_tuple) {
+  SelectStmt *select_stmt = static_cast<SelectStmt *>(stmt);
+  vector<Table *> tables = select_stmt->tables();
+
+  if (cur_select_stmt == nullptr) {
+    cur_select_stmt = select_stmt;
+    reset();
+  } else {
+    vector<Table *> cur_tables = cur_select_stmt->tables();
+    bool same = cur_tables.size() == tables.size();
+    for (int i = 0; i < min(cur_tables.size(), tables.size()); i++) {
+      if (cur_tables[i]->name() != tables[i]->name()) same = false;
+    }
+    if (same == false) {
+      cur_select_stmt = select_stmt;
+      reset();
+    }
+  }
+
   RC rc = RC::SUCCESS;
   // 创建逻辑算子
   if (cur_logical_oper == nullptr) rc = create_logical_plan(stmt, cur_logical_oper);
