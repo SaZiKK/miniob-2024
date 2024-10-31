@@ -806,7 +806,7 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
 
   // TODO delete
   if (value->get_null()) {
-    const char *flag = "&";
+    const char *flag = "ÿ";
     memcpy(old_data + field_offset, flag, 1);
   }
 

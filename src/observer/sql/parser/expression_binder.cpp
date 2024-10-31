@@ -351,7 +351,10 @@ RC ExpressionBinder::bind_alias_expression(unique_ptr<Expression> &expr, vector<
       StarExpr *star_expr = static_cast<StarExpr *>(child_expr.get());
       star_expr->set_star_alias(alias);
     } break;
-
+    case ExprType::ARITHMETIC: {
+      ArithmeticExpr *arithmetic_expr = static_cast<ArithmeticExpr *>(child_expr.get());
+      arithmetic_expr->set_alias(alias);
+    } break;
     default:
       return RC::INVALID_ARGUMENT;
       break;

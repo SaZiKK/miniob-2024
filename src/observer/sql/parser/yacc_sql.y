@@ -163,6 +163,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   int                                        number;
   float                                      floats;
   bool                                       boolean;
+  const char *                               aggre_type;
 }
 
 %token <number> NUMBER
@@ -178,6 +179,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <condition>           condition
 %type <value>               value
 %type <number>              number
+%type <floats>              float
 %type <comp>                comp_op
 %type <attr_infos>          attr_def_list
 %type <attr_info>           attr_def
@@ -189,6 +191,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <expression>          relation
 %type <expression_list>     rel_list
 %type <boolean>             null_def
+%type <expression_list>     query_list
+%type <expression>          query_unit
 %type <expression_list>     join_list
 %type <expression_list>     order_by
 %type <expression_list>     order_by_list
@@ -222,6 +226,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            help_stmt
 %type <sql_node>            exit_stmt
 %type <sql_node>            command_wrapper
+%type <aggre_type>          aggre_type
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
 
@@ -547,9 +552,7 @@ null_def:
     | UNNULLABLE {
       $$ = false;
     }
-number:
-    NUMBER {$$ = $1;}
-    ;
+
 type:
     INT_T      { $$ = static_cast<int>(AttrType::INTS); }
     | STRING_T { $$ = static_cast<int>(AttrType::CHARS); }
@@ -589,25 +592,36 @@ value_list:
       delete $2;
     }
     ;
+
+number:
+    NUMBER {
+      $$ = $1;
+    }
+    | '-' NUMBER {
+      $$ = -$2;
+    }
+    ;
+
+float:
+    FLOAT {
+      $$ = $1;
+    }
+    | '-' FLOAT {
+      $$ = -$2;
+    }
+    ;
+
 value:
     NULLABLE {
       $$ = new Value(string("ckk is stupid!"), 114514);
       @$ = @1;
     }
-    |NUMBER {
+    |number {
       $$ = new Value((int)$1);
       @$ = @1;
     }
-    |FLOAT {
+    |float {
       $$ = new Value((float)$1);
-      @$ = @1;
-    }
-    |'-' NUMBER {
-      $$ = new Value(-(int)$2);
-      @$ = @1;
-    }
-    |'-' FLOAT {
-      $$ = new Value(-(float)$2);
       @$ = @1;
     }
     |DATE_STR {
@@ -718,45 +732,47 @@ update_target_list:
     ;
 
 select_stmt:        /*  select 语句的语法解析树*/
-    SELECT expression_list FROM relation rel_list join_list where group_by having order_by_list
+    SELECT query_unit query_list FROM relation rel_list join_list where group_by having order_by_list
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
-      if ($2 != nullptr) {
-        $$->selection.expressions.swap(*$2);
-        delete $2;
+      if ($3 != nullptr) {
+        $$->selection.expressions.swap(*$3);
+        delete $3;
       }
-
-      if ($5 != nullptr) {
-        $$->selection.relations.swap(*$5);
-        delete $5;
-      }
-      $$->selection.relations.emplace_back($4);
-      std::reverse($$->selection.relations.begin(), $$->selection.relations.end());
+      $$->selection.expressions.emplace_back($2);
+      std::reverse($$->selection.expressions.begin(), $$->selection.expressions.end());
 
       if ($6 != nullptr) {
-        $$->selection.join.swap(*$6);
+        $$->selection.relations.swap(*$6);
         delete $6;
+      }
+      $$->selection.relations.emplace_back($5);
+      std::reverse($$->selection.relations.begin(), $$->selection.relations.end());
+
+      if ($7 != nullptr) {
+        $$->selection.join.swap(*$7);
+        delete $7;
       }
       std::reverse($$->selection.join.begin(), $$->selection.join.end());
 
-      if ($7 != nullptr) {
-        $$->selection.conditions.swap(*$7);
-        delete $7;
-      }
-
       if ($8 != nullptr) {
-        $$->selection.group_by.swap(*$8);
+        $$->selection.conditions.swap(*$8);
         delete $8;
       }
 
-      if($9 != nullptr) {
-        $$->selection.having_conditions.swap(*$9);
+      if ($9 != nullptr) {
+        $$->selection.group_by.swap(*$9);
         delete $9;
       }
 
       if($10 != nullptr) {
-        $$->selection.order_by.swap(*$10);
+        $$->selection.having_conditions.swap(*$10);
         delete $10;
+      }
+
+      if($11 != nullptr) {
+        $$->selection.order_by.swap(*$11);
+        delete $11;
       }
       std::reverse($$->selection.order_by.begin(), $$->selection.order_by.end());
     }
@@ -792,8 +808,61 @@ expression_list:
       $$->emplace($$->begin(), $1);
     }
     ;
+
+aggre_type:
+    MAX { 
+      const char * result = "MAX";
+      $$ = result; 
+    }
+    | MIN { 
+      const char * result = "MIN";
+      $$ = result; 
+    }
+    | COUNT { 
+      const char * result = "COUNT";
+      $$ = result; 
+    }
+    | AVG { 
+      const char * result = "AVG";
+      $$ = result; 
+    }
+    | SUM { 
+      const char * result = "SUM";
+      $$ = result; 
+    }
+    ;
+
 expression:
-    ID {
+    NUMBER {
+      $$ = new ValueExpr(Value($1));
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | FLOAT {
+      $$ = new ValueExpr(Value($1));
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | DATE_STR {
+      char *tmp = common::substr($1, 1, strlen($1)-2);
+      int year, month, day;
+      sscanf(tmp, "%d-%d-%d", &year, &month, &day);
+      int date_num = year * 10000 + month * 100 + day;
+      free(tmp);
+      free($1);
+
+      $$ = new ValueExpr(Value(date_num, true));
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | NULLABLE {
+      $$ = new ValueExpr(Value("dmx is handsome", 114514));
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | SSS {
+      char *tmp = common::substr($1,1,strlen($1)-2);
+      $$ = new ValueExpr(Value(tmp));
+      free(tmp);
+      $$->set_name(token_name(sql_string, &@$));
+    }
+    | ID {
       $$ = new UnboundFieldExpr(string(), $1);
       $$->set_name(token_name(sql_string, &@$));
       free($1);
@@ -807,16 +876,6 @@ expression:
       $$ = new StarExpr($1);
       $$->set_name(token_name(sql_string, &@$));
       free($1);
-    }
-    | expression AS ID {
-      $$ = new AliasExpr($3, $1);
-      $$->set_name(token_name(sql_string, &@$));
-      free($3);
-    }
-    | expression ID {
-      $$ = new AliasExpr($2, $1);
-      $$->set_name(token_name(sql_string, &@$));
-      free($2);
     }
     | expression '+' expression {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::ADD, $1, $3, sql_string, &@$);
@@ -837,62 +896,17 @@ expression:
     | '-' expression %prec UMINUS {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $2, nullptr, sql_string, &@$);
     }
-    | value {
-      $$ = new ValueExpr(*$1);
-      $$->set_name(token_name(sql_string, &@$));
-      delete $1;
-    }
     | '*' {
       $$ = new StarExpr();
     }
-    | MAX LBRACE RBRACE {
-      $$ = create_aggregate_expression("MAX", nullptr, sql_string, &@$);
+    | aggre_type LBRACE RBRACE {
+      $$ = create_aggregate_expression($1, nullptr, sql_string, &@$);
     }
-    | MIN LBRACE RBRACE {
-      $$ = create_aggregate_expression("MIN", nullptr, sql_string, &@$);
-    }
-    | AVG LBRACE RBRACE {
-      $$ = create_aggregate_expression("AVG", nullptr, sql_string, &@$);
-    }
-    | SUM LBRACE RBRACE {
-      $$ = create_aggregate_expression("SUM", nullptr, sql_string, &@$);
-    }
-    | COUNT LBRACE RBRACE {
-      $$ = create_aggregate_expression("COUNT", nullptr, sql_string, &@$);
-    }
-    | MAX LBRACE expression_list RBRACE {
+    | aggre_type LBRACE expression_list RBRACE {
       if($3->size() != 1) {
-        $$ = create_aggregate_expression("MAX", nullptr, sql_string, &@$);
+        $$ = create_aggregate_expression($1, nullptr, sql_string, &@$);
       } else {
-        $$ = create_aggregate_expression("MAX", $3->at(0).get(), sql_string, &@$);
-      }
-    }
-    | MIN LBRACE expression_list RBRACE {
-      if($3->size() != 1) {
-        $$ = create_aggregate_expression("MIN", nullptr, sql_string, &@$);
-      } else {
-        $$ = create_aggregate_expression("MIN", $3->at(0).get(), sql_string, &@$);
-      }
-    }
-    | COUNT LBRACE expression_list RBRACE {
-      if($3->size() != 1) {
-        $$ = create_aggregate_expression("COUNT", nullptr, sql_string, &@$);
-      } else {
-        $$ = create_aggregate_expression("COUNT", $3->at(0).get(), sql_string, &@$);
-      }
-    }
-    | AVG LBRACE expression_list RBRACE {
-      if($3->size() != 1) {
-        $$ = create_aggregate_expression("AVG", nullptr, sql_string, &@$);
-      } else {
-        $$ = create_aggregate_expression("AVG", $3->at(0).get(), sql_string, &@$);
-      }
-    }
-    | SUM LBRACE expression_list RBRACE {
-      if($3->size() != 1) {
-        $$ = create_aggregate_expression("SUM", nullptr, sql_string, &@$);
-      } else {
-        $$ = create_aggregate_expression("SUM", $3->at(0).get(), sql_string, &@$);
+        $$ = create_aggregate_expression($1, $3->at(0).get(), sql_string, &@$);
       }
     }
     | LENGTH LBRACE expression RBRACE {
@@ -920,6 +934,35 @@ expression:
       $$->set_name(token_name(sql_string, &@$));
     }
     ;
+
+query_unit:
+    expression {
+      $$ = $1;
+    }
+    | expression AS ID {
+      $$ = new AliasExpr($3, $1);
+      $$->set_name(token_name(sql_string, &@$));
+      free($3);
+    }
+    | expression ID {
+      $$ = new AliasExpr($2, $1);
+      $$->set_name(token_name(sql_string, &@$));
+      free($2);
+    }
+
+query_list:
+    {
+      $$ = nullptr;
+    }
+    | COMMA query_unit query_list {
+      if ($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new std::vector<std::unique_ptr<Expression>>;
+      }
+
+      $$->emplace_back($2);
+    }
 
 relation:
     ID {

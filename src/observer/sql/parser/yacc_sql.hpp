@@ -168,8 +168,9 @@ union YYSTYPE
   int                                        number;
   float                                      floats;
   bool                                       boolean;
+  const char *                               aggre_type;
 
-#line 173 "yacc_sql.hpp"
+#line 174 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

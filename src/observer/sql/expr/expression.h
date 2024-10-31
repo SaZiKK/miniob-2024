@@ -596,6 +596,7 @@ class ConjunctionExpr : public Expression {
 // *********************************************************
 // * 算术表达式
 // *
+// * 需要别名
 class ArithmeticExpr : public Expression {
  public:
   enum class Type {
@@ -634,6 +635,15 @@ class ArithmeticExpr : public Expression {
   std::unique_ptr<Expression> &left() { return left_; }
   std::unique_ptr<Expression> &right() { return right_; }
 
+  string arith_alias() const { return arith_alias_; }
+  void set_alias(string alias) { arith_alias_ = alias; }
+
+  RC get_alias(string &alias) const override {
+    if (arith_alias_.empty()) return RC::INVALID_ARGUMENT;
+    alias = arith_alias_;
+    return RC::SUCCESS;
+  }
+
  private:
   RC calc_value(const Value &left_value, const Value &right_value, Value &value) const;
 
@@ -646,6 +656,8 @@ class ArithmeticExpr : public Expression {
   Type arithmetic_type_;
   std::unique_ptr<Expression> left_;
   std::unique_ptr<Expression> right_;
+
+  string arith_alias_;
 };
 
 // *********************************************************
