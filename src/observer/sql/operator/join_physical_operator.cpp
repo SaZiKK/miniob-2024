@@ -16,7 +16,7 @@ See the Mulan PSL v2 for more details. */
 
 NestedLoopJoinPhysicalOperator::NestedLoopJoinPhysicalOperator() {}
 
-RC NestedLoopJoinPhysicalOperator::open(Trx *trx) {
+RC NestedLoopJoinPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   if (children_.size() != 2) {
     LOG_WARN("nlj operator should have 2 children");
     return RC::INTERNAL;
@@ -28,7 +28,7 @@ RC NestedLoopJoinPhysicalOperator::open(Trx *trx) {
   right_closed_ = true;
   round_done_ = true;
 
-  rc = left_->open(trx);
+  rc = left_->open(trx, main_tuple);
   trx_ = trx;
   return rc;
 }

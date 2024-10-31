@@ -118,18 +118,14 @@ RC CastExpr::try_get_value(Value &result) const {
 
 RC SubQueryExpr::get_tuple_list(const Tuple *main_tuple, std::vector<std::vector<Value>> &tuple_list) {
   if (sub_query_ == nullptr) return RC::INVALID_ARGUMENT;
+  if (use_father_table_ == false) return try_get_tuple_list(tuple_list);
 
-  if (has_calculated_ == false) {
-    TupleSchema tuple_schema;
-    RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list, tuple_schema, main_tuple);
-    if (rc == RC::SUCCESS) {
-      tuple_list_ = tuple_list;
-      has_calculated_ = true;
-    }
-    return rc;
+  TupleSchema tuple_schema;
+  RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list, tuple_schema, main_tuple);
+  if (rc == RC::SUCCESS) {
+    tuple_list_ = tuple_list;
   }
-  tuple_list = tuple_list_;
-  return RC::SUCCESS;
+  return rc;
 }
 
 RC SubQueryExpr::try_get_tuple_list(std::vector<std::vector<Value>> &tuple_list) {
@@ -161,10 +157,10 @@ int basicCompare(CompType type_, const Value &left, const Value &right, const st
   int cmp_result = INT32_MAX;
   Value value;
   if (!right_tuple_list.empty() && type_ == CompType::VAL_TUPLES) {
-    cmp_result = left.compare(right_tuple_list[0][0]);
+    if (!right_tuple_list[0][0].get_null()) cmp_result = left.compare(right_tuple_list[0][0]);
   }
   if (!left_tuple_list.empty() && type_ == CompType::TUPLES_VAL) {
-    cmp_result = left_tuple_list[0][0].compare(right);
+    if (!left_tuple_list[0][0].get_null()) cmp_result = left_tuple_list[0][0].compare(right);
   }
   if (!left_list.empty() && type_ == CompType::LIST_VAL) {
     value = left_list[0];

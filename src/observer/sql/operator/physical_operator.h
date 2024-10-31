@@ -77,7 +77,7 @@ class PhysicalOperator {
 
   virtual PhysicalOperatorType type() const = 0;
 
-  virtual RC open(Trx *trx) = 0;
+  virtual RC open(Trx *trx, const Tuple *main_tuple = nullptr) = 0;
   virtual RC next(const Tuple *main_tuple = nullptr) { return RC::UNIMPLEMENTED; }
   virtual RC next(Chunk &chunk) { return RC::UNIMPLEMENTED; }
   virtual RC close() = 0;

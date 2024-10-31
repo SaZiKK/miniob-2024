@@ -27,7 +27,7 @@ IndexScanPhysicalOperator::IndexScanPhysicalOperator(Table *table, Index *index,
   }
 }
 
-RC IndexScanPhysicalOperator::open(Trx *trx) {
+RC IndexScanPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   if (nullptr == table_ || nullptr == index_) {
     return RC::INTERNAL;
   }

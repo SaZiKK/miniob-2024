@@ -18,7 +18,7 @@ using namespace common;
 
 ExprVecPhysicalOperator::ExprVecPhysicalOperator(std::vector<Expression *> &&expressions) { expressions_ = std::move(expressions); }
 
-RC ExprVecPhysicalOperator::open(Trx *trx) {
+RC ExprVecPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
 
   PhysicalOperator &child = *children_[0];

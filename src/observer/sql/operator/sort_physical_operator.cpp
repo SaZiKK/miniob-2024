@@ -36,9 +36,9 @@ SortPhysicalOperator::SortPhysicalOperator(std::vector<Field> order_by_fields) :
   order_by_flags_.resize(order_by_fields.size());
 }
 
-RC SortPhysicalOperator::open(Trx *trx) {
+RC SortPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   if (children_.empty()) return RC::INTERNAL;
-  return children_[0]->open(trx);
+  return children_[0]->open(trx, main_tuple);
 }
 
 RC SortPhysicalOperator::next(const Tuple *main_tuple) {
@@ -47,7 +47,7 @@ RC SortPhysicalOperator::next(const Tuple *main_tuple) {
   if (has_collected == false) {
     valueList_tuples_.clear();
     valueList_tuples_.resize(0);
-    while ((rc = children_[0]->next()) == RC::SUCCESS) {
+    while ((rc = children_[0]->next(main_tuple)) == RC::SUCCESS) {
       // 获取下层算子的元组，并存储起来
       Tuple *tuple = children_[0]->current_tuple();
       std::vector<Value> values;

@@ -23,11 +23,11 @@ using namespace common;
 HashGroupByPhysicalOperator::HashGroupByPhysicalOperator(vector<unique_ptr<Expression>> &&group_by_exprs, vector<Expression *> &&expressions)
     : GroupByPhysicalOperator(std::move(expressions)), group_by_exprs_(std::move(group_by_exprs)) {}
 
-RC HashGroupByPhysicalOperator::open(Trx *trx) {
+RC HashGroupByPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
 
   PhysicalOperator &child = *children_[0];
-  RC rc = child.open(trx);
+  RC rc = child.open(trx, main_tuple);
   if (OB_FAIL(rc)) {
     LOG_INFO("failed to open child operator. rc=%s", strrc(rc));
     return rc;
@@ -37,7 +37,7 @@ RC HashGroupByPhysicalOperator::open(Trx *trx) {
 
   ValueListTuple group_by_evaluated_tuple;
 
-  while (OB_SUCC(rc = child.next())) {
+  while (OB_SUCC(rc = child.next(main_tuple))) {
     Tuple *child_tuple = child.current_tuple();
     if (nullptr == child_tuple) {
       LOG_WARN("failed to get tuple from child operator. rc=%s", strrc(rc));

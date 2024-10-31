@@ -22,7 +22,7 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-RC TableScanPhysicalOperator::open(Trx *trx) {
+RC TableScanPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   RC rc = table_->get_record_scanner(record_scanner_, trx, mode_);
   if (rc == RC::SUCCESS) {
     tuple_.set_schema(table_, table_->table_meta().field_metas());

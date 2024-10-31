@@ -27,7 +27,7 @@ class ExplainPhysicalOperator : public PhysicalOperator {
 
   PhysicalOperatorType type() const override { return PhysicalOperatorType::EXPLAIN; }
 
-  RC open(Trx *trx) override;
+  RC open(Trx *trx, const Tuple *main_tuple = nullptr) override;
   RC next(const Tuple *main_tuple = nullptr) override;
   RC next(Chunk &chunk) override;
   RC close() override;

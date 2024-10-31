@@ -413,7 +413,7 @@ class ValueExpr : public Expression {
 class SubQueryExpr : public Expression {
  public:
   SubQueryExpr() = default;
-  explicit SubQueryExpr(SelectStmt *sub_query, bool use_flag = false) : sub_query_(sub_query), use_father_table_(use_flag){};
+  explicit SubQueryExpr(SelectStmt *sub_query, bool use_flag = false) : sub_query_(sub_query), use_father_table_(use_flag) {}
 
   virtual ~SubQueryExpr() = default;
 

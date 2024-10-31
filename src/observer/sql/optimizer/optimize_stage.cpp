@@ -32,6 +32,9 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
+unique_ptr<LogicalOperator> OptimizeStage::cur_logical_oper = nullptr;
+unique_ptr<PhysicalOperator> OptimizeStage::cur_physical_oper = nullptr;
+
 RC OptimizeStage::handle_request(SQLStageEvent *sql_event) {
   // 创建逻辑算子
   unique_ptr<LogicalOperator> logical_operator;
@@ -129,10 +132,9 @@ RC OptimizeStage::create_logical_plan(SQLStageEvent *sql_event, unique_ptr<Logic
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list, TupleSchema &tuple_schema, const Tuple *main_tuple) {
+  RC rc = RC::SUCCESS;
   // 创建逻辑算子
-  unique_ptr<LogicalOperator> logical_operator;
-
-  RC rc = create_logical_plan(stmt, logical_operator);
+  if (cur_logical_oper == nullptr) rc = create_logical_plan(stmt, cur_logical_oper);
 
   // 查错
   if (rc != RC::SUCCESS) {
@@ -141,7 +143,7 @@ RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &t
     }
     return rc;
   }
-  ASSERT(logical_operator, "logical operator is null");
+  ASSERT(cur_logical_oper, "logical operator is null");
 
   // rc = rewrite(logical_operator);
 
@@ -152,7 +154,7 @@ RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &t
   //   return rc;
   // }
 
-  rc = optimize(logical_operator);
+  rc = optimize(cur_logical_oper);
 
   // 查错
   if (rc != RC::SUCCESS) {
@@ -160,8 +162,7 @@ RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &t
     return rc;
   }
 
-  unique_ptr<PhysicalOperator> physical_operator;
-  rc = generate_physical_plan(logical_operator, physical_operator);
+  if (cur_physical_oper == nullptr) rc = generate_physical_plan(cur_logical_oper, cur_physical_oper);
 
   // 查错
   if (rc != RC::SUCCESS) {
@@ -169,8 +170,8 @@ RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &t
     return rc;
   }
 
-  get_tuple_schema(physical_operator.get(), tuple_schema);
-  get_tuple_list(physical_operator.get(), tuple_list, main_tuple);
+  get_tuple_schema(cur_physical_oper.get(), tuple_schema);
+  get_tuple_list(cur_physical_oper.get(), tuple_list, main_tuple);
 
   return rc;
 }
@@ -197,7 +198,7 @@ RC OptimizeStage::get_tuple_schema(PhysicalOperator *physical_operator, TupleSch
 }
 
 RC OptimizeStage::get_tuple_list(PhysicalOperator *physical_operator, std::vector<std::vector<Value>> &tuple_list, const Tuple *main_tuple) {
-  RC rc = physical_operator->open(nullptr);
+  RC rc = physical_operator->open(nullptr, main_tuple);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to open sub physical operator. rc=%s", strrc(rc));
     return rc;

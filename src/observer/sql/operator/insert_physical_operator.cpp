@@ -21,7 +21,7 @@ using namespace std;
 
 InsertPhysicalOperator::InsertPhysicalOperator(Table *table, vector<Value> &&values) : table_(table), values_(std::move(values)) {}
 
-RC InsertPhysicalOperator::open(Trx *trx) {
+RC InsertPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   Record record;
   RC rc = table_->make_record(static_cast<int>(values_.size()), values_.data(), record);
   if (rc != RC::SUCCESS) {
