@@ -562,7 +562,9 @@ RC Table::delete_record(const Record &record) {
           LOG_ERROR("Failed to get page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), field->name(), rc, strrc(rc));
           return rc;
         }
-        while ( frame->pin_count() > 0 ) { data_buffer_pool_->unpin_page(frame); }
+        while (frame->pin_count() > 0) {
+          data_buffer_pool_->unpin_page(frame);
+        }
         rc = data_buffer_pool_->dispose_page(page_num);
         data_buffer_pool_->mark_text_page(page_num, false);
         if (rc != RC::SUCCESS) {
@@ -800,14 +802,18 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
         RC rc = RC::SUCCESS;
         rc = data_buffer_pool_->get_this_page(page_num, &frame);
         if (rc != RC::SUCCESS) {
-          LOG_ERROR("Failed to get page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc, strrc(rc));
+          LOG_ERROR("Failed to get page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc,
+                    strrc(rc));
           return rc;
         }
-        while ( frame->pin_count() > 0 ) { data_buffer_pool_->unpin_page(frame); }
+        while (frame->pin_count() > 0) {
+          data_buffer_pool_->unpin_page(frame);
+        }
         rc = data_buffer_pool_->dispose_page(page_num);
         data_buffer_pool_->mark_text_page(page_num, false);
         if (rc != RC::SUCCESS) {
-          LOG_ERROR("Failed to delete page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc, strrc(rc));
+          LOG_ERROR("Failed to delete page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc,
+                    strrc(rc));
           return rc;
         }
       }

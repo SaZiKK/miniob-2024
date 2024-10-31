@@ -217,7 +217,7 @@ class RowTuple : public Tuple {
           int length = *((int *)text_index);
           text_data = (char *)malloc(length);
           memset(text_data, 0, length);
-          int used_pages = length / BP_PAGE_SIZE + 1;
+          int used_pages = length / BP_PAGE_DATA_SIZE + 1;
           for (int i = 0; i < used_pages; i++) {
             memcpy(text_index, text_meta + sizeof(int) + i * sizeof(int), sizeof(int));
             page_nums[i] = *((int *)text_index);
