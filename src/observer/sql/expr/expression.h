@@ -46,6 +46,7 @@ enum class ExprType {
   UNBOUND_TABLE,        ///< 未绑定的表明，需要在resolver阶段提取别名和原名
   UNBOUND_AGGREGATION,  ///< 未绑定的聚合函数，需要在resolver阶段解析为AggregateExpr
 
+  ALIAS,        ///< 别名
   FIELD,        ///< 字段。在实际执行时，根据行数据内容提取对应字段的值
   JOINTABLE,    ///< join 字段
   ORDERBY,      ///< order 字段
@@ -61,19 +62,6 @@ enum class ExprType {
   VECFUNC,      ///< 向量函数运算
 };
 
-/**
- * @brief 表达式的抽象描述
- * @ingroup Expression
- * @details 在SQL的元素中，任何需要得出值的元素都可以使用表达式来描述
- * 比如获取某个字段的值、比较运算、类型转换
- * 当然还有一些当前没有实现的表达式，比如算术运算。
- *
- * 通常表达式的值，是在真实的算子运算过程中，拿到具体的tuple后
- * 才能计算出来真实的值。但是有些表达式可能就表示某一个固定的
- * 值，比如ValueExpr。
- *
- * TODO 区分unbound和bound的表达式
- */
 class Expression {
  public:
   Expression() = default;
@@ -141,6 +129,8 @@ class Expression {
    */
   virtual RC eval(Chunk &chunk, std::vector<uint8_t> &select) { return RC::UNIMPLEMENTED; }
 
+  virtual RC get_alias(string &alias) const { return RC::UNIMPLEMENTED; }
+
   static RC copy_expr(const std::unique_ptr<Expression> &expr_src, std::unique_ptr<Expression> &expr_dst);
 
  protected:
@@ -157,6 +147,32 @@ class Expression {
   std::string name_;
 };
 
+// *********************************************************
+// * 别名表达式
+// * 需要绑定：将别名导入子表达式并销毁自身
+class AliasExpr : public Expression {
+ public:
+  AliasExpr(string alias_name, std::unique_ptr<Expression> child) : alias_name_(alias_name), child_(std::move(child)) {}
+  AliasExpr(string alias_name, Expression *child) : alias_name_(alias_name), child_(child) {}
+  virtual ~AliasExpr() = default;
+
+  ExprType type() const override { return ExprType::ALIAS; }
+  AttrType value_type() const override { return AttrType::UNDEFINED; }
+
+  RC get_value(const Tuple &tuple, Value &value) const override { return RC::UNIMPLEMENTED; }
+
+  const char *alias_name() const { return alias_name_.c_str(); }
+  std::unique_ptr<Expression> &child() { return child_; }
+
+ private:
+  std::string alias_name_;
+  std::unique_ptr<Expression> child_;
+};
+
+// *********************************************************
+// * 星号 "*" 表达式
+// * 需要绑定：将 "*" 转换成某个表格的全部属性集合
+// * 需要别名
 class StarExpr : public Expression {
  public:
   StarExpr() : table_name_() {}
@@ -169,11 +185,25 @@ class StarExpr : public Expression {
   RC get_value(const Tuple &tuple, Value &value) const override { return RC::UNIMPLEMENTED; }  // 不需要实现
 
   const char *table_name() const { return table_name_.c_str(); }
+  const char *star_alias() const { return star_alias_.c_str(); }
+
+  void set_star_alias(string star_alias) { star_alias_ = star_alias; }
+  RC get_alias(string &alias) const override {
+    if (star_alias_.empty()) return RC::INVALID_ARGUMENT;
+    alias = star_alias_;
+    return RC::SUCCESS;
+  }
 
  private:
   std::string table_name_;
+
+  std::string star_alias_;
 };
 
+// *********************************************************
+// * 未绑定域表达式
+// * 需要绑定：通过表格名和域名找到真正的 Field
+// * 需要别名
 class UnboundFieldExpr : public Expression {
  public:
   UnboundFieldExpr(const std::string &table_name, const std::string &field_name, const std::string field_alias = "")
@@ -189,6 +219,8 @@ class UnboundFieldExpr : public Expression {
   RC get_value(const Tuple &tuple, Value &value) const override { return RC::INTERNAL; }
   void set_table_alias(string table_alias) { table_alias_ = table_alias; }
   void set_table_name(string table_name) { table_name_ = table_name; }
+  void set_field_alias(string field_alias) { field_alias_ = field_alias; }
+  void set_field_name(string field_name) { field_name_ = field_name; }
 
   const char *table_name() const { return table_name_.c_str(); }
   const char *field_name() const { return field_name_.c_str(); }
@@ -197,6 +229,12 @@ class UnboundFieldExpr : public Expression {
 
   bool has_table_alias() const { return !string(table_alias_).empty(); }
   bool has_field_alias() const { return !string(field_alias_).empty(); }
+
+  RC get_alias(string &alias) const override {
+    if (field_alias_.empty()) return RC::INVALID_ARGUMENT;
+    alias = field_alias_;
+    return RC::SUCCESS;
+  }
 
   int is_asc() const { return is_asc_; }
   void set_asc_or_desc(int flag) { is_asc_ = flag ? (flag > 0 ? 1 : -1) : 0; }
@@ -214,6 +252,10 @@ class UnboundFieldExpr : public Expression {
   int is_asc_ = 0;
 };
 
+// *********************************************************
+// * 未绑定表格表达式
+// * 需要绑定：通过表格名找到真正的 Table
+// * 需要别名
 class UnboundTableExpr : public Expression {
  public:
   UnboundTableExpr(const std::string &table_name, const std::string table_alias = "") : table_name_(table_name), table_alias_(table_alias) {}
@@ -225,8 +267,16 @@ class UnboundTableExpr : public Expression {
 
   RC get_value(const Tuple &tuple, Value &value) const override { return RC::INTERNAL; }
 
+  void set_table_alias(string table_alias) { table_alias_ = table_alias; }
+
   const char *table_name() const { return table_name_.c_str(); }
   const char *table_alias() const { return table_alias_.c_str(); }
+
+  RC get_alias(string &alias) const override {
+    if (table_alias_.empty()) return RC::INVALID_ARGUMENT;
+    alias = table_alias_;
+    return RC::SUCCESS;
+  }
 
   bool has_table_alias() const { return !string(table_alias_).empty(); }
 
@@ -237,6 +287,9 @@ class UnboundTableExpr : public Expression {
   std::string table_alias_;
 };
 
+// *********************************************************
+// * 排序表达式
+// *
 class OrderByExpr : public Expression {
  public:
   OrderByExpr(std::unique_ptr<Expression> child, int flag) : child_(std::move(child)), flag_(flag) {}
@@ -257,6 +310,9 @@ class OrderByExpr : public Expression {
   int flag_;
 };
 
+// *********************************************************
+// * 表格连接表达式
+// *
 class JoinTableExpr : public Expression {
  public:
   JoinTableExpr(std::vector<ConditionSqlNode> conditions, unique_ptr<Expression> child) : conditions_(conditions), child_(std::move(child)) {}
@@ -277,10 +333,10 @@ class JoinTableExpr : public Expression {
   std::unique_ptr<Expression> child_;
 };
 
-/**
- * @brief 字段表达式
- * @ingroup Expression
- */
+// *********************************************************
+// * 绑定表格表达式
+// *
+// * 需要别名
 class FieldExpr : public Expression {
  public:
   FieldExpr() = default;
@@ -303,6 +359,12 @@ class FieldExpr : public Expression {
   const char *table_name() const { return field_.table_name(); }
   const char *field_name() const { return field_.field_name(); }
 
+  RC get_alias(string &alias) const override {
+    if (!field_.has_field_alias()) return RC::INVALID_ARGUMENT;
+    alias = field_.field_alias();
+    return RC::SUCCESS;
+  }
+
   RC get_column(Chunk &chunk, Column &column) override;
 
   RC get_value(const Tuple &tuple, Value &value) const override;
@@ -311,10 +373,9 @@ class FieldExpr : public Expression {
   Field field_;
 };
 
-/**
- * @brief 常量值表达式
- * @ingroup Expression
- */
+// *********************************************************
+// * Value 表达式
+// *
 class ValueExpr : public Expression {
  public:
   ValueExpr() = default;
@@ -343,10 +404,10 @@ class ValueExpr : public Expression {
   Value value_;
 };
 
-/**
- * @brief 子查询表达式
- * @ingroup Expression
- */
+// *********************************************************
+// * 子查询表达式
+// *
+// TODO 重写子查询逻辑
 class SubQueryExpr : public Expression {
  public:
   SubQueryExpr() = default;
@@ -375,6 +436,9 @@ class SubQueryExpr : public Expression {
   std::vector<std::vector<Value>> tuple_list_;
 };
 
+// *********************************************************
+// * ValueList 表达式
+// *
 class ValueListExpr : public Expression {
  public:
   ValueListExpr() = default;
@@ -399,10 +463,9 @@ class ValueListExpr : public Expression {
   std::vector<Value> values_;
 };
 
-/**
- * @brief 类型转换表达式
- * @ingroup Expression
- */
+// *********************************************************
+// * 类型强制转换表达式
+// *
 class CastExpr : public Expression {
  public:
   CastExpr(std::unique_ptr<Expression> child, AttrType cast_type);
@@ -445,10 +508,9 @@ enum CompType {
   TUPLE_TUPLES,   ///< 元组-元组列
 };
 
-/**
- * @brief 比较表达式
- * @ingroup Expression
- */
+// *********************************************************
+// * 比较表达式
+// *
 class ComparisonExpr : public Expression {
  public:
   ComparisonExpr(CompOp comp, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right);
@@ -504,12 +566,9 @@ class ComparisonExpr : public Expression {
   std::unique_ptr<Expression> right_;
 };
 
-/**
- * @brief 联结表达式
- * @ingroup Expression
- * 多个表达式使用同一种关系(AND或OR)来联结
- * 当前miniob仅有AND操作
- */
+// *********************************************************
+// * 比较连接表达式
+// *
 class ConjunctionExpr : public Expression {
  public:
   enum class Type {
@@ -534,10 +593,9 @@ class ConjunctionExpr : public Expression {
   std::vector<std::unique_ptr<Expression>> children_;
 };
 
-/**
- * @brief 算术表达式
- * @ingroup Expression
- */
+// *********************************************************
+// * 算术表达式
+// *
 class ArithmeticExpr : public Expression {
  public:
   enum class Type {
@@ -590,6 +648,10 @@ class ArithmeticExpr : public Expression {
   std::unique_ptr<Expression> right_;
 };
 
+// *********************************************************
+// * 未绑定的聚合表达式
+// * 需要绑定：绑定子表达式并且将字符串转化成枚举类型
+// * 需要别名
 class UnboundAggregateExpr : public Expression {
  public:
   UnboundAggregateExpr(const char *aggregate_name, Expression *child);
@@ -604,11 +666,29 @@ class UnboundAggregateExpr : public Expression {
   RC get_value(const Tuple &tuple, Value &value) const override { return RC::INTERNAL; }
   AttrType value_type() const override { return child_->value_type(); }
 
+ public:
+  void set_aggre_alias(string aggre_alias) { aggre_alias_ = aggre_alias; }
+
+  const char *aggre_alias() const { return aggre_alias_.c_str(); }
+  bool has_aggre_alias() const { return !aggre_alias_.empty(); }
+
+  RC get_alias(string &alias) const override {
+    if (aggre_alias_.empty()) return RC::INVALID_ARGUMENT;
+    alias = aggre_alias_;
+    return RC::SUCCESS;
+  }
+
  private:
   std::string aggregate_name_;
   std::unique_ptr<Expression> child_;
+
+  std::string aggre_alias_;
 };
 
+// *********************************************************
+// * 绑定的聚合表达式
+// *
+// * 需要别名
 class AggregateExpr : public Expression {
  public:
   enum class Type {
@@ -643,18 +723,31 @@ class AggregateExpr : public Expression {
 
   std::unique_ptr<Aggregator> create_aggregator() const;
 
+  RC get_alias(string &alias) const override {
+    if (aggre_alias_.empty()) return RC::INVALID_ARGUMENT;
+    alias = aggre_alias_;
+    return RC::SUCCESS;
+  }
+
  public:
   static RC type_from_string(const char *type_str, Type &type);
+
+ public:
+  void set_aggre_alias(string aggre_alias) { aggre_alias_ = aggre_alias; }
+
+  const char *aggre_alias() const { return aggre_alias_.c_str(); }
+  bool has_aggre_alias() const { return !aggre_alias_.empty(); }
 
  private:
   Type aggregate_type_;
   std::unique_ptr<Expression> child_;
+
+  std::string aggre_alias_;
 };
 
-/**
- * @brief 函数表达式
- * @ingroup Expression
- */
+// *********************************************************
+// * 普通函数表达式
+// *
 class FuncExpr : public Expression {
  public:
   enum class FuncType { LENGTH, ROUND, DATE_FORMAT, UNDEFINED };
@@ -685,10 +778,9 @@ class FuncExpr : public Expression {
   std::unique_ptr<Expression> child_;
 };
 
-/**
- * @brief 函数表达式
- * @ingroup Expression
- */
+// *********************************************************
+// * 向量函数表达式
+// *
 class VecFuncExpr : public Expression {
  public:
   enum class VecFuncType {

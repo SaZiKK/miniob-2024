@@ -1,4 +1,5 @@
 #include "sql/operator/update_physical_operator.h"
+#include <cstddef>
 #include "common/log/log.h"
 #include "storage/table/table.h"
 #include "storage/trx/trx.h"
@@ -45,7 +46,7 @@ RC UpdatePhysicalOperator::open(Trx *trx) {
     backup_datas.push_back(backup_data);
   }
 
-  int update_num = 0;
+  size_t update_num = 0;
 
   // 先收集记录再更新
   // 记录的有效性由事务来保证，如果事务不保证更新的有效性，那说明此事务类型不支持并发控制，比如VacuousTrx
@@ -55,7 +56,7 @@ RC UpdatePhysicalOperator::open(Trx *trx) {
     if (rc != RC::SUCCESS) {
       // 如果更新失败，需要回滚
       assert(backup_datas.size() == records_.size());  // 确保两个 vector 长度相等
-      for (int i = 0; i < update_num; ++i) {
+      for (int i = 0; i < (int)update_num; ++i) {
         char *backup_data = backup_datas[i];
         Record &record = records_[i];
 

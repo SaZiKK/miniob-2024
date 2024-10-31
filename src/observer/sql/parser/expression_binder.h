@@ -24,27 +24,47 @@ class BinderContext {
   virtual ~BinderContext() = default;
 
   void add_table(Table *table) { query_tables_.push_back(table); }
-  void add_alias_and_name(pair<std::string, std::string> pair_) { alias_and_name_.insert(pair_); }
-  void add_father_alias_and_name(pair<std::string, std::string> pair_) { father_alias_and_name_.insert(pair_); }
-  void add_fields_alias_and_name(pair<std::string, std::string> pair_) { fields_alias_and_name_.insert(pair_); }
+  void add_t_alias(pair<std::string, std::string> pair_) { T_AliasMap.insert(pair_); }
+  void add_fa_t_alias(pair<std::string, std::string> pair_) { FA_T_AliasMap.insert(pair_); }
+  void add_f_alias(pair<std::string, std::string> pair_) { F_AliasMap.insert(pair_); }
 
   Table *find_table(const char *table_name) const;
 
   const std::vector<Table *> &query_tables() const { return query_tables_; }
-  const std::unordered_map<std::string, std::string> alias_and_name() const { return alias_and_name_; }
-  const std::unordered_map<std::string, std::string> father_alias_and_name() const { return father_alias_and_name_; }
-  const std::unordered_map<std::string, std::string> fields_alias_and_name() const { return fields_alias_and_name_; }
+  const std::unordered_map<std::string, std::string> t_alias() const { return T_AliasMap; }
+  const std::unordered_map<std::string, std::string> fa_t_alias() const { return FA_T_AliasMap; }
+  const std::unordered_map<std::string, std::string> f_alias() const { return F_AliasMap; }
+
+  // ? 试图将表格别名还原
+  const RC try_revert_t(string &table_name) {
+    if (T_AliasMap.count(table_name)) {
+      table_name = T_AliasMap[table_name];
+      return RC::SUCCESS;
+    }
+    if (FA_T_AliasMap.count(table_name)) {
+      table_name = FA_T_AliasMap[table_name];
+      return RC::SUCCESS;
+    }
+    return RC::INVALID_ARGUMENT;
+  }
+  const RC try_revert_f(string &field_name) {
+    if (F_AliasMap.count(field_name)) {
+      field_name = F_AliasMap[field_name];
+      return RC::SUCCESS;
+    }
+    return RC::INVALID_ARGUMENT;
+  }
 
  private:
   std::vector<Table *> query_tables_;
 
   // 当层别名起了就不能用原名
   // 上层起的别名下层用不用均可
-  std::unordered_map<std::string, std::string> alias_and_name_;
-  std::unordered_map<std::string, std::string> father_alias_and_name_;
+  std::unordered_map<std::string, std::string> T_AliasMap;
+  std::unordered_map<std::string, std::string> FA_T_AliasMap;
 
   // 传出的属性别名
-  std::unordered_map<std::string, std::string> fields_alias_and_name_;
+  std::unordered_map<std::string, std::string> F_AliasMap;
 };
 
 /**
@@ -72,6 +92,7 @@ class ExpressionBinder {
   RC bind_aggregate_expression(std::unique_ptr<Expression> &aggregate_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
   RC bind_func_expression(unique_ptr<Expression> &func_expr, vector<unique_ptr<Expression>> &bound_expressions);
   RC bind_vec_func_expression(unique_ptr<Expression> &vec_func_expr, vector<unique_ptr<Expression>> &bound_expressions);
+  RC bind_alias_expression(unique_ptr<Expression> &alias_expr, vector<unique_ptr<Expression>> &bound_expressions);
 
  private:
   BinderContext &context_;

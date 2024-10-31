@@ -63,6 +63,10 @@ RC CharType::cast_to(const Value &val, AttrType type, Value &result) const {
     case (AttrType::CHARS): {
       result = val;
     } break;
+    case (AttrType::TEXT): {
+      result = val;
+      result.attr_type_ = AttrType::TEXT;
+    } break;
     default:
       return RC::INVALID_ARGUMENT;
   }
@@ -83,6 +87,9 @@ int CharType::cast_cost(AttrType type) {
 
     case (AttrType::CHARS):
       return 0;
+
+    case (AttrType::TEXT):
+      return 1;
 
     default:
       return INT32_MAX;

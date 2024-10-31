@@ -97,6 +97,10 @@ RC ExpressionBinder::bind_expression(unique_ptr<Expression> &expr, vector<unique
       return bind_vec_func_expression(expr, bound_expressions);
     } break;
 
+    case ExprType::ALIAS: {
+      return bind_alias_expression(expr, bound_expressions);
+    }
+
     default: {
       LOG_WARN("unknown expression type: %d", static_cast<int>(expr->type()));
       return RC::INTERNAL;
@@ -114,17 +118,14 @@ RC ExpressionBinder::bind_star_expression(unique_ptr<Expression> &expr, vector<u
 
   vector<Table *> tables_to_wildcard;
 
-  const char *table_name = star_expr->table_name();
-  if (!is_blank(table_name) && 0 != strcmp(table_name, "*")) {
-    Table *table = context_.find_table(table_name);
-    if (nullptr == table) {
-      unordered_map<string, string> alias_map = context_.alias_and_name();
-      if (alias_map.count(table_name)) {
-        table_name = alias_map[table_name].c_str();
-        table = context_.find_table(table_name);
-        if (table == nullptr) return RC::SCHEMA_TABLE_NOT_EXIST;
-      }
-    }
+  string table_name = star_expr->table_name();
+
+  // ? 还原表格名称
+  context_.try_revert_t(table_name);
+
+  if (!is_blank(table_name.c_str()) && 0 != strcmp(table_name.c_str(), "*")) {
+    Table *table = context_.find_table(table_name.c_str());
+    if (nullptr == table) return RC::SCHEMA_TABLE_NOT_EXIST;
 
     tables_to_wildcard.push_back(table);
   } else {
@@ -146,81 +147,56 @@ RC ExpressionBinder::bind_unbound_field_expression(unique_ptr<Expression> &expr,
 
   auto unbound_field_expr = static_cast<UnboundFieldExpr *>(expr.get());
 
-  const char *table_name = unbound_field_expr->table_name();
-  const char *field_name = unbound_field_expr->field_name();
-  const char *field_alias = unbound_field_expr->field_alias();
+  string table_name = unbound_field_expr->table_name();
+  string field_name = unbound_field_expr->field_name();
 
-  if (unbound_field_expr->has_field_alias()) context_.add_fields_alias_and_name(std::make_pair(field_alias, field_name));
+  string field_alias = unbound_field_expr->field_alias();
+  string table_alias = table_name;
+
+  // ? 如果有属性别名
+  if (unbound_field_expr->has_field_alias()) context_.add_f_alias(std::make_pair(field_alias, field_name));
+
+  // ? 如果有表格别名
+  RC rc = context_.try_revert_t(table_alias);
+  if (rc == RC::SUCCESS) {
+    unbound_field_expr->set_table_alias(unbound_field_expr->table_name());
+    unbound_field_expr->set_table_name(table_alias);
+    table_name = table_alias;
+  }
 
   Table *table = nullptr;
-  // 如果属性列表不是 table_name.attr_name
-  // 的形式，table_name 为空，此时如果目标表格为多个则返回错误结果
-  if (is_blank(table_name)) {
-    if (context_.query_tables().size() != 1) {
-      LOG_INFO("cannot determine table for field: %s", field_name);
-      return RC::SCHEMA_TABLE_NOT_EXIST;
-    }
+  if (is_blank(table_name.c_str())) {
+    if (context_.query_tables().size() != 1) return RC::SCHEMA_TABLE_NOT_EXIST;
 
     table = context_.query_tables()[0];
-  }
-  // 如果属性列表是 table_name.attr_name 的形式，table_name
-  // 不为空，此时如果目标表格中不存在 table_name 则返回错误结果
-  else {
-    std::unordered_map<std::string, std::string> alias_map = context_.alias_and_name();
-    std::unordered_map<std::string, std::string> father_alias_map = context_.father_alias_and_name();
-    // table_name 实际上是别名，需要还原
-    if (alias_map.count(table_name)) {
-      unbound_field_expr->set_table_alias(table_name);
-      unbound_field_expr->set_table_name(alias_map[table_name]);
-      table_name = unbound_field_expr->table_name();
-    } else if (father_alias_map.count(table_name)) {
-      unbound_field_expr->set_table_alias(table_name);
-      unbound_field_expr->set_table_name(father_alias_map[table_name]);
-      table_name = unbound_field_expr->table_name();
-    } else {
-      // 如果当前层有别名但是不用，返回错误
-      for (auto it = alias_map.begin(); it != alias_map.end(); it++)
-        if (it->second == table_name) return RC::INVALID_ARGUMENT;
-    }
-    table = context_.find_table(table_name);
-    if (nullptr == table) {
-      LOG_INFO("no such table in from list: %s", table_name);
-      return RC::SCHEMA_TABLE_NOT_EXIST;
-    }
+  } else {
+    table = context_.find_table(table_name.c_str());
+    if (nullptr == table) return RC::SCHEMA_TABLE_NOT_EXIST;
   }
 
-  // 如果属性列表是通配符，则遍历表格的全部属性
-  if (0 == strcmp(field_name, "*")) {
+  if (0 == strcmp(field_name.c_str(), "*")) {
     wildcard_fields(table, bound_expressions);
   } else {
-    // 根据 Field 的名称找到对应的 FieldMeta 对象
-    const FieldMeta *field_meta = table->table_meta().field(field_name);
-    if (nullptr == field_meta) {
-      LOG_INFO("no such field in table: %s.%s", table_name, field_name);
-      return RC::SCHEMA_FIELD_MISSING;
-    }
+    const FieldMeta *field_meta = table->table_meta().field(field_name.c_str());
+    if (nullptr == field_meta) return RC::SCHEMA_FIELD_MISSING;
 
-    // 通过表格和 FieldMeta 对象创建 Field 对象，进而创建 FieldExpr 表达式
     Field field(table, field_meta);
-    // 设置别名信息
     if (unbound_field_expr->has_field_alias()) field.set_field_alias(unbound_field_expr->field_alias());
     if (unbound_field_expr->has_table_alias()) field.set_table_alias(unbound_field_expr->table_alias());
 
     FieldExpr *field_expr = new FieldExpr(field);
-    // 需要同时输出表格名称和属性名称
+
+    // ? 表头的输出 -- 有别名输出别名
+    // ? 表格多于一个，输出表格.属性
+    // ? 表格只有一个，输出属性
     if ((int)context_.query_tables().size() > 1) {
       string result;
-      // 有表格别名?
       result += field.has_table_alias() ? string(field.table_alias()) : string(field.table_name());
       result += '.';
-      // 有属性别名?
       result += field.has_field_alias() ? string(field.field_alias()) : string(field.field_name());
       field_expr->set_name(result.c_str());
-    }
-    // 只用输出属性名称
-    else {
+    } else {
       string result;
-      // 有属性别名?
       result += field.has_field_alias() ? string(field.field_alias()) : string(field.field_name());
       field_expr->set_name(result.c_str());
     }
@@ -347,6 +323,44 @@ RC ExpressionBinder::bind_conjunction_expression(unique_ptr<Expression> &expr, v
 
   bound_expressions.emplace_back(std::move(expr));
 
+  return RC::SUCCESS;
+}
+
+RC ExpressionBinder::bind_alias_expression(unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions) {
+  if (expr == nullptr) return RC::SUCCESS;
+
+  AliasExpr *alias_expr = static_cast<AliasExpr *>(expr.get());
+  string alias = alias_expr->alias_name();
+
+  unique_ptr<Expression> &child_expr = alias_expr->child();
+
+  switch (child_expr->type()) {
+    case ExprType::UNBOUND_FIELD: {
+      UnboundFieldExpr *field_expr = static_cast<UnboundFieldExpr *>(child_expr.get());
+      field_expr->set_field_alias(alias);
+    } break;
+    case ExprType::UNBOUND_TABLE: {
+      UnboundTableExpr *table_expr = static_cast<UnboundTableExpr *>(child_expr.get());
+      table_expr->set_table_alias(alias);
+    } break;
+    case ExprType::UNBOUND_AGGREGATION: {
+      UnboundAggregateExpr *aggre_expr = static_cast<UnboundAggregateExpr *>(child_expr.get());
+      aggre_expr->set_aggre_alias(alias);
+    } break;
+    case ExprType::STAR: {
+      StarExpr *star_expr = static_cast<StarExpr *>(child_expr.get());
+      star_expr->set_star_alias(alias);
+    } break;
+
+    default:
+      return RC::INVALID_ARGUMENT;
+      break;
+  }
+  vector<unique_ptr<Expression>> child_bound_expressions;
+  RC rc = bind_expression(child_expr, child_bound_expressions);
+  if (rc != RC::SUCCESS) return rc;
+
+  for (auto &it : child_bound_expressions) bound_expressions.emplace_back(std::move(it));
   return RC::SUCCESS;
 }
 
@@ -499,6 +513,7 @@ RC ExpressionBinder::bind_aggregate_expression(unique_ptr<Expression> &expr, vec
   // 创建聚合表达式
   auto aggregate_expr = make_unique<AggregateExpr>(aggregate_type, std::move(child_expr));
   aggregate_expr->set_name(unbound_aggregate_expr->name());
+  aggregate_expr->set_aggre_alias(unbound_aggregate_expr->aggre_alias());
 
   // 校验聚合表达式
   rc = check_aggregate_expression(*aggregate_expr);

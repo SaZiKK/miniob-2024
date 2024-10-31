@@ -61,7 +61,7 @@ class Table {
   RC open(Db *db, const char *meta_file, const char *base_dir);
 
   /**
-   * @brief 根据给定的字段生成一个记录/行
+   * @brief 根据给定的字段生成一个记录/行，检查字段类型，是否为NULL等，并复制数据到record中
    * @details 通常是由用户传过来的字段，按照schema信息组装成一个record。
    * @param value_num 字段的个数
    * @param values    每个字段的值
@@ -115,10 +115,12 @@ class Table {
 
   RC sync();
 
+  DiskBufferPool *data_buffer_pool() const { return data_buffer_pool_; }
+
  private:
   RC insert_entry_of_indexes(const char *record, const RID &rid);
   RC delete_entry_of_indexes(const char *record, const RID &rid, bool error_on_not_exists);
-  RC set_value_to_record(char *record_data, const Value &value, const FieldMeta *field, int index);
+  RC set_value_to_record(char *record_data, Value &value, const FieldMeta *field, int index);
 
  private:
   RC init_record_handler(const char *base_dir);

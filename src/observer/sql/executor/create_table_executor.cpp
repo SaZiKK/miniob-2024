@@ -48,8 +48,7 @@ RC CreateTableExecutor::execute(SQLStageEvent *sql_event) {
           attr_info.can_be_null = false;
           attr_info.name = create_table_stmt->query_expressions()[i]->name();
           attr_info.type = create_table_stmt->query_expressions()[i]->value_type();
-          // TODO 这是一段很危险的代码
-          attr_info.length = 4;
+          attr_info.length = create_table_stmt->query_expressions()[i]->value_length();
           attr_infos.push_back(attr_info);
         }
       }

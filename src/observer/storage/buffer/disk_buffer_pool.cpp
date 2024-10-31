@@ -12,6 +12,8 @@ See the Mulan PSL v2 for more details. */
 //
 #include <errno.h>
 #include <string.h>
+#include <cassert>
+#include <cstddef>
 
 #include "common/io/io.h"
 #include "common/lang/mutex.h"
@@ -179,13 +181,21 @@ RC BufferPoolIterator::init(DiskBufferPool &bp, PageNum start_page /* = 0 */) {
   } else {
     current_page_num_ = start_page - 1;
   }
+  this->bp_ = &bp;
   return RC::SUCCESS;
 }
 
 bool BufferPoolIterator::has_next() { return bitmap_.next_setted_bit(current_page_num_ + 1) != -1; }
 
 PageNum BufferPoolIterator::next() {
-  PageNum next_page = bitmap_.next_setted_bit(current_page_num_ + 1);
+  PageNum next_page = -1;
+  while (true) {
+    next_page = bitmap_.next_setted_bit(current_page_num_ + 1);
+    if (next_page == -1 || !(bp_->is_text_page_[next_page])) {
+      break;
+    }
+    current_page_num_ = next_page;
+  }
   if (next_page != -1) {
     current_page_num_ = next_page;
   }
@@ -289,6 +299,8 @@ RC DiskBufferPool::close_file() {
   bp_manager_.close_file(file_name_.c_str());
   return RC::SUCCESS;
 }
+
+void DiskBufferPool::mark_text_page(PageNum page_num, bool is_text_page) { this->is_text_page_[page_num] = is_text_page; }
 
 RC DiskBufferPool::get_this_page(PageNum page_num, Frame **frame) {
   RC rc = RC::SUCCESS;
@@ -698,7 +710,6 @@ RC DiskBufferPool::load_page(PageNum page_num, Frame *frame) {
   int64_t offset = ((int64_t)page_num) * BP_PAGE_SIZE;
   if (lseek(file_desc_, offset, SEEK_SET) == -1) {
     LOG_ERROR("Failed to load page %s:%d, due to failed to lseek:%s.", file_name_.c_str(), page_num, strerror(errno));
-
     return RC::IOERR_SEEK;
   }
 

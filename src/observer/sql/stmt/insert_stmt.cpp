@@ -44,11 +44,15 @@ RC InsertStmt::create(Db *db, const InsertSqlNode &inserts, Stmt *&stmt) {
     return RC::SCHEMA_FIELD_MISSING;
   }
 
-  // check date validity
+  // check date validity and text length
   for (int i = 0; i < value_num; ++i) {
     Value value = values[i];
     if (value.attr_type() == AttrType::DATE) {
       if (!DateType::check_date(value.get_date())) {
+        return RC::INVALID_ARGUMENT;
+      }
+    } else if (value.attr_type() == AttrType::CHARS) {
+      if (value.get_string().size() > BP_MAX_TEXT_SIZE) {
         return RC::INVALID_ARGUMENT;
       }
     }
