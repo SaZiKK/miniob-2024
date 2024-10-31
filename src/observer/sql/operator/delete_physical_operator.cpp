@@ -59,6 +59,6 @@ RC DeletePhysicalOperator::open(Trx *trx) {
   return RC::SUCCESS;
 }
 
-RC DeletePhysicalOperator::next() { return RC::RECORD_EOF; }
+RC DeletePhysicalOperator::next(const Tuple *main_tuple) { return RC::RECORD_EOF; }
 
 RC DeletePhysicalOperator::close() { return RC::SUCCESS; }

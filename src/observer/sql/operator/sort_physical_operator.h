@@ -23,7 +23,7 @@ class SortPhysicalOperator : public PhysicalOperator {
   Tuple *current_tuple() override;
 
   RC open(Trx *trx) override;
-  RC next() override;
+  RC next(const Tuple *main_tuple = nullptr) override;
   RC close() override;
 
  private:

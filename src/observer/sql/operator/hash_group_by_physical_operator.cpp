@@ -88,7 +88,7 @@ RC HashGroupByPhysicalOperator::open(Trx *trx) {
   return rc;
 }
 
-RC HashGroupByPhysicalOperator::next() {
+RC HashGroupByPhysicalOperator::next(const Tuple *main_tuple) {
   if (current_group_ == groups_.end()) {
     return RC::RECORD_EOF;
   }

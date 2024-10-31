@@ -2783,7 +2783,7 @@ yyreduce:
   case 90: /* expression: NULLABLE  */
 #line 855 "yacc_sql.y"
                {
-      (yyval.expression) = new ValueExpr(Value("dmx is handsome", 114514));
+      (yyval.expression) = new ValueExpr(Value(string("dmx is handsome"), 114514));
       (yyval.expression)->set_name(token_name(sql_string, &(yyloc)));
     }
 #line 2790 "yacc_sql.cpp"

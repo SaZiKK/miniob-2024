@@ -34,7 +34,7 @@ class IndexScanPhysicalOperator : public PhysicalOperator {
   std::string param() const override;
 
   RC open(Trx *trx) override;
-  RC next() override;
+  RC next(const Tuple *main_tuple = nullptr) override;
   RC close() override;
 
   Tuple *current_tuple() override;

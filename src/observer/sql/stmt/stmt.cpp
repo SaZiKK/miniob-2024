@@ -64,7 +64,8 @@ RC Stmt::create_stmt(Db *db, ParsedSqlNode &sql_node, Stmt *&stmt) {
     }
 
     case SCF_SELECT: {
-      return SelectStmt::create(db, sql_node.selection, stmt);
+      bool flag;
+      return SelectStmt::create(db, sql_node.selection, stmt, flag);
     }
 
     // 添加 SQL 语句：drop table

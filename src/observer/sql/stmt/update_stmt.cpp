@@ -64,7 +64,8 @@ RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt) {
   std::unordered_map<std::string, Table *> table_map;
   table_map.insert(std::pair<std::string, Table *>(std::string(table_name), table));
   FilterStmt *filter_stmt = nullptr;
-  RC rc = FilterStmt::create(db, table, &table_map, update.conditions.data(), static_cast<int>(update.conditions.size()), filter_stmt);
+  bool flag;
+  RC rc = FilterStmt::create(db, table, &table_map, update.conditions.data(), static_cast<int>(update.conditions.size()), filter_stmt, flag);
 
   // 谓词语句合法检查
   if (rc != RC::SUCCESS) {
@@ -76,7 +77,7 @@ RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt) {
   for (int i = 0; i < (int)update.update_targets.size(); i++) {
     if (update.update_targets[i].is_value == false) {
       Stmt *temp;
-      rc = SelectStmt::create(db, update.update_targets[i].sub_select->selection, temp);
+      rc = SelectStmt::create(db, update.update_targets[i].sub_select->selection, temp, flag);
       if (rc != RC::SUCCESS) return rc;
       vector<vector<Value>> tuple_list;
       TupleSchema tuple_schema;

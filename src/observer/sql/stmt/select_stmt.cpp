@@ -32,7 +32,7 @@ SelectStmt::~SelectStmt() {
 
 // ? 相较于原本的 create 函数新增加了两个参数，father_alias 代表父查询中定义的别名，father_tables 代表父查询中包含的表格
 // ? 表格在父查询中定义和在子查询中定义是不一样的
-RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, unordered_map<string, string> father_alias,
+RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, bool &use_father_table_flags, unordered_map<string, string> father_alias,
                       unordered_map<string, Table *> father_tables) {
   if (nullptr == db) return RC::INVALID_ARGUMENT;
 
@@ -135,6 +135,9 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, unordered_
   // *
   // *
 
+  // ? 父查询相关标志
+  bool left_flag = false;
+  bool right_flag = false;
   for (size_t i = 0; i < select_sql.conditions.size(); i++) {
     // ? right sub select stmt
     if (select_sql.conditions[i].right_is_sub_query) {
@@ -143,7 +146,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, unordered_
       if (right_sub_query->flag != SCF_SELECT) return RC::INVALID_ARGUMENT;
 
       Stmt *right_sub_query_stmt = nullptr;
-      RC rc = SelectStmt::create(db, right_sub_query->selection, right_sub_query_stmt, alias_for_son, tables_for_son);
+      RC rc = SelectStmt::create(db, right_sub_query->selection, right_sub_query_stmt, right_flag, alias_for_son, tables_for_son);
       if (rc != RC::SUCCESS) return rc;
 
       // ? 把生成的 Stmt 回传给上一级 ConditonSqlNode
@@ -158,13 +161,15 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, unordered_
       if (left_sub_query->flag != SCF_SELECT) return RC::INVALID_ARGUMENT;
 
       Stmt *left_sub_query_stmt = nullptr;
-      RC rc = SelectStmt::create(db, left_sub_query->selection, left_sub_query_stmt, alias_for_son, tables_for_son);
+      RC rc = SelectStmt::create(db, left_sub_query->selection, left_sub_query_stmt, left_flag, alias_for_son, tables_for_son);
       if (rc != RC::SUCCESS) return rc;
 
       // ? 把生成的 Stmt 回传给上一级 ConditonSqlNode
       auto sub_select_stmt = dynamic_cast<SelectStmt *>(left_sub_query_stmt);
       select_sql.conditions[i].left_sub_query_stmt = sub_select_stmt;
     }
+    select_sql.conditions[i].left_use_father = left_flag;
+    select_sql.conditions[i].right_use_father = right_flag;
   }
 
   // *****************************************************************************
@@ -267,11 +272,11 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, unordered_
   FilterStmt *filter_stmt = nullptr;
   FilterStmt *having_fliter_stmt = nullptr;
   RC rc = FilterStmt::create(db, default_table, &table_map, select_sql.conditions.data(), static_cast<int>(select_sql.conditions.size()), filter_stmt,
-                             alias_for_son, tables_for_son);
+                             use_father_table_flags, alias_for_son, tables_for_son);
   if (rc != RC::SUCCESS) return rc;
 
   rc = FilterStmt::create(db, default_table, &table_map, select_sql.having_conditions.data(), static_cast<int>(select_sql.having_conditions.size()),
-                          having_fliter_stmt, alias_for_son, tables_for_son);
+                          having_fliter_stmt, use_father_table_flags, alias_for_son, tables_for_son);
   if (rc != RC::SUCCESS) return rc;
 
   // *****************************************************************************

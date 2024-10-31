@@ -44,7 +44,7 @@ class StringListPhysicalOperator : public PhysicalOperator {
 
   RC open(Trx *) override { return RC::SUCCESS; }
 
-  RC next() override {
+  RC next(const Tuple *main_tuple) override {
     if (!started_) {
       started_ = true;
       iterator_ = strings_.begin();

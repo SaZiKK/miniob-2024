@@ -116,24 +116,32 @@ RC CastExpr::try_get_value(Value &result) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-RC SubQueryExpr::get_value(const Tuple &tuple, Value &value) const {
-  LOG_WARN("invalid operation. cannot get single value from subquery expression");
-  return RC::INVALID_ARGUMENT;
-}
+RC SubQueryExpr::get_tuple_list(const Tuple *main_tuple, std::vector<std::vector<Value>> &tuple_list) {
+  if (sub_query_ == nullptr) return RC::INVALID_ARGUMENT;
 
-RC SubQueryExpr::init() { return try_get_tuple_list(tuple_list_); }
+  if (has_calculated_ == false) {
+    TupleSchema tuple_schema;
+    RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list, tuple_schema, main_tuple);
+    if (rc == RC::SUCCESS) {
+      tuple_list_ = tuple_list;
+      has_calculated_ = true;
+    }
+    return rc;
+  }
+  tuple_list = tuple_list_;
+  return RC::SUCCESS;
+}
 
 RC SubQueryExpr::try_get_tuple_list(std::vector<std::vector<Value>> &tuple_list) {
   if (sub_query_ == nullptr) return RC::INVALID_ARGUMENT;
+  if (use_father_table_ == true) return RC::INVALID_ARGUMENT;
 
-  // 如果谓词中的表格来源于父查询，报错
-
-  if (has_calculated == false) {
+  if (has_calculated_ == false) {
     TupleSchema tuple_schema;
     RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list, tuple_schema);
     if (rc == RC::SUCCESS) {
       tuple_list_ = tuple_list;
-      has_calculated = true;
+      has_calculated_ = true;
     }
     return rc;
   }
@@ -154,25 +162,9 @@ int basicCompare(CompType type_, const Value &left, const Value &right, const st
   Value value;
   if (!right_tuple_list.empty() && type_ == CompType::VAL_TUPLES) {
     cmp_result = left.compare(right_tuple_list[0][0]);
-    int temp = cmp_result;
-    for (size_t i = 1; i < right_tuple_list.size(); i++) {
-      cmp_result = left.compare(right_tuple_list[i][0]);
-      if (temp != cmp_result) {
-        cmp_result = INT32_MAX;
-        break;
-      }
-    }
   }
   if (!left_tuple_list.empty() && type_ == CompType::TUPLES_VAL) {
     cmp_result = left_tuple_list[0][0].compare(right);
-    int temp = cmp_result;
-    for (size_t i = 1; i < left_tuple_list.size(); i++) {
-      cmp_result = left_tuple_list[i][0].compare(right);
-      if (temp != cmp_result) {
-        cmp_result = INT32_MAX;
-        break;
-      }
-    }
   }
   if (!left_list.empty() && type_ == CompType::LIST_VAL) {
     value = left_list[0];
@@ -184,6 +176,9 @@ int basicCompare(CompType type_, const Value &left, const Value &right, const st
   }
   if (type_ == CompType::VAL_VAL) {
     if (!left.get_null() && !right.get_null()) cmp_result = left.compare(right);
+  }
+  if (!left_tuple_list.empty() && !right_tuple_list.empty() && type_ == CompType::TUPLES_TUPLES) {
+    cmp_result = left_tuple_list[0][0].compare(right_tuple_list[0][0]);
   }
   return cmp_result;
 }
@@ -234,7 +229,6 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
    * LIST_LIST
    * TUPLES_LIST
    * LIST_TUPLES
-   * TUPLES_TUPLES
    */
 
   CompOp comp_ = comp();
@@ -243,7 +237,7 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
   if ((left.get_null() || right.get_null()) && (comp_ != CompOp::XXX_IS_NULL && comp_ != CompOp::XXX_IS_NOT_NULL)) return RC::SUCCESS;
 
   // 暂不支持多值之间比较
-  if (type_ == CompType::LIST_LIST || type_ == CompType::TUPLES_LIST || type_ == CompType::LIST_TUPLES || type_ == CompType::TUPLES_TUPLES) {
+  if (type_ == CompType::LIST_LIST || type_ == CompType::TUPLES_LIST || type_ == CompType::LIST_TUPLES) {
     LOG_WARN("both left and right are not value");  // todo 支持单tuple比较
     return RC::INVALID_ARGUMENT;
   }
@@ -275,6 +269,10 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, const st
           LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
+      } else if (type_ == CompType::TUPLES_TUPLES) {
+        if (left_tuple_list.size() > 1 || right_tuple_list.size() > 1) return RC::INVALID_ARGUMENT;
+        if ((!left_tuple_list.empty() && left_tuple_list[0].size() != 1) || (!right_tuple_list.empty() && right_tuple_list[0].size() != 1))
+          return RC::INVALID_ARGUMENT;
       }
     } break;
     case CompOp::LIKE_XXX:
@@ -509,7 +507,7 @@ RC ComparisonExpr::set_comp_type_by_verilog() const {
   return RC::SUCCESS;
 }
 
-RC ComparisonExpr::check_value(bool father_sub_mode) const {
+RC ComparisonExpr::check_value() const {
   Value left_value;
   Value right_value;
   vector<Value> right_list;
@@ -539,7 +537,7 @@ RC ComparisonExpr::check_value(bool father_sub_mode) const {
    * TUPLES_TUPLES
    */
   if ((left_value.get_null() || right_value.get_null()) && (comp_ != CompOp::XXX_IS_NULL && comp_ != CompOp::XXX_IS_NOT_NULL)) return RC::SUCCESS;
-  if (type_ == CompType::LIST_LIST || type_ == CompType::TUPLES_LIST || type_ == CompType::LIST_TUPLES || type_ == CompType::TUPLES_TUPLES) {
+  if (type_ == CompType::LIST_LIST || type_ == CompType::TUPLES_LIST || type_ == CompType::LIST_TUPLES) {
     LOG_WARN("both left and right are not value");  // todo 支持单tuple比较
     return RC::INVALID_ARGUMENT;
   }
@@ -563,15 +561,19 @@ RC ComparisonExpr::check_value(bool father_sub_mode) const {
           LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
+      } else if (type_ == CompType::TUPLES_TUPLES) {
+        if (left_tuples.size() > 1 || right_tuples.size() > 1) return RC::INVALID_ARGUMENT;
+        if ((!left_tuples.empty() && left_tuples[0].size() != 1) || (!right_tuples.empty() && right_tuples[0].size() != 1))
+          return RC::INVALID_ARGUMENT;
       }
       // 子查询结果（元组列）只能有一个值（一行一列）
       if (type_ == CompType::VAL_TUPLES) {
-        if ((!father_sub_mode && right_tuples.size() > 1) || (!right_tuples.empty() && right_tuples.front().size() > 1)) {
+        if ((right_tuples.size() > 1) || (!right_tuples.empty() && right_tuples.front().size() > 1)) {
           LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
       } else if (type_ == CompType::TUPLES_VAL) {
-        if ((!father_sub_mode && left_tuples.size() > 1) || (!left_tuples.empty() && left_tuples.front().size() > 1)) {
+        if ((left_tuples.size() > 1) || (!left_tuples.empty() && left_tuples.front().size() > 1)) {
           LOG_WARN("invaild comparison. %d", type_);
           return RC::INVALID_ARGUMENT;
         }
@@ -630,11 +632,11 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
 
   left_->get_value(tuple, left_value);
   left_->get_value_list(left_list);
-  left_->try_get_tuple_list(left_tuples);
+  left_->get_tuple_list(&tuple, left_tuples);
 
   right_->get_value(tuple, right_value);
   right_->get_value_list(right_list);
-  right_->try_get_tuple_list(right_tuples);
+  right_->get_tuple_list(&tuple, right_tuples);
 
   RC rc = set_comp_type_by_verilog();
   if (rc != RC::SUCCESS) return rc;

@@ -31,7 +31,7 @@ RC TableScanPhysicalOperator::open(Trx *trx) {
   return rc;
 }
 
-RC TableScanPhysicalOperator::next() {
+RC TableScanPhysicalOperator::next(const Tuple *main_tuple) {
   RC rc = RC::SUCCESS;
 
   bool filter_result = false;

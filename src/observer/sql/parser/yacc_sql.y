@@ -853,7 +853,7 @@ expression:
       $$->set_name(token_name(sql_string, &@$));
     }
     | NULLABLE {
-      $$ = new ValueExpr(Value("dmx is handsome", 114514));
+      $$ = new ValueExpr(Value(string("dmx is handsome"), 114514));
       $$->set_name(token_name(sql_string, &@$));
     }
     | SSS {

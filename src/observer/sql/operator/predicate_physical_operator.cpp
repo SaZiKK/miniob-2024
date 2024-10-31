@@ -31,7 +31,7 @@ RC PredicatePhysicalOperator::open(Trx *trx) {
   return children_[0]->open(trx);
 }
 
-RC PredicatePhysicalOperator::next() {
+RC PredicatePhysicalOperator::next(const Tuple *main_tuple) {
   RC rc = RC::SUCCESS;
   PhysicalOperator *oper = children_.front().get();
 
@@ -41,6 +41,13 @@ RC PredicatePhysicalOperator::next() {
       rc = RC::INTERNAL;
       LOG_WARN("failed to get tuple from operator");
       break;
+    }
+
+    if (main_tuple != nullptr) {
+      JoinedTuple *tuple_combines_with_main_tuple = new JoinedTuple();
+      tuple_combines_with_main_tuple->set_left(tuple);
+      tuple_combines_with_main_tuple->set_right(main_tuple);
+      tuple = tuple_combines_with_main_tuple;
     }
 
     Value value;

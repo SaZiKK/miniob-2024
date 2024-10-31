@@ -33,7 +33,7 @@ class HashGroupByPhysicalOperator : public GroupByPhysicalOperator {
   PhysicalOperatorType type() const override { return PhysicalOperatorType::HASH_GROUP_BY; }
 
   RC open(Trx *trx) override;
-  RC next() override;
+  RC next(const Tuple *main_tuple = nullptr) override;
   RC close() override;
 
   Tuple *current_tuple() override;

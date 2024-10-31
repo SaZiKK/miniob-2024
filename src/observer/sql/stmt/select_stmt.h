@@ -38,7 +38,7 @@ class SelectStmt : public Stmt {
   StmtType type() const override { return StmtType::SELECT; }
 
  public:
-  static RC create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt,
+  static RC create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, bool &use_father_table_flags,
                    std::unordered_map<string, string> father_alias = std::unordered_map<string, string>(),
                    std::unordered_map<string, Table *> father_tables = std::unordered_map<string, Table *>());
 

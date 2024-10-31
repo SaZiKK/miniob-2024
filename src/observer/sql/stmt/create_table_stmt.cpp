@@ -36,7 +36,8 @@ RC CreateTableStmt::create(Db *db, CreateTableSqlNode &create_table, Stmt *&stmt
   std::vector<std::unique_ptr<Expression>> query_expressions_;
   // 涉及到 create table 语句
   if (create_table.use_sub_select) {
-    RC rc = SelectStmt::create(db, create_table.sub_select->selection, temp);
+    bool flag;
+    RC rc = SelectStmt::create(db, create_table.sub_select->selection, temp, flag);
     if (rc != RC::SUCCESS) return rc;
     if (temp != nullptr) {
       SelectStmt *select_stmt = dynamic_cast<SelectStmt *>(temp);

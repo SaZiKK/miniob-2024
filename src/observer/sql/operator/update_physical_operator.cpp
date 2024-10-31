@@ -71,6 +71,6 @@ RC UpdatePhysicalOperator::open(Trx *trx) {
   return RC::SUCCESS;
 }
 
-RC UpdatePhysicalOperator::next() { return RC::RECORD_EOF; }
+RC UpdatePhysicalOperator::next(const Tuple *main_tuple) { return RC::RECORD_EOF; }
 
 RC UpdatePhysicalOperator::close() { return RC::SUCCESS; }

@@ -66,15 +66,17 @@ class FilterStmt {
 
  public:
   static RC create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const ConditionSqlNode *conditions,
-                   int condition_num, FilterStmt *&stmt, std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
+                   int condition_num, FilterStmt *&stmt, bool &use_flag,
+                   std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
                    std::unordered_map<string, Table *> table_map = std::unordered_map<string, Table *>());
 
   static RC bind_filter_expr(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, unique_ptr<Expression> &expr,
-                             std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
+                             bool &use_flag, std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
                              std::unordered_map<string, Table *> table_map = std::unordered_map<string, Table *>());
 
   static RC create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const ConditionSqlNode &condition,
-                               FilterUnit *&filter_unit, std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
+                               FilterUnit *&filter_unit, bool &use_flag,
+                               std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
                                std::unordered_map<string, Table *> table_map = std::unordered_map<string, Table *>());
 
  private:

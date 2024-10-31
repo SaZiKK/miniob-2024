@@ -47,7 +47,7 @@ RC OptimizeStage::handle_request(SQLStageEvent *sql_event) {
   }
   ASSERT(logical_operator, "logical operator is null");
 
-  rc = rewrite(logical_operator);
+  // rc = rewrite(logical_operator);
 
   // 查错
   if (rc != RC::SUCCESS) {
@@ -128,7 +128,7 @@ RC OptimizeStage::create_logical_plan(SQLStageEvent *sql_event, unique_ptr<Logic
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list, TupleSchema &tuple_schema) {
+RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list, TupleSchema &tuple_schema, const Tuple *main_tuple) {
   // 创建逻辑算子
   unique_ptr<LogicalOperator> logical_operator;
 
@@ -170,7 +170,7 @@ RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &t
   }
 
   get_tuple_schema(physical_operator.get(), tuple_schema);
-  get_tuple_list(physical_operator.get(), tuple_list);
+  get_tuple_list(physical_operator.get(), tuple_list, main_tuple);
 
   return rc;
 }
@@ -196,7 +196,7 @@ RC OptimizeStage::get_tuple_schema(PhysicalOperator *physical_operator, TupleSch
   return physical_operator->tuple_schema(tuple_schema);
 }
 
-RC OptimizeStage::get_tuple_list(PhysicalOperator *physical_operator, std::vector<std::vector<Value>> &tuple_list) {
+RC OptimizeStage::get_tuple_list(PhysicalOperator *physical_operator, std::vector<std::vector<Value>> &tuple_list, const Tuple *main_tuple) {
   RC rc = physical_operator->open(nullptr);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to open sub physical operator. rc=%s", strrc(rc));
@@ -204,7 +204,7 @@ RC OptimizeStage::get_tuple_list(PhysicalOperator *physical_operator, std::vecto
   }
 
   // 将查表结果放入value_list
-  while (RC::SUCCESS == (rc = physical_operator->next())) {
+  while (RC::SUCCESS == (rc = physical_operator->next(main_tuple))) {
     Tuple *tuple = physical_operator->current_tuple();
     std::vector<Value> single_tuple;
     for (int i = 0; i < tuple->cell_num(); i++) {

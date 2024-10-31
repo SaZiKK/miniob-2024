@@ -33,7 +33,7 @@ class InsertPhysicalOperator : public PhysicalOperator {
   PhysicalOperatorType type() const override { return PhysicalOperatorType::INSERT; }
 
   RC open(Trx *trx) override;
-  RC next() override;
+  RC next(const Tuple *main_tuple = nullptr) override;
   RC close() override;
 
   Tuple *current_tuple() override { return nullptr; }

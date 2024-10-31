@@ -75,6 +75,10 @@ struct ConditionSqlNode {
   SubSelectSqlNode *right_sub_query;
   SelectStmt *left_sub_query_stmt;
   SelectStmt *right_sub_query_stmt;
+
+  // 关联问题
+  bool left_use_father = false;
+  bool right_use_father = false;
 };
 
 /**

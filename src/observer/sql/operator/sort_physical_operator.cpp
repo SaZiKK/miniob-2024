@@ -41,7 +41,7 @@ RC SortPhysicalOperator::open(Trx *trx) {
   return children_[0]->open(trx);
 }
 
-RC SortPhysicalOperator::next() {
+RC SortPhysicalOperator::next(const Tuple *main_tuple) {
   RC rc = RC::SUCCESS;
   cur_index++;
   if (has_collected == false) {

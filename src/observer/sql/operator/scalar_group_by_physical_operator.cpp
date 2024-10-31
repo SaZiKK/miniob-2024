@@ -79,7 +79,7 @@ RC ScalarGroupByPhysicalOperator::open(Trx *trx) {
   return rc;
 }
 
-RC ScalarGroupByPhysicalOperator::next() {
+RC ScalarGroupByPhysicalOperator::next(const Tuple *main_tuple) {
   if (group_value_ == nullptr || emitted_) {
     return RC::RECORD_EOF;
   }

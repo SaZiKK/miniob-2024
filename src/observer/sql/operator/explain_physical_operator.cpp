@@ -43,7 +43,7 @@ void ExplainPhysicalOperator::generate_physical_plan() {
   physical_plan_ = ss.str();
 }
 
-RC ExplainPhysicalOperator::next() {
+RC ExplainPhysicalOperator::next(const Tuple *main_tuple) {
   if (!physical_plan_.empty()) {
     return RC::RECORD_EOF;
   }

@@ -29,7 +29,7 @@ FilterStmt::~FilterStmt() {
 }
 
 RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const ConditionSqlNode *conditions,
-                      int condition_num, FilterStmt *&stmt, std::unordered_map<string, string> alias_map,
+                      int condition_num, FilterStmt *&stmt, bool &use_flag, std::unordered_map<string, string> alias_map,
                       std::unordered_map<string, Table *> table_map) {
   RC rc = RC::SUCCESS;
   stmt = nullptr;
@@ -41,7 +41,7 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
     FilterUnit *filter_unit = nullptr;
 
     // 创建单个筛选条件
-    rc = create_filter_unit(db, default_table, tables, conditions[i], filter_unit, alias_map, table_map);
+    rc = create_filter_unit(db, default_table, tables, conditions[i], filter_unit, use_flag, alias_map, table_map);
 
     // 查错
     if (rc != RC::SUCCESS) {
@@ -59,8 +59,7 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
 }
 
 RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, Expression *expression, Table *&table,
-                       const FieldMeta *&field, bool &from_father,
-                       std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
+                       const FieldMeta *&field, bool &use_flag, std::unordered_map<string, string> alias_map = std::unordered_map<string, string>(),
                        std::unordered_map<string, Table *> table_map = std::unordered_map<string, Table *>()) {
   UnboundFieldExpr *field_expr = static_cast<UnboundFieldExpr *>(expression);
   string relation_name = field_expr->table_name();
@@ -84,12 +83,10 @@ RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::str
     table = db->find_table(relation_name.c_str());
   }
   if (nullptr == table) {
-    // 没找到表格，试图从父查询中寻找
+    // ? 还需要确认是否为父查询关联情况
     if (table_map.count(relation_name)) {
       table = table_map[relation_name];
-
-      // 表格是从父查询传下来的，需要转化成子查询
-      from_father = true;
+      use_flag = true;
     } else
       return RC::SCHEMA_TABLE_NOT_EXIST;
   }
@@ -105,7 +102,7 @@ RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::str
 }
 
 RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, unique_ptr<Expression> &expr,
-                                std::unordered_map<string, string> alias_map, std::unordered_map<string, Table *> table_map) {
+                                bool &use_flag, std::unordered_map<string, string> alias_map, std::unordered_map<string, Table *> table_map) {
   if (expr == nullptr) return RC::INVALID_ARGUMENT;
 
   // TODO 直接使用 expression_binder 中的函数进行
@@ -125,38 +122,27 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
         if (it.attr_type() == AttrType::DATE && !DateType::check_date(&it)) return RC::INVALID_ARGUMENT;
     } break;
     case ExprType::SUBQUERY: {
+      SubQueryExpr *sub_expr = static_cast<SubQueryExpr *>(expr.get());
       vector<vector<Value>> tuple_list;
-      RC rc = expr->try_get_tuple_list(tuple_list);
-      if (rc != RC::SUCCESS) return rc;
+      RC rc = sub_expr->try_get_tuple_list(tuple_list);
+      if (rc != RC::SUCCESS && !sub_expr->use_father_table()) return rc;
     } break;
     case ExprType::UNBOUND_FIELD: {
       Table *table = nullptr;
       const FieldMeta *field = nullptr;
-      bool from_father = false;
-      RC rc = get_table_and_field(db, default_table, tables, expr.get(), table, field, from_father, alias_map, table_map);
+      RC rc = get_table_and_field(db, default_table, tables, expr.get(), table, field, use_flag, alias_map, table_map);
       if (rc != RC::SUCCESS) return rc;
-      // 需要转化成子查询
-      if (from_father == true) {
-        SelectSqlNode select_sql_node;
-        select_sql_node.relations.emplace_back(make_unique<UnboundTableExpr>(table->name()));
-        select_sql_node.expressions.emplace_back(make_unique<UnboundFieldExpr>(table->name(), field->name()));
-        Stmt *sub_query_stmt = nullptr;
-        rc = SelectStmt::create(db, select_sql_node, sub_query_stmt);
-        if (rc != RC::SUCCESS) return rc;
-        auto *sub_select_stmt = dynamic_cast<SelectStmt *>(sub_query_stmt);
-        expr = std::make_unique<SubQueryExpr>(sub_select_stmt, true);
-      } else
-        expr = std::make_unique<FieldExpr>(table, field);
+      expr = std::make_unique<FieldExpr>(table, field);
     } break;
     case ExprType::ARITHMETIC: {
       RC rc = RC::SUCCESS;
       ArithmeticExpr *arith_expr = static_cast<ArithmeticExpr *>(expr.get());
       if (arith_expr->left() != nullptr) {
-        rc = bind_filter_expr(db, default_table, tables, arith_expr->left(), alias_map, table_map);
+        rc = bind_filter_expr(db, default_table, tables, arith_expr->left(), use_flag, alias_map, table_map);
       }
       if (rc != RC::SUCCESS) return rc;
       if (arith_expr->right() != nullptr) {
-        rc = bind_filter_expr(db, default_table, tables, arith_expr->right(), alias_map, table_map);
+        rc = bind_filter_expr(db, default_table, tables, arith_expr->right(), use_flag, alias_map, table_map);
       }
       if (rc != RC::SUCCESS) return rc;
     } break;
@@ -164,11 +150,11 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
       RC rc = RC::SUCCESS;
       VecFuncExpr *vec_func_expr = static_cast<VecFuncExpr *>(expr.get());
       if (vec_func_expr->child_left() != nullptr) {
-        rc = bind_filter_expr(db, default_table, tables, vec_func_expr->child_left(), alias_map, table_map);
+        rc = bind_filter_expr(db, default_table, tables, vec_func_expr->child_left(), use_flag, alias_map, table_map);
       }
       if (rc != RC::SUCCESS) return rc;
       if (vec_func_expr->child_right() != nullptr) {
-        rc = bind_filter_expr(db, default_table, tables, vec_func_expr->child_right(), alias_map, table_map);
+        rc = bind_filter_expr(db, default_table, tables, vec_func_expr->child_right(), use_flag, alias_map, table_map);
       }
       if (rc != RC::SUCCESS) return rc;
     } break;
@@ -190,7 +176,7 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
         ValueExpr *value_expr = new ValueExpr(Value(1));
         child_expr.reset(value_expr);
       } else {
-        rc = bind_filter_expr(db, default_table, tables, child_expr, alias_map, table_map);
+        rc = bind_filter_expr(db, default_table, tables, child_expr, use_flag, alias_map, table_map);
         if (rc != RC::SUCCESS) return rc;
       }
 
@@ -206,7 +192,7 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
 }
 
 RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables, const ConditionSqlNode &condition,
-                                  FilterUnit *&filter_unit, std::unordered_map<string, string> alias_map,
+                                  FilterUnit *&filter_unit, bool &use_flag, std::unordered_map<string, string> alias_map,
                                   std::unordered_map<string, Table *> table_map) {
   RC rc = RC::SUCCESS;
 
@@ -223,13 +209,13 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   std::unique_ptr<Expression> right_expr(condition.right_expression);
 
   // 构造子查询表达式
-  if (condition.left_is_sub_query) left_expr = make_unique<SubQueryExpr>(condition.left_sub_query_stmt);
-  if (condition.right_is_sub_query) right_expr = make_unique<SubQueryExpr>(condition.right_sub_query_stmt);
+  if (condition.left_is_sub_query) left_expr = make_unique<SubQueryExpr>(condition.left_sub_query_stmt, condition.left_use_father);
+  if (condition.right_is_sub_query) right_expr = make_unique<SubQueryExpr>(condition.right_sub_query_stmt, condition.right_use_father);
 
   // 绑定表达式
-  rc = bind_filter_expr(db, default_table, tables, left_expr, alias_map, table_map);
+  rc = bind_filter_expr(db, default_table, tables, left_expr, use_flag, alias_map, table_map);
   if (rc != RC::SUCCESS) return rc;
-  rc = bind_filter_expr(db, default_table, tables, right_expr, alias_map, table_map);
+  rc = bind_filter_expr(db, default_table, tables, right_expr, use_flag, alias_map, table_map);
   if (rc != RC::SUCCESS) return rc;
 
   FilterObj left_obj;

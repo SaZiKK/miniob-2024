@@ -82,6 +82,7 @@ class Expression {
 
   // 针对子查询
   virtual RC try_get_tuple_list(std::vector<std::vector<Value>> &tuple) { return RC::UNIMPLEMENTED; }
+  virtual RC get_tuple_list(const Tuple *main_tuple, std::vector<std::vector<Value>> &tuple) { return RC::UNIMPLEMENTED; }
 
   /**
    * @brief
@@ -397,6 +398,7 @@ class ValueExpr : public Expression {
   int value_length() const override { return value_.length(); }
 
   void get_value(Value &value) const { value = value_; }
+
   const Value &get_value() const { return value_; }
   Value value() { return value_; }
 
@@ -406,33 +408,31 @@ class ValueExpr : public Expression {
 
 // *********************************************************
 // * 子查询表达式
-// *
-// TODO 重写子查询逻辑
+// * 如果发现需要父查询的表格，则获取输出元组必须包含输入参数：父查询的一个元组
+// * 父查询不同的元组输入会带来不同的元组输出
 class SubQueryExpr : public Expression {
  public:
   SubQueryExpr() = default;
-  explicit SubQueryExpr(SelectStmt *sub_query, bool father_sub_mode = false) : sub_query_(sub_query), father_sub_mode_(father_sub_mode) { init(); };
+  explicit SubQueryExpr(SelectStmt *sub_query, bool use_flag = false) : sub_query_(sub_query), use_father_table_(use_flag){};
 
   virtual ~SubQueryExpr() = default;
 
   ExprType type() const override { return ExprType::SUBQUERY; }
   AttrType value_type() const override { return AttrType::TUPLES; }
 
-  RC get_value(const Tuple &tuple, Value &value) const override;
+  RC get_value(const Tuple &tuple, Value &value) const { return RC::INVALID_ARGUMENT; }
 
   RC try_get_tuple_list(std::vector<std::vector<Value>> &tuple) override;
-  // RC get_tuple_schema(TupleSchema tuple_schema);
-
-  RC init();
+  RC get_tuple_list(const Tuple *main_tuple, std::vector<std::vector<Value>> &tuple) override;
 
   SelectStmt *sub_query() { return sub_query_; }
-  bool father_sub_mode() { return father_sub_mode_; }
-  void set_father_sub_mode(bool flag) { father_sub_mode_ = flag; }
+  bool use_father_table() { return use_father_table_; }
+  void set_use_father_table(bool use) { use_father_table_ = use; }
 
  private:
   SelectStmt *sub_query_;
-  bool has_calculated = false;
-  bool father_sub_mode_ = false;
+  bool has_calculated_ = false;
+  bool use_father_table_ = false;
   std::vector<std::vector<Value>> tuple_list_;
 };
 
@@ -557,7 +557,7 @@ class ComparisonExpr : public Expression {
   // 获取表达式的比较类型
   CompType comp_type() const { return type_; }
 
-  RC check_value(bool father_sub_mode = false) const;
+  RC check_value() const;
 
  private:
   mutable CompType type_;
