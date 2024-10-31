@@ -85,7 +85,7 @@ RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt) {
       if (rc != RC::SUCCESS) return RC::INVALID_ARGUMENT;
       // 子查询为空值，等同于插入 NULL
       if (tuple_list.empty()) {
-        update.update_targets[i].value.set_int(0);
+        update.update_targets[i].value.set_null(true);
       }
       // 子查询非法，等同于插入非法 Value，如果筛选出来没有更新目标，则无视，否则报错
       else if (tuple_list.size() != 1 || tuple_list[0].size() != 1) {
