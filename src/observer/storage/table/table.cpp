@@ -785,6 +785,33 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   if (value->length() > field_length) {
     memcpy(old_data + field_offset, value->data(), field_length);
   } else if (targetFiled->type() == AttrType::TEXT) {
+    // 先删除原有的 TEXT
+    if (targetFiled->type() == AttrType::TEXT) {
+      const char *data = record.data() + targetFiled->offset();
+      int len = *(int *)data;
+      int offset = 4;
+      for (int i = 0; i < len / BP_PAGE_SIZE + 1; i++) {
+        PageNum page_num = *(PageNum *)(data + offset);
+        if (page_num <= 0) {
+          break;
+        }
+        offset += 4;
+        Frame *frame = nullptr;
+        RC rc = RC::SUCCESS;
+        rc = data_buffer_pool_->get_this_page(page_num, &frame);
+        if (rc != RC::SUCCESS) {
+          LOG_ERROR("Failed to get page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc, strrc(rc));
+          return rc;
+        }
+        while ( frame->pin_count() > 0 ) { data_buffer_pool_->unpin_page(frame); }
+        rc = data_buffer_pool_->dispose_page(page_num);
+        data_buffer_pool_->mark_text_page(page_num, false);
+        if (rc != RC::SUCCESS) {
+          LOG_ERROR("Failed to delete page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc, strrc(rc));
+          return rc;
+        }
+      }
+    }
     int offset = 0;
     vector<PageNum> page_nums;
     for (int i = 0; i < BP_MAX_TEXT_PAGES && offset < value->length(); i++) {
