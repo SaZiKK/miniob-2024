@@ -229,5 +229,8 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   // 设置比较符
   filter_unit->set_comp(comp);
 
+  // 设置 AND OR
+  filter_unit->set_conjunction_type(condition.conjuction_type);
+
   return rc;
 }

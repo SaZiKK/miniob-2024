@@ -46,10 +46,16 @@ class FilterUnit {
   FilterObj &left() { return left_; }
   FilterObj &right() { return right_; }
 
+  int conjunction_type() { return conjunction_type_; }
+  void set_conjunction_type(int num) { conjunction_type_ = num; }
+
  private:
   CompOp comp_ = NO_OP;
   FilterObj left_;
   FilterObj right_;
+
+  // ? 1 - AND  2 - OR
+  int conjunction_type_ = 0;
 };
 
 /**
@@ -80,5 +86,5 @@ class FilterStmt {
                                std::unordered_map<string, Table *> table_map = std::unordered_map<string, Table *>());
 
  private:
-  std::vector<FilterUnit *> filter_units_;  // 默认当前都是AND关系
+  std::vector<FilterUnit *> filter_units_;
 };

@@ -103,6 +103,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         FROM
         WHERE
         AND
+        OR
         SET
         ON
         LOAD
@@ -1099,11 +1100,19 @@ condition_list:
     }
     | condition {
       $$ = new std::vector<ConditionSqlNode>;
+      $1->conjuction_type = 0;
       $$->emplace_back(*$1);
       delete $1;
     }
     | condition AND condition_list {
       $$ = $3;
+      $1->conjuction_type = 1;
+      $$->emplace_back(*$1);
+      delete $1;
+    }
+    | condition OR condition_list {
+      $$ = $3;
+      $1->conjuction_type = 2;
       $$->emplace_back(*$1);
       delete $1;
     }

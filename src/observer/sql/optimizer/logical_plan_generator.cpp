@@ -198,6 +198,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
 RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<LogicalOperator> &logical_operator) {
   RC rc = RC::SUCCESS;
   std::vector<unique_ptr<Expression>> cmp_exprs;
+  ConjunctionExpr::Type conjunction_types;
   const std::vector<FilterUnit *> &filter_units = filter_stmt->filter_units();
   for (FilterUnit *filter_unit : filter_units) {
     FilterObj &filter_obj_left = filter_unit->left();
@@ -205,6 +206,11 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
 
     unique_ptr<Expression> left = std::move(filter_obj_left.expr);
     unique_ptr<Expression> right = std::move(filter_obj_right.expr);
+
+    if (filter_unit->conjunction_type() == 1)
+      conjunction_types = ConjunctionExpr::Type::AND;
+    else if (filter_unit->conjunction_type() == 2)
+      conjunction_types = ConjunctionExpr::Type::OR;
 
     bool need_value_cast = left->value_type() != AttrType::TUPLES && right->value_type() != AttrType::TUPLES && left->type() != ExprType::VALUELIST &&
                            right->type() != ExprType::VALUELIST && filter_unit->comp() != CompOp::XXX_IS_NULL &&
@@ -295,7 +301,7 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
 
   unique_ptr<PredicateLogicalOperator> predicate_oper;
   if (!cmp_exprs.empty()) {
-    unique_ptr<ConjunctionExpr> conjunction_expr(new ConjunctionExpr(ConjunctionExpr::Type::AND, cmp_exprs));
+    unique_ptr<ConjunctionExpr> conjunction_expr(new ConjunctionExpr(conjunction_types, cmp_exprs));
     predicate_oper = unique_ptr<PredicateLogicalOperator>(new PredicateLogicalOperator(std::move(conjunction_expr)));
   }
 

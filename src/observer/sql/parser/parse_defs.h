@@ -79,6 +79,9 @@ struct ConditionSqlNode {
   // 关联问题
   bool left_use_father = false;
   bool right_use_father = false;
+
+  // 1 - AND  2 - OR   0 - DEFAULT
+  int conjuction_type = 0;
 };
 
 /**
