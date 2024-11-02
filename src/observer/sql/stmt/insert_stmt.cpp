@@ -55,6 +55,10 @@ RC InsertStmt::create(Db *db, const InsertSqlNode &inserts, Stmt *&stmt) {
       if (value.get_string().size() > BP_MAX_TEXT_SIZE) {
         return RC::INVALID_ARGUMENT;
       }
+    } else if (value.attr_type() == AttrType::VECTORS) {
+      if (value.get_vector_size() > BP_MAX_VECTOR_SIZE) {
+        return RC::INVALID_ARGUMENT;
+      }
     }
   }
 

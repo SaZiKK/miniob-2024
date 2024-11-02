@@ -29,8 +29,14 @@ static constexpr const int BP_PAGE_DATA_SIZE = (BP_PAGE_SIZE - sizeof(PageNum) -
 static constexpr const int BP_MAX_TEXT_SIZE = 65535;
 // 一个TEXT记录最大占用的页面数
 static constexpr const int BP_MAX_TEXT_PAGES = BP_MAX_TEXT_SIZE / BP_PAGE_DATA_SIZE + 1;
-// 一个TEXT记录在record中占用的最大字节数（各页页号 + TEXT 长度）
+// 一个TEXT记录在record中占用的最大字节数（各页页号 + TEXT 长度记录）
 static constexpr const int BP_MAX_TEXT_RECORD_SIZE = BP_MAX_TEXT_PAGES * 4 + 4;
+// 一个VECTOR记录最大长度
+static constexpr const int BP_MAX_VECTOR_SIZE = 16000;
+// 一个VECTOR记录最大占用的页面数
+static constexpr const int BP_MAX_VECTOR_PAGES = BP_MAX_VECTOR_SIZE * 4 / BP_PAGE_DATA_SIZE + 1;
+// 一个VECTOR记录在record中占用的最大字节数（各页页号 + VECTOR 长度记录）
+static constexpr const int BP_MAX_VECTOR_RECORD_SIZE = BP_MAX_VECTOR_PAGES * 4 + 4;
 
 /**
  * @brief 表示一个页面，可能放在内存或磁盘上
