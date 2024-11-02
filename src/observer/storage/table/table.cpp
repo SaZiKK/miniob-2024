@@ -349,6 +349,45 @@ RC Table::set_value_to_record(char *record_data, Value &value, const FieldMeta *
     value.set_type(AttrType::CHARS);
     value.update_text_data(data, BP_MAX_TEXT_RECORD_SIZE);
     delete[] data;
+  } else if (field->type() == AttrType::VECTORS && value.get_vector_size() > 1000) {
+    // 如果是高维向量，在这里就要写入页中
+    int offset = 0;
+    vector<PageNum> page_nums;
+    for (int i = 0; i < BP_MAX_VECTOR_PAGES && offset < value.length(); i++) {
+      Frame *frame = nullptr;
+      RC rc = RC::SUCCESS;
+      rc = data_buffer_pool_->allocate_page(&frame);
+      data_buffer_pool_->mark_text_page(frame->page_num(), true);
+      if (rc != RC::SUCCESS) {
+        LOG_ERROR("Failed to allocate page for text field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), field->name(), rc, strrc(rc));
+        return rc;
+      }
+      auto data = frame->page().data;
+      memset(data, 0, BP_PAGE_DATA_SIZE);
+      int len = std::min(value.length() - offset, BP_PAGE_DATA_SIZE);
+      memcpy(data, value.data() + offset, len);
+      offset += len;
+      page_nums.push_back(frame->page_num());
+      frame->dirty();
+      data_buffer_pool_->unpin_page(frame);
+    }
+    char *data = new char[BP_MAX_VECTOR_RECORD_SIZE];
+    memset(data, 0, BP_MAX_VECTOR_RECORD_SIZE);
+    offset = 0;
+    int length = value.length();
+    memcpy(data, &length, 4);
+    offset += 4;
+    for (int i = 0; i < (int)page_nums.size(); i++) {
+      memcpy(data + offset, &page_nums[i], 4);
+      offset += 4;
+    }
+    for (int i = page_nums.size(); i < BP_MAX_VECTOR_PAGES; i++) {
+      memset(data + offset, 0, 4);
+      offset += 4;
+    }
+    value.set_type(AttrType::CHARS);
+    memcpy(record_data + field->offset(), data, BP_MAX_VECTOR_RECORD_SIZE);
+    delete[] data;
   }
 
   if (field->type() == AttrType::CHARS) {
@@ -358,7 +397,9 @@ RC Table::set_value_to_record(char *record_data, Value &value, const FieldMeta *
     }
   }
 
-  memcpy(record_data + field->offset(), value.data(), copy_len);
+  if (field->type() != AttrType::VECTORS || value.get_vector_size() <= 1000) {
+    memcpy(record_data + field->offset(), value.data(), copy_len);
+  }
 
   // null bitmap
   const char *bit = value.get_null() ? "0" : "1";
