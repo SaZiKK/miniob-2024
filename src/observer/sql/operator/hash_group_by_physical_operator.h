@@ -37,6 +37,7 @@ class HashGroupByPhysicalOperator : public GroupByPhysicalOperator {
   RC close() override;
 
   Tuple *current_tuple() override;
+  static int min_Num;
 
  private:
   using AggregatorList = GroupByPhysicalOperator::AggregatorList;
@@ -54,6 +55,7 @@ class HashGroupByPhysicalOperator : public GroupByPhysicalOperator {
   /// pair的first是group by 的值列表，second是计算出来的表达式值列表
   /// TODO 改成hash/unordered_map
   std::vector<GroupType> groups_;
+  std::vector<int> num_of_groups_;
 
   std::vector<GroupType>::iterator current_group_;
   bool first_emited_ = false;  /// 第一条数据是否已经输出
