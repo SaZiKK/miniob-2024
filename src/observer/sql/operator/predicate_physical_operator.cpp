@@ -43,13 +43,6 @@ RC PredicatePhysicalOperator::next(const Tuple *main_tuple) {
       break;
     }
 
-    if (main_tuple != nullptr) {
-      JoinedTuple *tuple_combines_with_main_tuple = new JoinedTuple();
-      tuple_combines_with_main_tuple->set_left(tuple);
-      tuple_combines_with_main_tuple->set_right(main_tuple);
-      tuple = tuple_combines_with_main_tuple;
-    }
-
     Value value;
     rc = expression_->get_value(*tuple, value);
     if (rc != RC::SUCCESS) {

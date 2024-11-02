@@ -432,6 +432,9 @@ class JoinedTuple : public Tuple {
   void set_left(Tuple *left) { left_ = left; }
   void set_right(const Tuple *right) { right_ = right; }
 
+  const Tuple *left() const { return left_; }
+  const Tuple *right() const { return right_; }
+
   int cell_num() const override { return left_->cell_num() + right_->cell_num(); }
 
   RC cell_at(int index, Value &value) const override {

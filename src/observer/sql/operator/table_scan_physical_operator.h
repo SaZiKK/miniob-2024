@@ -53,5 +53,6 @@ class TableScanPhysicalOperator : public PhysicalOperator {
   RecordFileScanner record_scanner_;
   Record current_record_;
   RowTuple tuple_;
+  JoinedTuple join_tuple_;
   std::vector<std::unique_ptr<Expression>> predicates_;  // TODO chang predicate to table tuple filter
 };

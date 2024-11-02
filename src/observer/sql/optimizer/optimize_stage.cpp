@@ -32,9 +32,8 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
-unique_ptr<LogicalOperator> OptimizeStage::cur_logical_oper = nullptr;
-unique_ptr<PhysicalOperator> OptimizeStage::cur_physical_oper = nullptr;
-SelectStmt *OptimizeStage::cur_select_stmt = nullptr;
+unordered_map<string, unique_ptr<LogicalOperator>> OptimizeStage::sub_expr_and_logical_oper = unordered_map<string, unique_ptr<LogicalOperator>>();
+unordered_map<string, unique_ptr<PhysicalOperator>> OptimizeStage::sub_expr_and_physical_oper = unordered_map<string, unique_ptr<PhysicalOperator>>();
 
 RC OptimizeStage::handle_request(SQLStageEvent *sql_event) {
   // 创建逻辑算子
@@ -135,62 +134,35 @@ RC OptimizeStage::create_logical_plan(SQLStageEvent *sql_event, unique_ptr<Logic
 RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &tuple_list, TupleSchema &tuple_schema, const Tuple *main_tuple) {
   SelectStmt *select_stmt = static_cast<SelectStmt *>(stmt);
   vector<Table *> tables = select_stmt->tables();
-
-  if (cur_select_stmt == nullptr) {
-    cur_select_stmt = select_stmt;
-    reset();
-  } else {
-    vector<Table *> cur_tables = cur_select_stmt->tables();
-    bool same = cur_tables.size() == tables.size();
-    for (int i = 0; i < min(cur_tables.size(), tables.size()); i++) {
-      if (cur_tables[i]->name() != tables[i]->name()) same = false;
-    }
-    if (same == false) {
-      cur_select_stmt = select_stmt;
-      reset();
-    }
-  }
+  string table_names;
+  for (auto it : tables) table_names += it->name();
 
   RC rc = RC::SUCCESS;
-  // 创建逻辑算子
-  if (cur_logical_oper == nullptr) rc = create_logical_plan(stmt, cur_logical_oper);
 
-  // 查错
-  if (rc != RC::SUCCESS) {
-    if (rc != RC::UNIMPLEMENTED) {
-      LOG_WARN("failed to create logical plan. rc=%s", strrc(rc));
-    }
-    return rc;
-  }
-  ASSERT(cur_logical_oper, "logical operator is null");
+  // ? 不存在创建好的逻辑算子
+  if (!sub_expr_and_logical_oper.contains(table_names)) {
+    unique_ptr<LogicalOperator> logical_oper;
+    rc = create_logical_plan(stmt, logical_oper);
 
-  // rc = rewrite(logical_operator);
+    if (rc != RC::SUCCESS && rc != RC::UNIMPLEMENTED) return rc;
+    ASSERT(logical_oper, "logical operator is null");
 
-  // 查错
-  // if (rc != RC::SUCCESS)
-  // {
-  //   LOG_WARN("failed to rewrite plan. rc=%s", strrc(rc));
-  //   return rc;
-  // }
-
-  rc = optimize(cur_logical_oper);
-
-  // 查错
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to optimize plan. rc=%s", strrc(rc));
-    return rc;
+    sub_expr_and_logical_oper.insert(make_pair(table_names, std::move(logical_oper)));
   }
 
-  if (cur_physical_oper == nullptr) rc = generate_physical_plan(cur_logical_oper, cur_physical_oper);
+  // ? 不存在创建好的物理算子
+  if (!sub_expr_and_physical_oper.contains(table_names)) {
+    unique_ptr<PhysicalOperator> physical_oper;
+    rc = generate_physical_plan(sub_expr_and_logical_oper[table_names], physical_oper);
 
-  // 查错
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to generate physical plan. rc=%s", strrc(rc));
-    return rc;
+    if (rc != RC::SUCCESS) return rc;
+
+    sub_expr_and_physical_oper.insert(make_pair(table_names, std::move(physical_oper)));
   }
 
-  get_tuple_schema(cur_physical_oper.get(), tuple_schema);
-  get_tuple_list(cur_physical_oper.get(), tuple_list, main_tuple);
+  PhysicalOperator *physical_oper = sub_expr_and_physical_oper[table_names].get();
+  get_tuple_schema(physical_oper, tuple_schema);
+  get_tuple_list(physical_oper, tuple_list, main_tuple);
 
   return rc;
 }

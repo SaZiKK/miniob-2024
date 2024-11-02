@@ -84,11 +84,11 @@ class OptimizeStage {
   static RC get_tuple_schema(PhysicalOperator *physical_operator, TupleSchema &tuple_schema);
   static RC get_tuple_list(PhysicalOperator *physical_operator, std::vector<std::vector<Value>> &tuple_list, const Tuple *main_tuple = nullptr);
 
+  static unordered_map<string, unique_ptr<LogicalOperator>> sub_expr_and_logical_oper;
+  static unordered_map<string, unique_ptr<PhysicalOperator>> sub_expr_and_physical_oper;
+
   static void reset() {
-    cur_logical_oper.release();
-    cur_physical_oper.release();
+    sub_expr_and_logical_oper.clear();
+    sub_expr_and_physical_oper.clear();
   }
-  static unique_ptr<LogicalOperator> cur_logical_oper;
-  static unique_ptr<PhysicalOperator> cur_physical_oper;
-  static SelectStmt *cur_select_stmt;
 };

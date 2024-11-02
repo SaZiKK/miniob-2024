@@ -122,10 +122,7 @@ RC FilterStmt::bind_filter_expr(Db *db, Table *default_table, std::unordered_map
         if (it.attr_type() == AttrType::DATE && !DateType::check_date(&it)) return RC::INVALID_ARGUMENT;
     } break;
     case ExprType::SUBQUERY: {
-      SubQueryExpr *sub_expr = static_cast<SubQueryExpr *>(expr.get());
-      vector<vector<Value>> tuple_list;
-      RC rc = sub_expr->try_get_tuple_list(tuple_list);
-      if (rc != RC::SUCCESS && !sub_expr->use_father_table()) return rc;
+      return RC::SUCCESS;
     } break;
     case ExprType::UNBOUND_FIELD: {
       Table *table = nullptr;

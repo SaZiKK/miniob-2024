@@ -413,7 +413,7 @@ class ValueExpr : public Expression {
 class SubQueryExpr : public Expression {
  public:
   SubQueryExpr() = default;
-  explicit SubQueryExpr(SelectStmt *sub_query, bool use_flag = false) : sub_query_(sub_query), use_father_table_(use_flag) {}
+  explicit SubQueryExpr(SelectStmt *sub_query, bool use_flag = false) : sub_query_(sub_query) {}
 
   virtual ~SubQueryExpr() = default;
 
@@ -426,13 +426,9 @@ class SubQueryExpr : public Expression {
   RC get_tuple_list(const Tuple *main_tuple, std::vector<std::vector<Value>> &tuple) override;
 
   SelectStmt *sub_query() { return sub_query_; }
-  bool use_father_table() { return use_father_table_; }
-  void set_use_father_table(bool use) { use_father_table_ = use; }
 
  private:
   SelectStmt *sub_query_;
-  bool has_calculated_ = false;
-  bool use_father_table_ = false;
   std::vector<std::vector<Value>> tuple_list_;
 };
 

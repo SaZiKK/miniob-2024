@@ -118,7 +118,6 @@ RC CastExpr::try_get_value(Value &result) const {
 
 RC SubQueryExpr::get_tuple_list(const Tuple *main_tuple, std::vector<std::vector<Value>> &tuple_list) {
   if (sub_query_ == nullptr) return RC::INVALID_ARGUMENT;
-  if (use_father_table_ == false) return try_get_tuple_list(tuple_list);
 
   TupleSchema tuple_schema;
   RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list, tuple_schema, main_tuple);
@@ -130,19 +129,13 @@ RC SubQueryExpr::get_tuple_list(const Tuple *main_tuple, std::vector<std::vector
 
 RC SubQueryExpr::try_get_tuple_list(std::vector<std::vector<Value>> &tuple_list) {
   if (sub_query_ == nullptr) return RC::INVALID_ARGUMENT;
-  if (use_father_table_ == true) return RC::INVALID_ARGUMENT;
 
-  if (has_calculated_ == false) {
-    TupleSchema tuple_schema;
-    RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list, tuple_schema);
-    if (rc == RC::SUCCESS) {
-      tuple_list_ = tuple_list;
-      has_calculated_ = true;
-    }
-    return rc;
+  TupleSchema tuple_schema;
+  RC rc = OptimizeStage::handle_sub_stmt(sub_query_, tuple_list, tuple_schema, nullptr);
+  if (rc == RC::SUCCESS) {
+    tuple_list_ = tuple_list;
   }
-  tuple_list = tuple_list_;
-  return RC::SUCCESS;
+  return rc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
