@@ -161,9 +161,10 @@ RC OptimizeStage::handle_sub_stmt(Stmt *stmt, std::vector<std::vector<Value>> &t
   }
 
   PhysicalOperator *physical_oper = sub_expr_and_physical_oper[table_names].get();
-  get_tuple_schema(physical_oper, tuple_schema);
-  get_tuple_list(physical_oper, tuple_list, main_tuple);
+  rc = get_tuple_schema(physical_oper, tuple_schema);
+  if (rc != RC::SUCCESS) return rc;
 
+  rc = get_tuple_list(physical_oper, tuple_list, main_tuple);
   return rc;
 }
 
@@ -207,11 +208,10 @@ RC OptimizeStage::get_tuple_list(PhysicalOperator *physical_operator, std::vecto
     tuple_list.push_back(single_tuple);
   }
 
+  if (rc != RC::RECORD_EOF) return rc;
+
   rc = physical_operator->close();
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to close sub physical operator. rc=%s", strrc(rc));
-    return rc;
-  }
+  if (rc != RC::SUCCESS) return rc;
 
   return RC::SUCCESS;
 }

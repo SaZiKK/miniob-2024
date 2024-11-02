@@ -619,13 +619,15 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const {
   std::vector<std::vector<Value>> left_tuples;
   std::vector<std::vector<Value>> right_tuples;
 
-  left_->get_value(tuple, left_value);
-  left_->get_value_list(left_list);
-  left_->get_tuple_list(&tuple, left_tuples);
+  RC rc1 = left_->get_value(tuple, left_value);
+  RC rc2 = left_->get_value_list(left_list);
+  RC rc3 = left_->get_tuple_list(&tuple, left_tuples);
+  if (OB_FAIL(rc1) && OB_FAIL(rc2) && OB_FAIL(rc3)) return RC::INVALID_ARGUMENT;
 
-  right_->get_value(tuple, right_value);
-  right_->get_value_list(right_list);
-  right_->get_tuple_list(&tuple, right_tuples);
+  rc1 = right_->get_value(tuple, right_value);
+  rc2 = right_->get_value_list(right_list);
+  rc3 = right_->get_tuple_list(&tuple, right_tuples);
+  if (OB_FAIL(rc1) && OB_FAIL(rc2) && OB_FAIL(rc3)) return RC::INVALID_ARGUMENT;
 
   RC rc = set_comp_type_by_verilog();
   if (rc != RC::SUCCESS) return rc;

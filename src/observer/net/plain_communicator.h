@@ -36,7 +36,8 @@ class PlainCommunicator : public Communicator {
   RC write_state(SessionEvent *event, bool &need_disconnect);
   RC write_debug(SessionEvent *event, bool &need_disconnect);
   RC write_result_internal(SessionEvent *event, bool &need_disconnect);
-  RC write_tuple_result(SqlResult *sql_result);
+  RC write_tuple_result(SqlResult *sql_result, vector<vector<string>> result);
+  RC get_tuple_result(SqlResult *sql_result, vector<vector<string>> &result);
   RC write_chunk_result(SqlResult *sql_result);
 
  protected:
