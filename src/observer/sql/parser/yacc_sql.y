@@ -520,7 +520,11 @@ attr_def:
       $$->can_be_null = $6;
 
       if($$->type == AttrType::VECTORS){
-        $$->length = $4 * 4;
+        if ($4 <= 1000) {
+          $$->length = $4 * 4;
+        } else {
+          $$->length = 36; // 页号 + 长度 高维向量数据最多占8页
+        }
       }
 
       if($$->type == AttrType::TEXT){

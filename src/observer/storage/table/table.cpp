@@ -308,7 +308,7 @@ RC Table::set_value_to_record(char *record_data, Value &value, const FieldMeta *
   size_t copy_len = field->len();
   size_t data_len = value.length();
 
-  if (value.attr_type() == AttrType::VECTORS && copy_len != (size_t)data_len) return RC::INVALID_ARGUMENT;
+  if (value.attr_type() == AttrType::VECTORS && data_len <= 1000 && copy_len != (size_t)data_len) return RC::INVALID_ARGUMENT;
 
   // 如果是 TEXT 类型，在这里就要写入页中
   if (field->type() == AttrType::TEXT) {
@@ -389,7 +389,8 @@ RC Table::set_value_to_record(char *record_data, Value &value, const FieldMeta *
     memcpy(record_data + field->offset(), data, BP_MAX_VECTOR_RECORD_SIZE);
     delete[] data;
   }
-
+  // copy_len = field->len();
+  // data_len = value.length();
   if (field->type() == AttrType::CHARS) {
     if (copy_len > data_len) {
       data_len = value.length();
