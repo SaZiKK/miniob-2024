@@ -148,5 +148,15 @@ void KMEANS::kmeans() {
   }
 }
 
-void KMEANS::insertVec(vector<float> vec) {}
-void KMEANS::deleteVec(vector<float> vec) {}
+void KMEANS::insertVec(vector<float> vec) {
+  this->rowLen++;
+  this->dataSet.push_back(vec);
+  this->kmeans();
+}
+void KMEANS::deleteVec(vector<float> vec) {
+  for (size_t i = 0; i < this->dataSet.size(); i++) {
+    if (vec == this->dataSet[i]) this->dataSet.erase(dataSet.begin() + i);
+  }
+  this->rowLen--;
+  this->kmeans();
+}

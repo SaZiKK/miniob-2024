@@ -1341,6 +1341,17 @@ RC VecFuncExpr::INNER_PRODUCT_FUNC(const Value left, const Value right, Value &r
   return RC::SUCCESS;
 }
 
+RC VecFuncExpr::set_left_expr(unique_ptr<Expression> left) {
+  this->child_left_.release();
+  this->child_left_ = std::move(left);
+  return RC::SUCCESS;
+}
+RC VecFuncExpr::set_right_expr(unique_ptr<Expression> right) {
+  this->child_right_.release();
+  this->child_right_ = std::move(right);
+  return RC::SUCCESS;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 RC Expression::copy_expr(const std::unique_ptr<Expression> &expr_src, std::unique_ptr<Expression> &expr_dst) {
   RC rc = RC::SUCCESS;

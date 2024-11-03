@@ -51,6 +51,8 @@ class SelectStmt : public Stmt {
   std::vector<std::unique_ptr<Expression>> &group_by() { return group_by_; }
   std::vector<std::unique_ptr<Expression>> &order_by() { return order_by_; }
 
+  int vec_order_limit() const { return vec_order_limit_; }
+
  private:
   std::vector<std::unique_ptr<Expression>> query_expressions_;
   std::vector<Table *> tables_;
@@ -58,4 +60,6 @@ class SelectStmt : public Stmt {
   FilterStmt *having_filter_stmt_ = nullptr;
   std::vector<std::unique_ptr<Expression>> group_by_;
   std::vector<std::unique_ptr<Expression>> order_by_;
+
+  int vec_order_limit_ = -1;
 };

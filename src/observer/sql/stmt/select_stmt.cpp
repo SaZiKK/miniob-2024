@@ -211,12 +211,67 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, bool &use_
   for (size_t i = 0; i < select_sql.order_by.size(); i++) {
     OrderByExpr *order_by_expr = static_cast<OrderByExpr *>(select_sql.order_by[i].get());
     Expression *expr = order_by_expr->child().get();
+    UnboundFieldExpr *unbound_field_expr = nullptr;
+
+    // ? 如果是 VECFUNC 表达式
+    if (expr->type() == ExprType::VECFUNC) {
+      // ? 绑定 VECFUNC 左右两侧的表达式
+      VecFuncExpr *vec_func_expr = static_cast<VecFuncExpr *>(expr);
+      Expression *left_ = vec_func_expr->child_left().get();
+      Expression *right_ = vec_func_expr->child_right().get();
+
+      if (left_->type() != ExprType::UNBOUND_FIELD && right_->type() != ExprType::UNBOUND_FIELD) return RC::INVALID_ARGUMENT;
+
+      if (left_->type() == ExprType::UNBOUND_FIELD) {
+        UnboundFieldExpr *left_unbound_ = static_cast<UnboundFieldExpr *>(left_);
+        const char *table_name = left_unbound_->table_name();
+        const char *field_name = left_unbound_->field_name();
+
+        if (is_blank(table_name) && tables.size() != 1) return RC::INVALID_ARGUMENT;
+
+        table_name = tables[0]->name();
+        left_unbound_->set_table_name(table_name);
+
+        Table *table = tables[0];
+
+        const FieldMeta *field_meta = table->table_meta().field(field_name);
+
+        if (field_meta == nullptr) return RC::INVALID_ARGUMENT;
+
+        Field *field = new Field(table, field_meta);
+        if (field->attr_type() != AttrType::VECTORS) return RC::INVALID_ARGUMENT;
+        unique_ptr<FieldExpr> field_expr = make_unique<FieldExpr>(*field);
+        vec_func_expr->set_left_expr(move(field_expr));
+      }
+
+      if (right_->type() == ExprType::UNBOUND_FIELD) {
+        UnboundFieldExpr *right_unbound_ = static_cast<UnboundFieldExpr *>(right_);
+        const char *table_name = right_unbound_->table_name();
+        const char *field_name = right_unbound_->field_name();
+
+        if (is_blank(table_name) && tables.size() != 1) return RC::INVALID_ARGUMENT;
+
+        table_name = tables[0]->name();
+        right_unbound_->set_table_name(table_name);
+
+        Table *table = tables[0];
+
+        const FieldMeta *field_meta = table->table_meta().field(field_name);
+
+        if (field_meta == nullptr) return RC::INVALID_ARGUMENT;
+
+        Field *field = new Field(table, field_meta);
+        if (field->attr_type() != AttrType::VECTORS) return RC::INVALID_ARGUMENT;
+        unique_ptr<FieldExpr> field_expr = make_unique<FieldExpr>(*field);
+        vec_func_expr->set_right_expr(move(field_expr));
+      }
+      order_by_expressions.emplace_back(move(select_sql.order_by[i]));
+      continue;
+    }
 
     // ? 同样的，对于排序字段，只能是 ALIAS UNBOUNDFIELD 两种表达式类型
     string table_name;
     string field_name;
-
-    UnboundFieldExpr *unbound_field_expr;
 
     if (expr->type() == ExprType::ALIAS) {
       AliasExpr *alias_expr = static_cast<AliasExpr *>(expr);
@@ -227,7 +282,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, bool &use_
       unbound_field_expr = static_cast<UnboundFieldExpr *>(expr);
       table_name = unbound_field_expr->table_name();
       field_name = unbound_field_expr->field_name();
-    } else
+    } else if (expr->type() != ExprType::VECFUNC)
       return RC::INVALID_ARGUMENT;
 
     // ? 还原表格和属性的名称
@@ -300,6 +355,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, bool &use_
   select_stmt->having_filter_stmt_ = having_fliter_stmt;
   select_stmt->group_by_.swap(group_by_expressions);
   select_stmt->order_by_.swap(order_by_expressions);
+  select_stmt->vec_order_limit_ = select_sql.vec_order_limit_;
   stmt = select_stmt;
 
   return RC::SUCCESS;

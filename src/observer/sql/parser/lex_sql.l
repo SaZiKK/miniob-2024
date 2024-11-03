@@ -149,6 +149,13 @@ AS                                      RETURN_TOKEN(AS);
 ORDER[ \t]+BY                           RETURN_TOKEN(ORDER_BY);
 ASC                                     RETURN_TOKEN(ASC);
 HAVING                                  RETURN_TOKEN(HAVING);
+WITH                                    RETURN_TOKEN(WITH);
+DISTANCE                                RETURN_TOKEN(DISTANCE);
+TYPE                                    RETURN_TOKEN(TYPE);
+LISTS                                   RETURN_TOKEN(LISTS);
+PROBES                                  RETURN_TOKEN(PROBES);
+LIMIT                                   RETURN_TOKEN(LIMIT);
+IVFFLAT                                 RETURN_TOKEN(IVFFLAT);
 
 L2_DISTANCE                             RETURN_TOKEN(VEC_L2_DISTANCE);
 COSINE_DISTANCE                         RETURN_TOKEN(VEC_COSINE_DISTANCE_FUNC);

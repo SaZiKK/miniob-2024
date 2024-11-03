@@ -104,6 +104,8 @@ struct SelectSqlNode {
   std::vector<std::unique_ptr<Expression>> join;         ///< join clause
   std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
   std::vector<std::unique_ptr<Expression>> order_by;     ///< order by clause
+
+  int vec_order_limit_ = -1;
 };
 
 /**
@@ -194,6 +196,17 @@ struct CreateIndexSqlNode {
   std::string relation_name;                 ///< Relation name
   std::vector<std::string> attribute_names;  ///< Attribute name
   bool is_unique;                            ///< 是否是唯一索引
+};
+
+struct CreateVecIndexSqlNode {
+  std::string index_name;
+  std::string relation_name;
+  std::string attribute_name;
+
+  std::string distance_name;
+  std::string type_name;
+  int lists_;
+  int probes_;
 };
 
 /**
@@ -287,6 +300,7 @@ enum SqlCommandFlag {
   SCF_EXIT,
   SCF_EXPLAIN,
   SCF_SET_VARIABLE,  ///< 设置变量
+  SCF_CREATE_VEC_INDEX,
 };
 /**
  * @brief 表示一个SQL语句
@@ -309,6 +323,7 @@ class ParsedSqlNode {
   LoadDataSqlNode load_data;
   ExplainSqlNode explain;
   SetVariableSqlNode set_variable;
+  CreateVecIndexSqlNode create_vec_index;
 
  public:
   ParsedSqlNode();

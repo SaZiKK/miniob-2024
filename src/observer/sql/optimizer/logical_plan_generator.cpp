@@ -31,6 +31,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/table_get_logical_operator.h"
 #include "sql/operator/group_by_logical_operator.h"
 #include "sql/operator/sort_logical_operator.h"
+#include "sql/operator/sort_vec_logical_operator.h"
 
 #include "sql/optimizer/physical_plan_generator.h"
 #include "sql/stmt/calc_stmt.h"
@@ -476,6 +477,46 @@ RC LogicalPlanGenerator::create_group_by_plan(SelectStmt *select_stmt, unique_pt
 }
 
 RC LogicalPlanGenerator::create_order_by_plan(SelectStmt *select_stmt, std::unique_ptr<LogicalOperator> &logical_operator) {
+  if (select_stmt->order_by().empty()) return RC::SUCCESS;
+
+  OrderByExpr *order_expr = static_cast<OrderByExpr *>(select_stmt->order_by()[0].get());
+  // ? 向量排序语句
+  if (order_expr->child()->type() == ExprType::VECFUNC) {
+    Field *left_f = nullptr;
+    Field *right_f = nullptr;
+    Value *left_v = nullptr;
+    Value *right_v = nullptr;
+
+    Expression *expr = order_expr->child().get();
+    VecFuncExpr *vec_func_expr = static_cast<VecFuncExpr *>(expr);
+
+    Expression *left_expr = vec_func_expr->child_left().get();
+    Expression *right_expr = vec_func_expr->child_right().get();
+
+    if (left_expr->type() == ExprType::FIELD) {
+      FieldExpr *field_expr = static_cast<FieldExpr *>(left_expr);
+      left_f = &field_expr->field();
+    } else if (left_expr->type() == ExprType::VALUE) {
+      ValueExpr *value_expr = static_cast<ValueExpr *>(left_expr);
+      left_v = (Value *)&value_expr->get_value();
+    } else
+      return RC::INVALID_ARGUMENT;
+
+    if (right_expr->type() == ExprType::FIELD) {
+      FieldExpr *field_expr = static_cast<FieldExpr *>(right_expr);
+      right_f = &field_expr->field();
+    } else if (right_expr->type() == ExprType::VALUE) {
+      ValueExpr *value_expr = static_cast<ValueExpr *>(right_expr);
+      right_v = (Value *)&value_expr->get_value();
+    } else
+      return RC::INVALID_ARGUMENT;
+
+    auto order_by_oper =
+        make_unique<SortVecLogicalOperator>(left_f, right_f, left_v, right_v, vec_func_expr->func_type(), select_stmt->vec_order_limit());
+    logical_operator = std::move(order_by_oper);
+    return RC::SUCCESS;
+  }
+  // ? 普通的排序语句
   std::vector<Field> order_by_fields;
   for (auto &it : select_stmt->order_by()) {
     FieldExpr *field_expr = static_cast<FieldExpr *>(it.get());

@@ -133,10 +133,17 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         VEC_L2_DISTANCE
         VEC_COSINE_DISTANCE_FUNC
         VEC_INNER_PRODUCT_FUNC
+        IVFFLAT
         LBRACKET
         RBRACKET
         UNIQUE
         ORDER_BY
+        WITH
+        DISTANCE
+        TYPE    
+        LISTS   
+        PROBES  
+        LIMIT
         AS
         EQ
         LT
@@ -180,6 +187,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <condition>           condition
 %type <value>               value
 %type <number>              number
+%type <number>              limited
 %type <floats>              float
 %type <comp>                comp_op
 %type <attr_infos>          attr_def_list
@@ -216,6 +224,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            show_tables_stmt
 %type <sql_node>            desc_table_stmt
 %type <sql_node>            create_index_stmt
+%type <sql_node>            create_vec_index_stmt
 %type <sql_node>            drop_index_stmt
 %type <sql_node>            sync_stmt
 %type <sql_node>            begin_stmt
@@ -257,6 +266,7 @@ command_wrapper:
   | show_tables_stmt
   | desc_table_stmt
   | create_index_stmt
+  | create_vec_index_stmt
   | drop_index_stmt
   | sync_stmt
   | begin_stmt
@@ -362,6 +372,47 @@ create_index_stmt:    /*create index 语句的语法解析树*/
       free($8);
     }
     ;
+
+create_vec_index_stmt:
+    CREATE VECTOR_T INDEX ID ON ID LBRACE ID RBRACE WITH LBRACE TYPE EQ IVFFLAT COMMA DISTANCE EQ VEC_L2_DISTANCE COMMA LISTS EQ number COMMA PROBES EQ number RBRACE {
+      $$ = new ParsedSqlNode(SCF_CREATE_VEC_INDEX);
+      CreateVecIndexSqlNode &create_vec_index = $$->create_vec_index;
+      create_vec_index.index_name = $4;
+      create_vec_index.relation_name = $6;
+      create_vec_index.attribute_name = $8;
+
+      // para
+      create_vec_index.type_name = "IVFFLAT";
+      create_vec_index.distance_name = "L2_DISTANCE";
+      create_vec_index.lists_ = $22;
+      create_vec_index.probes_ = $26;
+    }
+    | CREATE VECTOR_T INDEX ID ON ID LBRACE ID RBRACE WITH LBRACE TYPE EQ IVFFLAT COMMA DISTANCE EQ VEC_COSINE_DISTANCE_FUNC COMMA LISTS EQ number COMMA PROBES EQ number RBRACE {
+      $$ = new ParsedSqlNode(SCF_CREATE_VEC_INDEX);
+      CreateVecIndexSqlNode &create_vec_index = $$->create_vec_index;
+      create_vec_index.index_name = $4;
+      create_vec_index.relation_name = $6;
+      create_vec_index.attribute_name = $8;
+
+      // para
+      create_vec_index.type_name = "IVFFLAT";
+      create_vec_index.distance_name = "COSINE_DISTANCE";
+      create_vec_index.lists_ = $22;
+      create_vec_index.probes_ = $26;
+    }
+    | CREATE VECTOR_T INDEX ID ON ID LBRACE ID RBRACE WITH LBRACE TYPE EQ IVFFLAT COMMA DISTANCE EQ VEC_INNER_PRODUCT_FUNC COMMA LISTS EQ number COMMA PROBES EQ number RBRACE {
+      $$ = new ParsedSqlNode(SCF_CREATE_VEC_INDEX);
+      CreateVecIndexSqlNode &create_vec_index = $$->create_vec_index;
+      create_vec_index.index_name = $4;
+      create_vec_index.relation_name = $6;
+      create_vec_index.attribute_name = $8;
+
+      // para
+      create_vec_index.type_name = "IVFFLAT";
+      create_vec_index.distance_name = "INNER_PRODUCT";
+      create_vec_index.lists_ = $22;
+      create_vec_index.probes_ = $26;
+    }
 
 id_list:
     /* empty */
@@ -739,7 +790,7 @@ update_target_list:
     ;
 
 select_stmt:        /*  select 语句的语法解析树*/
-    SELECT query_unit query_list FROM relation rel_list join_list where group_by having order_by_list
+    SELECT query_unit query_list FROM relation rel_list join_list where group_by having order_by_list limited
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($3 != nullptr) {
@@ -782,6 +833,8 @@ select_stmt:        /*  select 语句的语法解析树*/
         delete $11;
       }
       std::reverse($$->selection.order_by.begin(), $$->selection.order_by.end());
+
+      $$->selection.vec_order_limit_ = $12;
     }
     ;
 sub_select_stmt:
@@ -815,6 +868,15 @@ expression_list:
       $$->emplace($$->begin(), $1);
     }
     ;
+
+limited:
+    /* empty */
+    {
+      $$ = -1;
+    }
+    | LIMIT number {
+      $$ = $2;
+    }
 
 aggre_type:
     MAX { 

@@ -43,6 +43,8 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/group_by_physical_operator.h"
 #include "sql/operator/sort_logical_operator.h"
 #include "sql/operator/sort_physical_operator.h"
+#include "sql/operator/sort_vec_logical_operator.h"
+#include "sql/operator/sort_vec_physical_operator.h"
 #include "sql/operator/hash_group_by_physical_operator.h"
 #include "sql/operator/scalar_group_by_physical_operator.h"
 #include "sql/operator/table_scan_vec_physical_operator.h"
@@ -93,9 +95,15 @@ RC PhysicalPlanGenerator::create(LogicalOperator &logical_operator, unique_ptr<P
     case LogicalOperatorType::GROUP_BY: {
       return create_plan(static_cast<GroupByLogicalOperator &>(logical_operator), oper);
     } break;
+
     case LogicalOperatorType::SORT: {
       return create_plan(static_cast<SortLogicalOperator &>(logical_operator), oper);
     } break;
+
+    case LogicalOperatorType::SORTVEC: {
+      return create_plan(static_cast<SortVecLogicalOperator &>(logical_operator), oper);
+    } break;
+
     default: {
       ASSERT(false, "unknown logical operator type");
       return RC::INVALID_ARGUMENT;
@@ -454,6 +462,33 @@ RC PhysicalPlanGenerator::create_plan(SortLogicalOperator &logical_oper, std::un
     if (rc != RC::SUCCESS) return rc;
   }
   auto sort_oper = make_unique<SortPhysicalOperator>(logical_oper.order_by_fields());
+  if (child_phy_oper) {
+    sort_oper->add_child(std::move(child_phy_oper));
+  }
+
+  oper = std::move(sort_oper);
+  return rc;
+}
+
+RC PhysicalPlanGenerator::create_plan(SortVecLogicalOperator &logical_oper, std::unique_ptr<PhysicalOperator> &oper) {
+  vector<unique_ptr<LogicalOperator>> &child_opers = logical_oper.children();
+
+  unique_ptr<PhysicalOperator> child_phy_oper;
+
+  RC rc = RC::SUCCESS;
+  if (!child_opers.empty()) {
+    LogicalOperator *child_oper = child_opers.front().get();
+
+    rc = create(*child_oper, child_phy_oper);
+    if (rc != RC::SUCCESS) return rc;
+  }
+  Field *left_field = logical_oper.left_field();
+  Field *right_field = logical_oper.right_field();
+  Value *left_value = logical_oper.left_value();
+  Value *right_value = logical_oper.right_value();
+  VecFuncExpr::VecFuncType type = logical_oper.distance_func();
+  int limit_num = logical_oper.limit_num();
+  auto sort_oper = make_unique<SortVecPhysicalOperator>(left_field, right_field, left_value, right_value, type, limit_num);
   if (child_phy_oper) {
     sort_oper->add_child(std::move(child_phy_oper));
   }
