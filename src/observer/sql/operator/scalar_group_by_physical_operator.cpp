@@ -22,11 +22,11 @@ using namespace common;
 
 ScalarGroupByPhysicalOperator::ScalarGroupByPhysicalOperator(vector<Expression *> &&expressions) : GroupByPhysicalOperator(std::move(expressions)) {}
 
-RC ScalarGroupByPhysicalOperator::open(Trx *trx) {
+RC ScalarGroupByPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
 
   PhysicalOperator &child = *children_[0];
-  RC rc = child.open(trx);
+  RC rc = child.open(trx, main_tuple);
   if (OB_FAIL(rc)) {
     LOG_INFO("failed to open child operator. rc=%s", strrc(rc));
     return rc;
@@ -44,7 +44,7 @@ RC ScalarGroupByPhysicalOperator::open(Trx *trx) {
     group_value_ = make_unique<GroupValueType>(std::move(aggregator_list), std::move(composite_tuple));
   }
 
-  while (OB_SUCC(rc = child.next())) {
+  while (OB_SUCC(rc = child.next(main_tuple))) {
     Tuple *child_tuple = child.current_tuple();
     if (nullptr == child_tuple) {
       LOG_WARN("failed to get tuple from child operator. rc=%s", strrc(rc));

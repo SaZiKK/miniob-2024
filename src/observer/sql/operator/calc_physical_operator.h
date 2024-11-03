@@ -28,7 +28,7 @@ class CalcPhysicalOperator : public PhysicalOperator {
   std::string name() const override { return "CALC"; }
   std::string param() const override { return ""; }
 
-  RC open(Trx *trx) override { return RC::SUCCESS; }
+  RC open(Trx *trx, const Tuple *main_tuple = nullptr) override { return RC::SUCCESS; }
   RC next(const Tuple *main_tuple = nullptr) {
     RC rc = RC::SUCCESS;
     if (emitted_) {

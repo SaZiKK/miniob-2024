@@ -201,7 +201,7 @@ class RowTuple : public Tuple {
     FieldExpr *field_expr = speces_[index];
     const FieldMeta *field_meta = field_expr->field().meta();
     cell.set_type(field_meta->type());
-    if ((record_->data())[index] == '0')
+    if (strncmp(record_->data() + field_meta->offset(), "ÿÿÿÿ", std::min(4, field_meta->len())) == 0)
       cell.set_null(true);
     else if (cell.attr_type() == AttrType::TEXT) {
       vector<Field> text_fields;
@@ -477,6 +477,9 @@ class JoinedTuple : public Tuple {
 
   void set_left(Tuple *left) { left_ = left; }
   void set_right(const Tuple *right) { right_ = right; }
+
+  const Tuple *left() const { return left_; }
+  const Tuple *right() const { return right_; }
 
   int cell_num() const override { return left_->cell_num() + right_->cell_num(); }
 

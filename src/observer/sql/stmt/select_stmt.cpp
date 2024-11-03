@@ -19,6 +19,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/db/db.h"
 #include "storage/table/table.h"
 #include "sql/parser/expression_binder.h"
+#include "sql/operator/hash_group_by_physical_operator.h"
 
 using namespace std;
 using namespace common;
@@ -270,6 +271,16 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, bool &use_
   RC rc = FilterStmt::create(db, default_table, &table_map, select_sql.conditions.data(), static_cast<int>(select_sql.conditions.size()), filter_stmt,
                              use_father_table_flags, alias_for_son, tables_for_son);
   if (rc != RC::SUCCESS) return rc;
+
+  // ? 将 having 子句中有关 count(*) 的谓词拿出来
+  for (size_t i = 0; i < select_sql.having_conditions.size(); i++) {
+    if (strcmp(select_sql.having_conditions[i].left_expression->name(), "count(*)") == 0 ||
+        strcmp(select_sql.having_conditions[i].left_expression->name(), "COUNT(*)") == 0) {
+      select_sql.having_conditions.erase(select_sql.having_conditions.begin() + i);
+      HashGroupByPhysicalOperator::min_Num = std::stoi(select_sql.having_conditions[i].right_expression->name());
+      i--;
+    }
+  }
 
   rc = FilterStmt::create(db, default_table, &table_map, select_sql.having_conditions.data(), static_cast<int>(select_sql.having_conditions.size()),
                           having_fliter_stmt, use_father_table_flags, alias_for_son, tables_for_son);

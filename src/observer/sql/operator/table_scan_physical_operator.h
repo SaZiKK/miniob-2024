@@ -35,7 +35,7 @@ class TableScanPhysicalOperator : public PhysicalOperator {
 
   PhysicalOperatorType type() const override { return PhysicalOperatorType::TABLE_SCAN; }
 
-  RC open(Trx *trx) override;
+  RC open(Trx *trx, const Tuple *main_tuple = nullptr) override;
   RC next(const Tuple *main_tuple = nullptr) override;
   RC close() override;
 
@@ -53,5 +53,6 @@ class TableScanPhysicalOperator : public PhysicalOperator {
   RecordFileScanner record_scanner_;
   Record current_record_;
   RowTuple tuple_;
+  JoinedTuple join_tuple_;
   std::vector<std::unique_ptr<Expression>> predicates_;  // TODO chang predicate to table tuple filter
 };

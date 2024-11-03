@@ -83,4 +83,12 @@ class OptimizeStage {
   static RC generate_physical_plan(std::unique_ptr<LogicalOperator> &logical_operator, std::unique_ptr<PhysicalOperator> &physical_operator);
   static RC get_tuple_schema(PhysicalOperator *physical_operator, TupleSchema &tuple_schema);
   static RC get_tuple_list(PhysicalOperator *physical_operator, std::vector<std::vector<Value>> &tuple_list, const Tuple *main_tuple = nullptr);
+
+  static unordered_map<string, unique_ptr<LogicalOperator>> sub_expr_and_logical_oper;
+  static unordered_map<string, unique_ptr<PhysicalOperator>> sub_expr_and_physical_oper;
+
+  static void reset() {
+    sub_expr_and_logical_oper.clear();
+    sub_expr_and_physical_oper.clear();
+  }
 };

@@ -22,7 +22,7 @@ ProjectVecPhysicalOperator::ProjectVecPhysicalOperator(vector<unique_ptr<Express
     expr_pos++;
   }
 }
-RC ProjectVecPhysicalOperator::open(Trx *trx) {
+RC ProjectVecPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   if (children_.empty()) {
     return RC::SUCCESS;
   }

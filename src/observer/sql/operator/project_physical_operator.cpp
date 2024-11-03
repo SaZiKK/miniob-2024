@@ -22,13 +22,13 @@ using namespace std;
 ProjectPhysicalOperator::ProjectPhysicalOperator(vector<unique_ptr<Expression>> &&expressions)
     : expressions_(std::move(expressions)), tuple_(expressions_) {}
 
-RC ProjectPhysicalOperator::open(Trx *trx) {
+RC ProjectPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   if (children_.empty()) {
     return RC::SUCCESS;
   }
 
   PhysicalOperator *child = children_[0].get();
-  RC rc = child->open(trx);
+  RC rc = child->open(trx, main_tuple);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to open child operator: %s", strrc(rc));
     return rc;

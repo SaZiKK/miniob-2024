@@ -20,14 +20,16 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
+int HashGroupByPhysicalOperator::min_Num = 0;
+
 HashGroupByPhysicalOperator::HashGroupByPhysicalOperator(vector<unique_ptr<Expression>> &&group_by_exprs, vector<Expression *> &&expressions)
     : GroupByPhysicalOperator(std::move(expressions)), group_by_exprs_(std::move(group_by_exprs)) {}
 
-RC HashGroupByPhysicalOperator::open(Trx *trx) {
+RC HashGroupByPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   ASSERT(children_.size() == 1, "group by operator only support one child, but got %d", children_.size());
 
   PhysicalOperator &child = *children_[0];
-  RC rc = child.open(trx);
+  RC rc = child.open(trx, main_tuple);
   if (OB_FAIL(rc)) {
     LOG_INFO("failed to open child operator. rc=%s", strrc(rc));
     return rc;
@@ -37,7 +39,7 @@ RC HashGroupByPhysicalOperator::open(Trx *trx) {
 
   ValueListTuple group_by_evaluated_tuple;
 
-  while (OB_SUCC(rc = child.next())) {
+  while (OB_SUCC(rc = child.next(main_tuple))) {
     Tuple *child_tuple = child.current_tuple();
     if (nullptr == child_tuple) {
       LOG_WARN("failed to get tuple from child operator. rc=%s", strrc(rc));
@@ -93,6 +95,8 @@ RC HashGroupByPhysicalOperator::next(const Tuple *main_tuple) {
     return RC::RECORD_EOF;
   }
 
+flag:
+
   if (first_emited_) {
     ++current_group_;
   } else {
@@ -102,10 +106,14 @@ RC HashGroupByPhysicalOperator::next(const Tuple *main_tuple) {
     return RC::RECORD_EOF;
   }
 
+  int index = current_group_ - groups_.begin();
+  if (num_of_groups_[index] <= min_Num) goto flag;
+
   return RC::SUCCESS;
 }
 
 RC HashGroupByPhysicalOperator::close() {
+  min_Num = 0;
   children_[0]->close();
   LOG_INFO("close group by operator");
   return RC::SUCCESS;
@@ -134,6 +142,7 @@ RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple, GroupType *
   }
 
   // 找到对应的group
+  int index = 0;
   for (GroupType &group : groups_) {
     int compare_result = 0;
     rc = group_by_evaluated_tuple.compare(get<0>(group), compare_result);
@@ -144,8 +153,10 @@ RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple, GroupType *
 
     if (compare_result == 0) {
       found_group = &group;
+      num_of_groups_[index]++;
       break;
     }
+    index++;
   }
 
   // 如果没有找到对应的group，创建一个新的group
@@ -163,6 +174,7 @@ RC HashGroupByPhysicalOperator::find_group(const Tuple &child_tuple, GroupType *
     CompositeTuple composite_tuple;
     composite_tuple.add_tuple(make_unique<ValueListTuple>(std::move(child_tuple_to_value)));
     groups_.emplace_back(std::move(group_by_evaluated_tuple), GroupValueType(std::move(aggregator_list), std::move(composite_tuple)));
+    num_of_groups_.emplace_back(1);
     found_group = &groups_.back();
   }
 

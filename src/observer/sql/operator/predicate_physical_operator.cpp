@@ -22,32 +22,25 @@ PredicatePhysicalOperator::PredicatePhysicalOperator(std::unique_ptr<Expression>
   ASSERT(expression_->value_type() == AttrType::BOOLEANS, "predicate's expression should be BOOLEAN type");
 }
 
-RC PredicatePhysicalOperator::open(Trx *trx) {
+RC PredicatePhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   if (children_.size() != 1) {
     LOG_WARN("predicate operator must has one child");
     return RC::INTERNAL;
   }
 
-  return children_[0]->open(trx);
+  return children_[0]->open(trx, main_tuple);
 }
 
 RC PredicatePhysicalOperator::next(const Tuple *main_tuple) {
   RC rc = RC::SUCCESS;
   PhysicalOperator *oper = children_.front().get();
 
-  while (RC::SUCCESS == (rc = oper->next())) {
+  while (RC::SUCCESS == (rc = oper->next(main_tuple))) {
     Tuple *tuple = oper->current_tuple();
     if (nullptr == tuple) {
       rc = RC::INTERNAL;
       LOG_WARN("failed to get tuple from operator");
       break;
-    }
-
-    if (main_tuple != nullptr) {
-      JoinedTuple *tuple_combines_with_main_tuple = new JoinedTuple();
-      tuple_combines_with_main_tuple->set_left(tuple);
-      tuple_combines_with_main_tuple->set_right(main_tuple);
-      tuple = tuple_combines_with_main_tuple;
     }
 
     Value value;

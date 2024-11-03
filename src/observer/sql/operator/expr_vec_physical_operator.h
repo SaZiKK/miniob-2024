@@ -24,7 +24,7 @@ class ExprVecPhysicalOperator : public PhysicalOperator {
 
   PhysicalOperatorType type() const override { return PhysicalOperatorType::EXPR_VEC; }
 
-  RC open(Trx *trx) override;
+  RC open(Trx *trx, const Tuple *main_tuple = nullptr) override;
   RC next(Chunk &chunk) override;
   RC close() override;
 

@@ -4,14 +4,14 @@
 #include "storage/table/table.h"
 #include "storage/trx/trx.h"
 
-RC UpdatePhysicalOperator::open(Trx *trx) {
+RC UpdatePhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   if (children_.empty()) {
     return RC::SUCCESS;
   }
 
   std::unique_ptr<PhysicalOperator> &child = children_[0];
 
-  RC rc = child->open(trx);
+  RC rc = child->open(trx, main_tuple);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to open child operator: %s", strrc(rc));
     return rc;
@@ -19,7 +19,7 @@ RC UpdatePhysicalOperator::open(Trx *trx) {
 
   trx_ = trx;
 
-  while (OB_SUCC(rc = child->next())) {
+  while (OB_SUCC(rc = child->next(main_tuple))) {
     Tuple *tuple = child->current_tuple();
     if (nullptr == tuple) {
       return rc;

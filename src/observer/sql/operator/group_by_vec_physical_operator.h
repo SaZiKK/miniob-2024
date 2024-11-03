@@ -25,7 +25,7 @@ class GroupByVecPhysicalOperator : public PhysicalOperator {
 
   PhysicalOperatorType type() const override { return PhysicalOperatorType::GROUP_BY_VEC; }
 
-  RC open(Trx *trx) override { return RC::UNIMPLEMENTED; }
+  RC open(Trx *trx, const Tuple *main_tuple = nullptr) override { return RC::UNIMPLEMENTED; }
   RC next(Chunk &chunk) override { return RC::UNIMPLEMENTED; }
   RC close() override { return RC::UNIMPLEMENTED; }
 

@@ -27,7 +27,7 @@ class ScalarGroupByPhysicalOperator : public GroupByPhysicalOperator {
 
   PhysicalOperatorType type() const override { return PhysicalOperatorType::SCALAR_GROUP_BY; }
 
-  RC open(Trx *trx) override;
+  RC open(Trx *trx, const Tuple *main_tuple = nullptr) override;
   RC next(const Tuple *main_tuple = nullptr) override;
   RC close() override;
 

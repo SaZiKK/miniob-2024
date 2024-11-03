@@ -42,7 +42,7 @@ class StringListPhysicalOperator : public PhysicalOperator {
 
   PhysicalOperatorType type() const override { return PhysicalOperatorType::STRING_LIST; }
 
-  RC open(Trx *) override { return RC::SUCCESS; }
+  RC open(Trx *, const Tuple *main_tuple = nullptr) override { return RC::SUCCESS; }
 
   RC next(const Tuple *main_tuple) override {
     if (!started_) {

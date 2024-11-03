@@ -14,7 +14,7 @@ See the Mulan PSL v2 for more details. */
 
 using namespace std;
 
-RC TableScanVecPhysicalOperator::open(Trx *trx) {
+RC TableScanVecPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   RC rc = table_->get_chunk_scanner(chunk_scanner_, trx, mode_);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to get chunk scanner", strrc(rc));

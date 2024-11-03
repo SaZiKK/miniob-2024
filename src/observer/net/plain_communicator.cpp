@@ -180,16 +180,26 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
 
   SqlResult *sql_result = event->sql_result();
 
-  // 语句只需要打印 SUCCESS OR FAILURE
-  if (RC::SUCCESS != sql_result->return_code() || !sql_result->has_operator()) {
-    return write_state(event, need_disconnect);
-  }
+  if (!sql_result->has_operator()) return write_state(event, need_disconnect);
 
   // 调用物理算子的 open 函数进行初始化，物理算子会递归调用自己的全部子算子来进行初始化
   rc = sql_result->open();
   if (OB_FAIL(rc)) {
     sql_result->close();
     sql_result->set_return_code(rc);
+    return write_state(event, need_disconnect);
+  }
+
+  vector<vector<string>> result;
+  rc = get_tuple_result(sql_result, result);
+
+  if (rc != RC::SUCCESS) {
+    sql_result->close();
+    sql_result->set_return_code(rc);
+  }
+
+  // 语句只需要打印 SUCCESS OR FAILURE
+  if (RC::SUCCESS != sql_result->return_code() || !sql_result->has_operator()) {
     return write_state(event, need_disconnect);
   }
 
@@ -240,7 +250,7 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
     rc = write_chunk_result(sql_result);
   } else {
     // 默认为 TUPLE 模式
-    rc = write_tuple_result(sql_result);
+    rc = write_tuple_result(sql_result, result);
   }
   if (OB_FAIL(rc)) {
     return rc;
@@ -268,16 +278,41 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
   return rc;
 }
 
-RC PlainCommunicator::write_tuple_result(SqlResult *sql_result) {
+RC PlainCommunicator::get_tuple_result(SqlResult *sql_result, vector<vector<string>> &result) {
   RC rc = RC::SUCCESS;
   Tuple *tuple = nullptr;
   // 不断获取"下一个"元组然后打印输出
   while (RC::SUCCESS == (rc = sql_result->next_tuple(tuple))) {
     assert(tuple != nullptr);
 
+    vector<string> single_result;
     int cell_num = tuple->cell_num();
     for (int i = 0; i < cell_num; i++) {
-      if (i != 0) {
+      Value value;
+      rc = tuple->cell_at(i, value);
+      if (rc != RC::SUCCESS) {
+        sql_result->close();
+        return rc;
+      }
+
+      string cell_str = value.to_string();
+      single_result.push_back(cell_str);
+    }
+    result.push_back(single_result);
+  }
+
+  if (rc == RC::RECORD_EOF) {
+    rc = RC::SUCCESS;
+  }
+  return rc;
+}
+
+RC PlainCommunicator::write_tuple_result(SqlResult *sql_result, vector<vector<string>> result) {
+  RC rc = RC::SUCCESS;
+  for (size_t i = 0; i < result.size(); i++) {
+    int cell_num = (int)result[0].size();
+    for (int j = 0; j < cell_num; j++) {
+      if (j != 0) {
         const char *delim = " | ";
 
         rc = writer_->writen(delim, strlen(delim));
@@ -288,15 +323,7 @@ RC PlainCommunicator::write_tuple_result(SqlResult *sql_result) {
         }
       }
 
-      Value value;
-      rc = tuple->cell_at(i, value);
-      if (rc != RC::SUCCESS) {
-        LOG_WARN("failed to get tuple cell value. rc=%s", strrc(rc));
-        sql_result->close();
-        return rc;
-      }
-
-      string cell_str = value.to_string();
+      string cell_str = result[i][j];
 
       rc = writer_->writen(cell_str.data(), cell_str.size());
       if (OB_FAIL(rc)) {
@@ -314,10 +341,10 @@ RC PlainCommunicator::write_tuple_result(SqlResult *sql_result) {
       sql_result->close();
       return rc;
     }
-  }
 
-  if (rc == RC::RECORD_EOF) {
-    rc = RC::SUCCESS;
+    if (rc == RC::RECORD_EOF) {
+      rc = RC::SUCCESS;
+    }
   }
   return rc;
 }
