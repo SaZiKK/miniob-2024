@@ -374,8 +374,11 @@ RC Table::set_value_to_record(char *record_data, Value &value, const FieldMeta *
     char *data = new char[BP_MAX_VECTOR_RECORD_SIZE];
     memset(data, 0, BP_MAX_VECTOR_RECORD_SIZE);
     offset = 0;
+    const char *flag = "high";
+    memcpy(data, flag, 4);
+    offset += 4;
     int length = value.length();
-    memcpy(data, &length, 4);
+    memcpy(data + offset, &length, 4);
     offset += 4;
     for (int i = 0; i < (int)page_nums.size(); i++) {
       memcpy(data + offset, &page_nums[i], 4);

@@ -2272,7 +2272,7 @@ yyreduce:
         if ((yyvsp[-2].number) <= 1000) {
           (yyval.attr_info)->length = (yyvsp[-2].number) * 4;
         } else {
-          (yyval.attr_info)->length = 36; // 页号 + 长度 高维向量数据最多占8页
+          (yyval.attr_info)->length = 40; // 页号 + 长度 + 标志位 高维向量数据最多占8页
         }
       }
 
