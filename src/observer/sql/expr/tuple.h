@@ -19,6 +19,7 @@ See the Mulan PSL v2 for more details. */
 #include <vector>
 
 #include "common/log/log.h"
+#include "common/type/attr_type.h"
 #include "sql/expr/expression.h"
 #include "sql/expr/tuple_cell.h"
 #include "sql/parser/parse.h"
@@ -238,9 +239,54 @@ class RowTuple : public Tuple {
           cell.update_text_data(text_data, length);
         }
       }
-    }
+    } else if (cell.attr_type() == AttrType::VECTORS) {
+      for (const FieldMeta &field_meta : *table_->table_meta().field_metas()) {
+        if (field_meta.type() == AttrType::VECTORS) {
+          // 检查是否是高维向量
+          char *flag_check = (char *)malloc(5);
+          memset(flag_check, 0, 5);
+          memcpy(flag_check, record_->data() + field_meta.offset(), 4);
+          flag_check[4] = '\0';
+          if (strcmp(flag_check, "high") != 0) {
+            cell.set_data(this->record_->data() + field_meta.offset(), field_meta.len());
+            return RC::SUCCESS;
+          }
 
-    else
+          // 读取高维向量
+          char *vector_data = nullptr;                                 // 用于存储vector的数据
+          char *vector_meta = (char *)malloc(field_meta.len());  // 用于存储vector的元数据
+          char *vector_index = (char *)malloc(sizeof(int));      // 用于取出vector元数据的每个页号
+          int page_nums[BP_MAX_VECTOR_PAGES];                         // 用于存储vector所在的页号
+          memset(vector_meta, 0, field_meta.len());
+          memcpy(vector_meta, record_->data() + field_meta.offset(), field_meta.len());
+          memset(vector_index, 0, sizeof(int));
+          memcpy(vector_index, vector_meta + 4, sizeof(int));  // 取出头四位vector的长度
+          int length = *((int *)vector_index);
+          vector_data = (char *)malloc(length);
+          memset(vector_data, 0, length);
+          int used_pages = length / BP_PAGE_DATA_SIZE + 1;
+          for (int i = 0; i < used_pages; i++) {
+            memcpy(vector_index, vector_meta + 4 + sizeof(int) + i * sizeof(int), sizeof(int));
+            page_nums[i] = *((int *)vector_index);
+          }
+          int offset = 0;
+          for (int i = 0; i < used_pages; i++) {
+            Frame *frame;
+            RC rc = this->table_->data_buffer_pool()->get_this_page(page_nums[i], &frame);
+            if (rc != RC::SUCCESS) {
+              LOG_ERROR("Failed to get page. page_num=%d, rc=%s", page_nums[i], strrc(rc));
+              return rc;
+            }
+            int len = std::min(length - offset, BP_PAGE_DATA_SIZE);
+            memcpy(vector_data + offset, frame->data(), len);
+            offset += len;
+          }
+          cell.set_type(AttrType::VECTORS);
+          cell.set_data(vector_data, length);
+        }
+      }
+
+    } else
       cell.set_data(this->record_->data() + field_meta->offset(), field_meta->len());
     return RC::SUCCESS;
   }
