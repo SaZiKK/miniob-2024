@@ -21,6 +21,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/algorithm.h"
 #include "common/log/log.h"
 #include "common/global_context.h"
+#include "common/type/attr_type.h"
 #include "storage/buffer/page.h"
 #include "storage/db/db.h"
 #include "storage/buffer/disk_buffer_pool.h"
@@ -829,7 +830,7 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   memcpy(backup_data, old_data, record.len());
 
   // 对于 CHARS 这种不定长的记录，如果更新的元素大于原来的长度，需要截断
-  if (value->length() > field_length) {
+  if (value->length() > field_length && targetFiled->type() != AttrType::VECTORS) {
     memcpy(old_data + field_offset, value->data(), field_length);
   } else if (targetFiled->type() == AttrType::TEXT) {
     // 先删除原有的 TEXT
@@ -902,6 +903,50 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
     value->update_text_data(data, BP_MAX_TEXT_RECORD_SIZE);
     delete[] data;
     memcpy(old_data + targetFiled->offset(), value->data(), value->length() + 1);
+  } 
+  // 对于 VECTORS
+  else if (targetFiled->type() == AttrType::VECTORS && value->get_vector_size() > 1000) {
+    int offset = 0;
+    vector<PageNum> page_nums;
+    for (int i = 0; i < BP_MAX_VECTOR_PAGES && offset < value->length(); i++) {
+      Frame *frame = nullptr;
+      RC rc = RC::SUCCESS;
+      rc = data_buffer_pool_->allocate_page(&frame);
+      data_buffer_pool_->mark_text_page(frame->page_num(), true);
+      if (rc != RC::SUCCESS) {
+        LOG_ERROR("Failed to allocate page for vector field. table name=%s, field name=%s, rc=%d:%s", table_meta_.name(), targetFiled->name(), rc,
+                  strrc(rc));
+        return rc;
+      }
+      auto data = frame->page().data;
+      memset(data, 0, BP_PAGE_DATA_SIZE);
+      int len = std::min(value->length() - offset, BP_PAGE_DATA_SIZE);
+      memcpy(data, value->data() + offset, len);
+      offset += len;
+      page_nums.push_back(frame->page_num());
+      frame->dirty();
+      data_buffer_pool_->unpin_page(frame);
+    }
+    char *data = new char[BP_MAX_VECTOR_RECORD_SIZE];
+    memset(data, 0, BP_MAX_VECTOR_RECORD_SIZE);
+    offset = 0;
+    const char *flag = "high";
+    memcpy(data, flag, 4);
+    offset += 4;
+    int length = value->length();
+    memcpy(data + offset, &length, 4);
+    offset += 4;
+    for (int i = 0; i < (int)page_nums.size(); i++) {
+      memcpy(data + offset, &page_nums[i], 4);
+      offset += 4;
+    }
+    for (int i = page_nums.size(); i < BP_MAX_VECTOR_PAGES; i++) {
+      memset(data + offset, 0, 4);
+      offset += 4;
+    }
+    value->set_type(AttrType::CHARS);
+    memcpy(old_data + targetFiled->offset(), data, BP_MAX_VECTOR_RECORD_SIZE);
+    delete[] data;
   }
   // 对于 CHARS
   // 这种不定长的记录，如果更新的元素小于原来的长度，需要额外抹去原有元素
