@@ -479,9 +479,9 @@ RC LogicalPlanGenerator::create_group_by_plan(SelectStmt *select_stmt, unique_pt
 RC LogicalPlanGenerator::create_order_by_plan(SelectStmt *select_stmt, std::unique_ptr<LogicalOperator> &logical_operator) {
   if (select_stmt->order_by().empty()) return RC::SUCCESS;
 
-  OrderByExpr *order_expr = static_cast<OrderByExpr *>(select_stmt->order_by()[0].get());
   // ? 向量排序语句
-  if (order_expr->child()->type() == ExprType::VECFUNC) {
+  if (select_stmt->order_by()[0]->type() == ExprType::ORDERBY) {
+    OrderByExpr *order_expr = static_cast<OrderByExpr *>(select_stmt->order_by()[0].get());
     Field *left_f = nullptr;
     Field *right_f = nullptr;
     Value *left_v = nullptr;
