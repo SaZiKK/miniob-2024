@@ -200,6 +200,7 @@ class RowTuple : public Tuple {
 
     FieldExpr *field_expr = speces_[index];
     const FieldMeta *field_meta = field_expr->field().meta();
+    int target_offset = field_meta->offset();
     cell.set_type(field_meta->type());
     if (strncmp(record_->data() + field_meta->offset(), "ÿÿÿÿ", std::min(4, field_meta->len())) == 0)
       cell.set_null(true);
@@ -241,7 +242,7 @@ class RowTuple : public Tuple {
       }
     } else if (cell.attr_type() == AttrType::VECTORS) {
       for (const FieldMeta &field_meta : *table_->table_meta().field_metas()) {
-        if (field_meta.type() == AttrType::VECTORS) {
+        if (field_meta.offset() == target_offset) {
           // 检查是否是高维向量
           char *flag_check = (char *)malloc(5);
           memset(flag_check, 0, 5);
@@ -249,14 +250,14 @@ class RowTuple : public Tuple {
           flag_check[4] = '\0';
           if (strcmp(flag_check, "high") != 0) {
             cell.set_data(this->record_->data() + field_meta.offset(), field_meta.len());
-            return RC::SUCCESS;
+            break;
           }
 
           // 读取高维向量
-          char *vector_data = nullptr;                                 // 用于存储vector的数据
+          char *vector_data = nullptr;                           // 用于存储vector的数据
           char *vector_meta = (char *)malloc(field_meta.len());  // 用于存储vector的元数据
           char *vector_index = (char *)malloc(sizeof(int));      // 用于取出vector元数据的每个页号
-          int page_nums[BP_MAX_VECTOR_PAGES];                         // 用于存储vector所在的页号
+          int page_nums[BP_MAX_VECTOR_PAGES];                    // 用于存储vector所在的页号
           memset(vector_meta, 0, field_meta.len());
           memcpy(vector_meta, record_->data() + field_meta.offset(), field_meta.len());
           memset(vector_index, 0, sizeof(int));

@@ -898,7 +898,7 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
     value->update_text_data(data, BP_MAX_TEXT_RECORD_SIZE);
     delete[] data;
     memcpy(old_data + targetFiled->offset(), value->data(), value->length() + 1);
-  } 
+  }
   // 对于 VECTORS
   else if (targetFiled->type() == AttrType::VECTORS && value->get_vector_size() > 1000) {
     int offset = 0;
