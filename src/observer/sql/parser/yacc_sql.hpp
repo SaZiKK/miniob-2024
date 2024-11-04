@@ -127,21 +127,22 @@ extern int yydebug;
     RBRACKET = 328,                /* RBRACKET  */
     UNIQUE = 329,                  /* UNIQUE  */
     ORDER_BY = 330,                /* ORDER_BY  */
-    AS = 331,                      /* AS  */
-    EQ = 332,                      /* EQ  */
-    LT = 333,                      /* LT  */
-    GT = 334,                      /* GT  */
-    LE = 335,                      /* LE  */
-    GE = 336,                      /* GE  */
-    NE = 337,                      /* NE  */
-    NUMBER = 338,                  /* NUMBER  */
-    FLOAT = 339,                   /* FLOAT  */
-    ID = 340,                      /* ID  */
-    DATE_STR = 341,                /* DATE_STR  */
-    TEXT_STR = 342,                /* TEXT_STR  */
-    SSS = 343,                     /* SSS  */
-    HIGHER_THAN_EXPRESSION = 344,  /* HIGHER_THAN_EXPRESSION  */
-    UMINUS = 345                   /* UMINUS  */
+    VIEW = 331,                    /* VIEW  */
+    AS = 332,                      /* AS  */
+    EQ = 333,                      /* EQ  */
+    LT = 334,                      /* LT  */
+    GT = 335,                      /* GT  */
+    LE = 336,                      /* LE  */
+    GE = 337,                      /* GE  */
+    NE = 338,                      /* NE  */
+    NUMBER = 339,                  /* NUMBER  */
+    FLOAT = 340,                   /* FLOAT  */
+    ID = 341,                      /* ID  */
+    DATE_STR = 342,                /* DATE_STR  */
+    TEXT_STR = 343,                /* TEXT_STR  */
+    SSS = 344,                     /* SSS  */
+    HIGHER_THAN_EXPRESSION = 345,  /* HIGHER_THAN_EXPRESSION  */
+    UMINUS = 346                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -150,7 +151,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 149 "yacc_sql.y"
+#line 150 "yacc_sql.y"
 
   ParsedSqlNode *                            sql_node;
   ConditionSqlNode *                         condition;
@@ -171,7 +172,7 @@ union YYSTYPE
   bool                                       boolean;
   const char *                               aggre_type;
 
-#line 175 "yacc_sql.hpp"
+#line 176 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

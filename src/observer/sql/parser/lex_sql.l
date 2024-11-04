@@ -149,6 +149,7 @@ AS                                      RETURN_TOKEN(AS);
 ORDER[ \t]+BY                           RETURN_TOKEN(ORDER_BY);
 ASC                                     RETURN_TOKEN(ASC);
 HAVING                                  RETURN_TOKEN(HAVING);
+VIEW                                    RETURN_TOKEN(VIEW);
 
 L2_DISTANCE                             RETURN_TOKEN(VEC_L2_DISTANCE);
 COSINE_DISTANCE                         RETURN_TOKEN(VEC_COSINE_DISTANCE_FUNC);

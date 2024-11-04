@@ -176,11 +176,28 @@ struct CreateTableSqlNode {
 };
 
 /**
+ * @brief 描述一个create view语句
+ * @ingroup SQLParser
+ */
+struct CreateViewSqlNode {
+  std::string view_name;         ///< View name
+  SubSelectSqlNode *sub_select;  ///< select sql node
+};
+
+/**
  * @brief 描述一个drop table语句
  * @ingroup SQLParser
  */
 struct DropTableSqlNode {
   std::string relation_name;  ///< 要删除的表名
+};
+
+/**
+ * @brief 描述一个drop view语句
+ * @ingroup SQLParser
+ */
+struct DropViewSqlNode {
+  std::string view_name;  ///< 要删除的视图名
 };
 
 /**
@@ -272,7 +289,9 @@ enum SqlCommandFlag {
   SCF_UPDATE,
   SCF_DELETE,
   SCF_CREATE_TABLE,
+  SCF_CREATE_VIEW,
   SCF_DROP_TABLE,
+  SCF_DROP_VIEW,
   SCF_CREATE_INDEX,
   SCF_DROP_INDEX,
   SCF_SYNC,
@@ -302,7 +321,9 @@ class ParsedSqlNode {
   DeleteSqlNode deletion;
   UpdateSqlNode update;
   CreateTableSqlNode create_table;
+  CreateViewSqlNode create_view;
   DropTableSqlNode drop_table;
+  DropViewSqlNode drop_view;
   CreateIndexSqlNode create_index;
   DropIndexSqlNode drop_index;
   DescTableSqlNode desc_table;

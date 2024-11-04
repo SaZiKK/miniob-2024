@@ -137,6 +137,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         RBRACKET
         UNIQUE
         ORDER_BY
+        VIEW
         AS
         EQ
         LT
@@ -212,7 +213,9 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            update_stmt
 %type <sql_node>            delete_stmt
 %type <sql_node>            create_table_stmt
+%type <sql_node>            create_view_stmt
 %type <sql_node>            drop_table_stmt
+%type <sql_node>            drop_view_stmt
 %type <sql_node>            show_tables_stmt
 %type <sql_node>            desc_table_stmt
 %type <sql_node>            create_index_stmt
@@ -253,6 +256,7 @@ command_wrapper:
   | update_stmt
   | delete_stmt
   | create_table_stmt
+  | create_view_stmt
   | drop_table_stmt
   | show_tables_stmt
   | desc_table_stmt
@@ -311,6 +315,13 @@ drop_table_stmt:    /*drop table 语句的语法解析树*/
       free($3);
     };
 
+drop_view_stmt:
+    DROP VIEW ID {
+      $$ = new ParsedSqlNode(SCF_DROP_VIEW);
+      $$->drop_view.view_name = $3;
+      free($3);
+    }
+    ;
 show_tables_stmt:
     SHOW TABLES {
       $$ = new ParsedSqlNode(SCF_SHOW_TABLES);
@@ -491,6 +502,16 @@ create_table_stmt:    /*create table 语句的语法解析树*/
 
       create_table.use_sub_select = true;
       create_table.sub_select = $5;
+    }
+    ;
+create_view_stmt:
+    CREATE VIEW ID AS select_stmt
+    {
+      $$ = new ParsedSqlNode(SCF_CREATE_VIEW);
+      CreateViewSqlNode &create_view = $$->create_view;
+      create_view.view_name = $3;
+      free($3);
+      create_view.sub_select = $5;
     }
     ;
 attr_def_list:
