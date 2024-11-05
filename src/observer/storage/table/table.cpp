@@ -458,6 +458,9 @@ RC Table::get_chunk_scanner(ChunkFileScanner &scanner, Trx *trx, ReadWriteMode m
 }
 
 RC Table::create_vec_index(Trx *trx, const FieldMeta &fieldmeta, const char *index_name, string distance_func, int lists, int probes) {
+  if (fieldmeta.type() != AttrType::VECTORS) return RC::INVALID_ARGUMENT;
+  if (!table_meta_.kmeans_.index_name_.empty()) return RC::INVALID_ARGUMENT;
+
   DistanceFuncType type = distance_func == "L2_DISTANCE"       ? DistanceFuncType::L2_DISTANCE
                           : distance_func == "COSINE_DISTANCE" ? DistanceFuncType::COSINE_DISTANCE
                                                                : DistanceFuncType::INNER_PRODUCT;
