@@ -141,7 +141,7 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator &table_get_oper, u
 
   // 创建向量索引搜索算子
   if (table_get_oper.get_vec_flag()) {
-    KMEANS kmeans = table->table_meta().kmeans_;
+    KMEANS kmeans = table->kmeans();
     Value value = table_get_oper.get_value();
     int limit = table_get_oper.get_limit();
     auto vec_scan_oper = new VecIndexScanPhysicalOperator(table, limit, kmeans.type_, value);

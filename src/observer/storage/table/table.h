@@ -89,7 +89,11 @@ class Table {
 
   RC create_index(Trx *trx, const std::vector<FieldMeta> &fieldmetas, const char *index_name, bool is_unique);
 
+  // * create a vector index
   RC create_vec_index(Trx *trx, const FieldMeta &fieldmeta, const char *index_name, string distance_func, int lists, int probes);
+
+  // * update vector index when insert record
+  RC insert_entry_of_vec_indexes(const char *record, const RID &rid);
 
   RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, ReadWriteMode mode);
 
@@ -130,6 +134,10 @@ class Table {
   Index *find_index(const char *index_name) const;
   Index *find_index_by_field(const char *field_name) const;
   Index *find_index_by_fields(const std::vector<const char *> field_name) const;
+
+  KMEANS kmeans() { return table_meta_.kmeans_; }
+  string vec_index_field_name() const { return table_meta_.vec_index_field_name_; }
+  const FieldMeta vec_index_field_meta() const { return table_meta_.vec_index_field_meta_; }
 
  private:
   Db *db_ = nullptr;

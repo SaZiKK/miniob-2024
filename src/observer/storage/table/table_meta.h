@@ -66,15 +66,18 @@ class TableMeta : public common::Serializable {
   int record_size() const;
 
  public:
+  RC init_vec_index(FieldMeta field_meta, vector<pair<RID, Value>> values, int lists, int probes, DistanceFuncType type, string index_name);
+
+ public:
   int serialize(std::ostream &os) const override;
   int deserialize(std::istream &is) override;
   int get_serial_size() const override;
   void to_string(std::string &output) const override;
   void desc(std::ostream &os) const;
 
- public:
-  // vec part
-  FieldMeta vec_index_field_;
+  // * vector index part
+  string vec_index_field_name_;
+  FieldMeta vec_index_field_meta_;
   KMEANS kmeans_;
 
  protected:

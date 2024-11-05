@@ -10,7 +10,7 @@ RC VecIndexScanPhysicalOperator::open(Trx *trx, const Tuple *main_tuple) {
   trx_ = trx;
   rc = table_->get_record_scanner(record_scanner_, trx, mode_);
   if (rc == RC::SUCCESS) tuple_.set_schema(table_, table_->table_meta().field_metas());
-  KMEANS kmeans = table_->table_meta().kmeans_;
+  KMEANS kmeans = table_->kmeans();
   vector<RID> results;
   kmeans.searchVector(value_, limit_, results);
 
@@ -41,7 +41,7 @@ Tuple *VecIndexScanPhysicalOperator::current_tuple() {
 }
 
 string VecIndexScanPhysicalOperator::param() const {
-  string index_name = table_->table_meta().kmeans_.index_name_;
+  string index_name = table_->kmeans().index_name_;
   string table_name = table_->name();
 
   return index_name + " ON " + table_name;

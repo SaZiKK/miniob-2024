@@ -194,14 +194,8 @@ RC Table::insert_record(Record &record) {
     return rc;
   }
 
-  // ? vec index insert
-  int offset = table_meta_.vec_index_field_.offset();
-  int len = table_meta_.vec_index_field_.len();
-  if (len > 0) {
-    Value value(AttrType::VECTORS, record.data() + offset, len);
-    RID rid = record.rid();
-    table_meta_.kmeans_.insertVector(make_pair(rid, value));
-  }
+  rc = insert_entry_of_vec_indexes(record.data(), record.rid());
+  if (rc != RC::SUCCESS) return rc;
 
   rc = insert_entry_of_indexes(record.data(), record.rid());
   if (rc != RC::SUCCESS) {  // 可能出现了键值重复
@@ -492,8 +486,7 @@ RC Table::create_vec_index(Trx *trx, const FieldMeta &fieldmeta, const char *ind
   scanner.close_scan();
 
   // * init KMEAN
-  table_meta_.vec_index_field_ = fieldmeta;
-  rc = table_meta_.kmeans_.createIndex(values, fieldmeta.len() / 4, lists, probes, type, index_name);
+  rc = table_meta_.init_vec_index(fieldmeta, values, lists, probes, type, index_name);
   return rc;
 }
 
@@ -1014,4 +1007,17 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   record_handler_->update_record(&record);
   // delete old_data;
   return RC::SUCCESS;
+}
+
+RC Table::insert_entry_of_vec_indexes(const char *record, const RID &rid) {
+  const FieldMeta field_meta = table_meta_.vec_index_field_meta_;
+  int offset = field_meta.offset();
+  int len = field_meta.len();
+  KMEANS &kmeans = table_meta_.kmeans_;
+
+  const char *data = record + offset;
+  Value value(AttrType::VECTORS, (char *)data, len);
+
+  RC rc = kmeans.insertVector(make_pair(rid, value));
+  return rc;
 }

@@ -184,24 +184,45 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   // 如果触发了向量索引
   if (!select_stmt->order_by().empty() && order_by_oper == nullptr) {
     OrderByExpr *order_expr = static_cast<OrderByExpr *>(select_stmt->order_by()[0].get());
+    Field *left_f = nullptr;
+    Field *right_f = nullptr;
+    Value *left_v = nullptr;
     Value *right_v = nullptr;
 
     Expression *expr = order_expr->child().get();
     VecFuncExpr *vec_func_expr = static_cast<VecFuncExpr *>(expr);
 
+    Expression *left_expr = vec_func_expr->child_left().get();
     Expression *right_expr = vec_func_expr->child_right().get();
 
-    ValueExpr *value_expr = static_cast<ValueExpr *>(right_expr);
-    right_v = (Value *)&value_expr->get_value();
+    if (left_expr->type() == ExprType::FIELD) {
+      FieldExpr *field_expr = static_cast<FieldExpr *>(left_expr);
+      left_f = &field_expr->field();
+    } else if (left_expr->type() == ExprType::VALUE) {
+      ValueExpr *value_expr = static_cast<ValueExpr *>(left_expr);
+      left_v = (Value *)&value_expr->get_value();
+    }
+
+    if (right_expr->type() == ExprType::FIELD) {
+      FieldExpr *field_expr = static_cast<FieldExpr *>(right_expr);
+      right_f = &field_expr->field();
+    } else if (right_expr->type() == ExprType::VALUE) {
+      ValueExpr *value_expr = static_cast<ValueExpr *>(right_expr);
+      right_v = (Value *)&value_expr->get_value();
+    }
+
+    if (left_f == nullptr && right_f == nullptr) return RC::INVALID_ARGUMENT;
 
     ///////////////////////////////////////////////////
 
     LogicalOperator *oper = last_oper->get();
     while (!oper->children().empty()) oper = oper->children()[0].get();
     TableGetLogicalOperator *table_get_oper = static_cast<TableGetLogicalOperator *>(oper);
+
     table_get_oper->set_vec_flag(true);
     table_get_oper->set_limit(select_stmt->vec_order_limit());
-    table_get_oper->set_value(*right_v);
+    Value value = left_v == nullptr ? *right_v : *left_v;
+    table_get_oper->set_value(value);
   }
 
   if (order_by_oper) {
@@ -539,10 +560,10 @@ RC LogicalPlanGenerator::create_order_by_plan(SelectStmt *select_stmt, std::uniq
 
     // ? 如果触发向量索引，则不创建该算子
     const std::vector<Table *> &tables = select_stmt->tables();
-    if (tables.size() == 1 && !tables[0]->table_meta().kmeans_.index_name_.empty()) {
-      FieldMeta field_meta = tables[0]->table_meta().vec_index_field_;
-      if (strcmp(field_meta.name(), left_f->meta()->name()) == 0) return RC::SUCCESS;
-    }
+    string name = tables[0]->vec_index_field_name();
+
+    if (left_f != nullptr && strcmp(name.c_str(), left_f->meta()->name()) == 0) return RC::SUCCESS;
+    if (right_f != nullptr && strcmp(name.c_str(), right_f->meta()->name()) == 0) return RC::SUCCESS;
 
     auto order_by_oper =
         make_unique<SortVecLogicalOperator>(left_f, right_f, left_v, right_v, vec_func_expr->func_type(), select_stmt->vec_order_limit());
