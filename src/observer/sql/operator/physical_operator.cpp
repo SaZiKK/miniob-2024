@@ -51,9 +51,9 @@ std::string physical_operator_type_name(PhysicalOperatorType type) {
     case PhysicalOperatorType::VEC_INDEX_SCAN:
       return "VECTOR_INDEX_SCAN";
     case PhysicalOperatorType::SORTVEC:
-      return "ORDER BY";
+      return "ORDER_BY_LIMIT";
     case PhysicalOperatorType::SORT:
-      return "ORDER BY";
+      return "ORDER_BY";
     default:
       return "UNKNOWN";
   }
