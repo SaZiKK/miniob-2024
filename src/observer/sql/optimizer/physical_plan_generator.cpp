@@ -49,6 +49,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/scalar_group_by_physical_operator.h"
 #include "sql/operator/table_scan_vec_physical_operator.h"
 #include "sql/optimizer/physical_plan_generator.h"
+#include "sql/operator/vector_index_scan_physical_operator.h"
 
 using namespace std;
 
@@ -136,9 +137,20 @@ RC PhysicalPlanGenerator::create_vec(LogicalOperator &logical_operator, unique_p
 }
 
 RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator &table_get_oper, unique_ptr<PhysicalOperator> &oper) {
+  Table *table = table_get_oper.table();
+
+  // 创建向量索引搜索算子
+  if (table_get_oper.get_vec_flag()) {
+    KMEANS kmeans = table->table_meta().kmeans_;
+    Value value = table_get_oper.get_value();
+    int limit = table_get_oper.get_limit();
+    auto vec_scan_oper = new VecIndexScanPhysicalOperator(table, limit, kmeans.type_, value);
+    oper = unique_ptr<PhysicalOperator>(vec_scan_oper);
+    return RC::SUCCESS;
+  }
+
   vector<unique_ptr<Expression>> &predicates = table_get_oper.predicates();
   // 看看是否有可以用于索引查找的表达式
-  Table *table = table_get_oper.table();
 
   Index *index = nullptr;
   ValueExpr *value_expr = nullptr;

@@ -333,7 +333,6 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, bool &use_
         strcmp(select_sql.having_conditions[i].left_expression->name(), "COUNT(*)") == 0) {
       select_sql.having_conditions.erase(select_sql.having_conditions.begin() + i);
       HashGroupByPhysicalOperator::min_Num = std::stoi(select_sql.having_conditions[i].right_expression->name());
-      i--;
     }
   }
 

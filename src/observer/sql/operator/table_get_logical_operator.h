@@ -35,6 +35,14 @@ class TableGetLogicalOperator : public LogicalOperator {
   void set_predicates(std::vector<std::unique_ptr<Expression>> &&exprs);
   auto predicates() -> std::vector<std::unique_ptr<Expression>> & { return predicates_; }
 
+  void set_vec_flag(bool flag) { use_vec_index_ = flag; }
+  void set_value(Value value) { value_ = value; }
+  void set_limit(int limit) { limit_ = limit; }
+
+  bool get_vec_flag() const { return use_vec_index_; }
+  Value get_value() const { return value_; }
+  int get_limit() const { return limit_; }
+
  private:
   Table *table_ = nullptr;
   ReadWriteMode mode_ = ReadWriteMode::READ_WRITE;
@@ -44,4 +52,8 @@ class TableGetLogicalOperator : public LogicalOperator {
   // 不包含复杂的表达式运算，比如加减乘除、或者conjunction expression
   // 如果有多个表达式，他们的关系都是 AND
   std::vector<std::unique_ptr<Expression>> predicates_;
+
+  bool use_vec_index_ = false;
+  Value value_;
+  int limit_;
 };

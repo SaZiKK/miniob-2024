@@ -121,8 +121,8 @@ extern int yydebug;
     IS_NULL = 322,                 /* IS_NULL  */
     IS_NOT_NULL = 323,             /* IS_NOT_NULL  */
     VEC_L2_DISTANCE = 324,         /* VEC_L2_DISTANCE  */
-    VEC_COSINE_DISTANCE_FUNC = 325, /* VEC_COSINE_DISTANCE_FUNC  */
-    VEC_INNER_PRODUCT_FUNC = 326,  /* VEC_INNER_PRODUCT_FUNC  */
+    VEC_COSINE_DISTANCE = 325,     /* VEC_COSINE_DISTANCE  */
+    VEC_INNER_PRODUCT = 326,       /* VEC_INNER_PRODUCT  */
     IVFFLAT = 327,                 /* IVFFLAT  */
     LBRACKET = 328,                /* LBRACKET  */
     RBRACKET = 329,                /* RBRACKET  */
@@ -177,8 +177,9 @@ union YYSTYPE
   float                                      floats;
   bool                                       boolean;
   const char *                               aggre_type;
+  const char *                               vec_func_type;
 
-#line 182 "yacc_sql.hpp"
+#line 183 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

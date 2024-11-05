@@ -109,9 +109,11 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
 
   // 获取涉及表格并遍历
   const std::vector<Table *> &tables = select_stmt->tables();
+
   for (Table *table : tables) {
     // 创建 TableGet 逻辑算子
     unique_ptr<LogicalOperator> table_get_oper(new TableGetLogicalOperator(table, ReadWriteMode::READ_ONLY));
+
     // 第一张表格
     if (table_oper == nullptr) {
       table_oper = std::move(table_get_oper);
@@ -178,6 +180,30 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   // 创建 OrderBy 逻辑算子
   unique_ptr<LogicalOperator> order_by_oper;
   rc = create_order_by_plan(select_stmt, order_by_oper);
+
+  // 如果触发了向量索引
+  if (!select_stmt->order_by().empty() && order_by_oper == nullptr) {
+    OrderByExpr *order_expr = static_cast<OrderByExpr *>(select_stmt->order_by()[0].get());
+    Value *right_v = nullptr;
+
+    Expression *expr = order_expr->child().get();
+    VecFuncExpr *vec_func_expr = static_cast<VecFuncExpr *>(expr);
+
+    Expression *right_expr = vec_func_expr->child_right().get();
+
+    ValueExpr *value_expr = static_cast<ValueExpr *>(right_expr);
+    right_v = (Value *)&value_expr->get_value();
+
+    ///////////////////////////////////////////////////
+
+    LogicalOperator *oper = last_oper->get();
+    while (!oper->children().empty()) oper = oper->children()[0].get();
+    TableGetLogicalOperator *table_get_oper = static_cast<TableGetLogicalOperator *>(oper);
+    table_get_oper->set_vec_flag(true);
+    table_get_oper->set_limit(select_stmt->vec_order_limit());
+    table_get_oper->set_value(*right_v);
+  }
+
   if (order_by_oper) {
     if (*last_oper) {
       order_by_oper->add_child(std::move(*last_oper));
@@ -510,6 +536,13 @@ RC LogicalPlanGenerator::create_order_by_plan(SelectStmt *select_stmt, std::uniq
       right_v = (Value *)&value_expr->get_value();
     } else
       return RC::INVALID_ARGUMENT;
+
+    // ? 如果触发向量索引，则不创建该算子
+    const std::vector<Table *> &tables = select_stmt->tables();
+    if (tables.size() == 1 && !tables[0]->table_meta().kmeans_.index_name_.empty()) {
+      FieldMeta field_meta = tables[0]->table_meta().vec_index_field_;
+      if (strcmp(field_meta.name(), left_f->meta()->name()) == 0) return RC::SUCCESS;
+    }
 
     auto order_by_oper =
         make_unique<SortVecLogicalOperator>(left_f, right_f, left_v, right_v, vec_func_expr->func_type(), select_stmt->vec_order_limit());

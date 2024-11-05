@@ -87,8 +87,9 @@ class Table {
 
   RC recover_insert_record(Record &record);
 
-  // TODO refactor
   RC create_index(Trx *trx, const std::vector<FieldMeta> &fieldmetas, const char *index_name, bool is_unique);
+
+  RC create_vec_index(Trx *trx, const FieldMeta &fieldmeta, const char *index_name, string distance_func, int lists, int probes);
 
   RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, ReadWriteMode mode);
 

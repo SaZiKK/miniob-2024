@@ -131,8 +131,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         IS_NULL
         IS_NOT_NULL
         VEC_L2_DISTANCE
-        VEC_COSINE_DISTANCE_FUNC
-        VEC_INNER_PRODUCT_FUNC
+        VEC_COSINE_DISTANCE
+        VEC_INNER_PRODUCT
         IVFFLAT
         LBRACKET
         RBRACKET
@@ -172,6 +172,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   float                                      floats;
   bool                                       boolean;
   const char *                               aggre_type;
+  const char *                               vec_func_type;
 }
 
 %token <number> NUMBER
@@ -237,6 +238,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            exit_stmt
 %type <sql_node>            command_wrapper
 %type <aggre_type>          aggre_type
+%type <vec_func_type>       vec_func_type
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
 
@@ -374,7 +376,7 @@ create_index_stmt:    /*create index 语句的语法解析树*/
     ;
 
 create_vec_index_stmt:
-    CREATE VECTOR_T INDEX ID ON ID LBRACE ID RBRACE WITH LBRACE TYPE EQ IVFFLAT COMMA DISTANCE EQ VEC_L2_DISTANCE COMMA LISTS EQ number COMMA PROBES EQ number RBRACE {
+    CREATE VECTOR_T INDEX ID ON ID LBRACE ID RBRACE WITH LBRACE TYPE EQ IVFFLAT COMMA DISTANCE EQ vec_func_type COMMA LISTS EQ number COMMA PROBES EQ number RBRACE {
       $$ = new ParsedSqlNode(SCF_CREATE_VEC_INDEX);
       CreateVecIndexSqlNode &create_vec_index = $$->create_vec_index;
       create_vec_index.index_name = $4;
@@ -383,33 +385,7 @@ create_vec_index_stmt:
 
       // para
       create_vec_index.type_name = "IVFFLAT";
-      create_vec_index.distance_name = "L2_DISTANCE";
-      create_vec_index.lists_ = $22;
-      create_vec_index.probes_ = $26;
-    }
-    | CREATE VECTOR_T INDEX ID ON ID LBRACE ID RBRACE WITH LBRACE TYPE EQ IVFFLAT COMMA DISTANCE EQ VEC_COSINE_DISTANCE_FUNC COMMA LISTS EQ number COMMA PROBES EQ number RBRACE {
-      $$ = new ParsedSqlNode(SCF_CREATE_VEC_INDEX);
-      CreateVecIndexSqlNode &create_vec_index = $$->create_vec_index;
-      create_vec_index.index_name = $4;
-      create_vec_index.relation_name = $6;
-      create_vec_index.attribute_name = $8;
-
-      // para
-      create_vec_index.type_name = "IVFFLAT";
-      create_vec_index.distance_name = "COSINE_DISTANCE";
-      create_vec_index.lists_ = $22;
-      create_vec_index.probes_ = $26;
-    }
-    | CREATE VECTOR_T INDEX ID ON ID LBRACE ID RBRACE WITH LBRACE TYPE EQ IVFFLAT COMMA DISTANCE EQ VEC_INNER_PRODUCT_FUNC COMMA LISTS EQ number COMMA PROBES EQ number RBRACE {
-      $$ = new ParsedSqlNode(SCF_CREATE_VEC_INDEX);
-      CreateVecIndexSqlNode &create_vec_index = $$->create_vec_index;
-      create_vec_index.index_name = $4;
-      create_vec_index.relation_name = $6;
-      create_vec_index.attribute_name = $8;
-
-      // para
-      create_vec_index.type_name = "IVFFLAT";
-      create_vec_index.distance_name = "INNER_PRODUCT";
+      create_vec_index.distance_name = $18;
       create_vec_index.lists_ = $22;
       create_vec_index.probes_ = $26;
     }
@@ -901,6 +877,21 @@ aggre_type:
     }
     ;
 
+vec_func_type:
+    VEC_INNER_PRODUCT { 
+      const char * result = "INNER_PRODUCT";
+      $$ = result; 
+    }
+    | VEC_COSINE_DISTANCE { 
+      const char * result = "COSINE_DISTANCE";
+      $$ = result; 
+    }
+    | VEC_L2_DISTANCE { 
+      const char * result = "L2_DISTANCE";
+      $$ = result; 
+    }
+    ;
+
 expression:
     NUMBER {
       $$ = new ValueExpr(Value($1));
@@ -1002,11 +993,11 @@ expression:
       $$ = new FuncExpr(FuncExpr::FuncType::DATE_FORMAT, nullptr, $5, $3);
       $$->set_name(token_name(sql_string, &@$));
     }
-    | VEC_INNER_PRODUCT_FUNC LBRACE expression COMMA expression RBRACE {
+    | VEC_INNER_PRODUCT LBRACE expression COMMA expression RBRACE {
       $$ = new VecFuncExpr(VecFuncExpr::VecFuncType::INNER_PRODUCT, $3, $5);
       $$->set_name(token_name(sql_string, &@$));
     }
-    | VEC_COSINE_DISTANCE_FUNC LBRACE expression COMMA expression RBRACE {
+    | VEC_COSINE_DISTANCE LBRACE expression COMMA expression RBRACE {
       $$ = new VecFuncExpr(VecFuncExpr::VecFuncType::COSINE_DISTANCE, $3, $5);
       $$->set_name(token_name(sql_string, &@$));
     }

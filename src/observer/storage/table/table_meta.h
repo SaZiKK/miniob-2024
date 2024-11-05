@@ -23,6 +23,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/types.h"
 #include "storage/field/field_meta.h"
 #include "storage/index/index_meta.h"
+#include "vectorIndex/Kmeans.h"
 
 /**
  * @brief 表元数据
@@ -70,6 +71,11 @@ class TableMeta : public common::Serializable {
   int get_serial_size() const override;
   void to_string(std::string &output) const override;
   void desc(std::ostream &os) const;
+
+ public:
+  // vec part
+  FieldMeta vec_index_field_;
+  KMEANS kmeans_;
 
  protected:
   int32_t table_id_ = -1;

@@ -31,6 +31,11 @@ class CreateVecIndexStmt : public Stmt {
   const vector<FieldMeta> field_meta() const { return field_meta_; }
   const std::string &index_name() const { return index_name_; }
 
+  string distance_name() const { return distance_name_; }
+  string type_name() const { return type_name_; }
+  int lists() const { return lists_; }
+  int probes() const { return probes_; }
+
  public:
   static RC create(Db *db, CreateVecIndexSqlNode &create_vec_index, Stmt *&stmt);
 

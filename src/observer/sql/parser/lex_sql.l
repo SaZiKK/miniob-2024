@@ -158,8 +158,8 @@ LIMIT                                   RETURN_TOKEN(LIMIT);
 IVFFLAT                                 RETURN_TOKEN(IVFFLAT);
 
 L2_DISTANCE                             RETURN_TOKEN(VEC_L2_DISTANCE);
-COSINE_DISTANCE                         RETURN_TOKEN(VEC_COSINE_DISTANCE_FUNC);
-INNER_PRODUCT                           RETURN_TOKEN(VEC_INNER_PRODUCT_FUNC);
+COSINE_DISTANCE                         RETURN_TOKEN(VEC_COSINE_DISTANCE);
+INNER_PRODUCT                           RETURN_TOKEN(VEC_INNER_PRODUCT);
 
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
 {QUOTE}[0-9]{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01]){QUOTE} yylval->string=strdup(yytext); RETURN_TOKEN(DATE_STR); 

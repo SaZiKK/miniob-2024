@@ -454,6 +454,40 @@ RC Table::get_chunk_scanner(ChunkFileScanner &scanner, Trx *trx, ReadWriteMode m
   return rc;
 }
 
+RC Table::create_vec_index(Trx *trx, const FieldMeta &fieldmeta, const char *index_name, string distance_func, int lists, int probes) {
+  DistanceFuncType type = distance_func == "L2_DISTANCE"       ? DistanceFuncType::L2_DISTANCE
+                          : distance_func == "COSINE_DISTANCE" ? DistanceFuncType::COSINE_DISTANCE
+                                                               : DistanceFuncType::INNER_PRODUCT;
+
+  if (common::is_blank(index_name)) return RC::INVALID_ARGUMENT;
+
+  // 遍历当前的所有数据，插入这个索引
+  RecordFileScanner scanner;
+  RC rc = get_record_scanner(scanner, trx, ReadWriteMode::READ_ONLY);
+  if (rc != RC::SUCCESS) return rc;
+
+  vector<pair<RID, Value>> values;
+  Record record;
+  while (OB_SUCC(rc = scanner.next(record))) {
+    RID rid = record.rid();
+
+    // * 提取出索引列的 Value
+    Value value(AttrType::VECTORS, record.data() + fieldmeta.offset(), fieldmeta.len());
+
+    values.push_back(make_pair(rid, value));
+  }
+  if (RC::RECORD_EOF == rc)
+    rc = RC::SUCCESS;
+  else
+    return rc;
+  scanner.close_scan();
+
+  // * init KMEAN
+  table_meta_.vec_index_field_ = fieldmeta;
+  rc = table_meta_.kmeans_.createIndex(values, lists, probes, type, index_name);
+  return rc;
+}
+
 RC Table::create_index(Trx *trx, const vector<FieldMeta> &fieldmetas, const char *index_name, bool is_unique) {
   if (common::is_blank(index_name) || fieldmetas.empty()) {
     LOG_INFO(
