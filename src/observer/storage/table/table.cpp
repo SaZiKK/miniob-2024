@@ -194,6 +194,15 @@ RC Table::insert_record(Record &record) {
     return rc;
   }
 
+  // ? vec index insert
+  int offset = table_meta_.vec_index_field_.offset();
+  int len = table_meta_.vec_index_field_.len();
+  if (len > 0) {
+    Value value(AttrType::VECTORS, record.data() + offset, len);
+    RID rid = record.rid();
+    table_meta_.kmeans_.insertVector(make_pair(rid, value));
+  }
+
   rc = insert_entry_of_indexes(record.data(), record.rid());
   if (rc != RC::SUCCESS) {  // 可能出现了键值重复
     RC rc2 = delete_entry_of_indexes(record.data(), record.rid(), false /*error_on_not_exists*/);
@@ -484,7 +493,7 @@ RC Table::create_vec_index(Trx *trx, const FieldMeta &fieldmeta, const char *ind
 
   // * init KMEAN
   table_meta_.vec_index_field_ = fieldmeta;
-  rc = table_meta_.kmeans_.createIndex(values, lists, probes, type, index_name);
+  rc = table_meta_.kmeans_.createIndex(values, fieldmeta.len() / 4, lists, probes, type, index_name);
   return rc;
 }
 

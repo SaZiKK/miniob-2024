@@ -7,13 +7,13 @@
 // * 2 将表格中已有向量录入
 // * 3 运行 KMEANS 算法，生成指定数量的簇
 // * 4 维护类内其他参数并生成倒排文件索引
-RC KMEANS::createIndex(vector<RID_AND_VALUE> vectors, int list, int probes, DistanceFuncType type, string index_name) {
+RC KMEANS::createIndex(vector<RID_AND_VALUE> vectors, int dimension, int list, int probes, DistanceFuncType type, string index_name) {
   // * 1 设置 KMEANS 中有关向量维度、簇数、搜索时返回簇、距离函数数等参数
   this->type_ = type;
   this->lists_ = list;
   this->probes_ = probes;
   this->vecTotal_ = vectors.size();
-  this->vecDimension_ = vectors[0].second.get_vector_size();
+  this->vecDimension_ = dimension;
   this->index_name_ = index_name;
   this->invertedIndex_.clear();
   for (int i = 0; i < lists_; i++) this->invertedIndex_.insert(make_pair(i, vector<int>()));
@@ -65,6 +65,7 @@ RC KMEANS::insertVector(RID_AND_VALUE Ivector) {
     this->minNum[i] = std::min(this->minNum[i], vec[i]);
     this->maxNum[i] = std::max(this->maxNum[i], vec[i]);
   }
+  kmeans();
   return RC::SUCCESS;
 }
 

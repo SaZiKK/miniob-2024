@@ -82,7 +82,7 @@ class KMEANS {
   ?   input  DistanceFuncType type_
   ?   output void/RC                  rc_
   */
-  RC createIndex(vector<RID_AND_VALUE> vectors, int list, int probes, DistanceFuncType type, string index_name);
+  RC createIndex(vector<RID_AND_VALUE> vectors, int dimension, int list, int probes, DistanceFuncType type, string index_name);
 
   // * 插入向量
   // * 1 插入最接近的簇中
