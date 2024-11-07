@@ -62,6 +62,12 @@ RC SqlTaskHandler::handle_sql(SQLStageEvent *sql_event) {
     LOG_TRACE("failed to do query cache. rc=%s", strrc(rc));
     return rc;
   }
+  if (sql_event->sql().length() >= 9 && sql_event->sql().substr(0, 9) == "SET NAMES") {
+    SqlResult *sql_result = sql_event->session_event()->sql_result();
+    sql_result->set_return_code(RC::SUCCESS);
+    sql_result->set_state_string("SUCCESS");
+    return RC::SUCCESS;
+  }
 
   rc = parse_stage_.handle_request(sql_event);
   if (OB_FAIL(rc)) {

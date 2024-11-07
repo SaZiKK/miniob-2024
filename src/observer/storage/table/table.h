@@ -110,6 +110,8 @@ class Table {
    */
   RC visit_record(const RID &rid, function<bool(Record &)> visitor);
 
+  RC record_to_vector(const char *record, int field_offset, int field_len, Value &value);
+
  public:
   int32_t table_id() const { return table_meta_.table_id(); }
   const char *name() const;

@@ -29,6 +29,7 @@ RC KMEANS::createIndex(vector<RID_AND_VALUE> vectors, int dimension, int list, i
                        : type_ == DistanceFuncType::INNER_PRODUCT   ? INNER_PRODUCT
                                                                     : L2_DISTANCE;
 
+  LOG_WARN("BEGIN KMEAN: Total Vector: %d", dataSet.size());
   // * 3 运行 KMEANS 算法，生成指定数量的簇
   kmeans();
 
@@ -178,9 +179,12 @@ RC KMEANS::searchVector(Value para, int limit, vector<RID> &results) {
 // * 将向量分到不同的簇中
 void KMEANS::kmeans() {
   // * 生成簇
+  LOG_WARN("rand begin");
   this->randCent();
+  LOG_WARN("rand end");
 
   // * 将向量分到对应的簇中
+  LOG_WARN("add vector begin");
   for (int i = 0; i < vecTotal_; i++) {
     vector<float> vec = dataSet[i].second.get_vector();
     float minNum = INT16_MAX;
@@ -193,8 +197,10 @@ void KMEANS::kmeans() {
     }
     invertedIndex_[minIndex].push_back(i);
   }
+  LOG_WARN("add vector end");
 
   // * 优化簇，将簇变成簇内向量的平均值
+  LOG_WARN("optimize begin");
   for (int i = 0; i < lists_; i++) {
     vector<float> vec(vecDimension_, 0);
     for (int j = 0; j < (int)invertedIndex_[i].size(); j++) {
@@ -206,6 +212,7 @@ void KMEANS::kmeans() {
       centroids[i][j] = vec[j] / num;
     }
   }
+  LOG_WARN("optimize end");
 }
 
 // * 获取某个维度的最大值和最小值
@@ -229,7 +236,6 @@ void KMEANS::randCent() {
   vector<float> vec(vecDimension_, 0);
   for (int i = 0; i < lists_; i++) centroids.push_back(vec);
 
-  srand(time(NULL));
   minNum.resize(vecDimension_);
   maxNum.resize(vecDimension_);
   for (int j = 0; j < vecDimension_; j++) {
@@ -237,7 +243,7 @@ void KMEANS::randCent() {
     maxNum[j] = getMinMax(j).second;
     float rangeNum = maxNum[j] - minNum[j];
     for (int i = 0; i < lists_; i++) {
-      centroids[i][j] = minNum[j] + rangeNum * (rand() / (double)RAND_MAX);
+      centroids[i][j] = minNum[j] + rangeNum * (0.5);
     }
   }
 }

@@ -78,7 +78,7 @@ RC TableMeta::init(int32_t table_id, const char *name, const std::vector<FieldMe
     if (attr_info.type == AttrType::VECTORS && attr_info.length > 16000 * 4) return RC::INVALID_ARGUMENT;
     // `i` is the col_id of fields[i]
     rc = fields_[i + trx_field_num].init(attr_info.name.c_str(), attr_info.type, field_offset, attr_info.length, true /*visible*/, i,
-                                         attr_info.can_be_null);
+                                         attr_info.can_be_null, attr_info.real_length);
     if (OB_FAIL(rc)) {
       LOG_ERROR("Failed to init field meta. table name=%s, field name: %s", name, attr_info.name.c_str());
       return rc;
@@ -343,6 +343,6 @@ void TableMeta::desc(std::ostream &os) const {
 RC TableMeta::init_vec_index(FieldMeta field_meta, vector<pair<RID, Value>> values, int lists, int probes, DistanceFuncType type, string index_name) {
   this->vec_index_field_meta_ = field_meta;
   this->vec_index_field_name_ = field_meta.name();
-  RC rc = kmeans_.createIndex(values, field_meta.len() / 4, lists, probes, type, index_name);
+  RC rc = kmeans_.createIndex(values, field_meta.real_len() / 4, lists, probes, type, index_name);
   return rc;
 }

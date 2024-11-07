@@ -478,7 +478,8 @@ RC Table::create_vec_index(Trx *trx, const FieldMeta &fieldmeta, const char *ind
     RID rid = record.rid();
 
     // * 提取出索引列的 Value
-    Value value(AttrType::VECTORS, record.data() + fieldmeta.offset(), fieldmeta.len());
+    Value value;
+    record_to_vector(record.data(), fieldmeta.offset(), fieldmeta.len(), value);
 
     values.push_back(make_pair(rid, value));
   }
@@ -1013,14 +1014,64 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
 }
 
 RC Table::insert_entry_of_vec_indexes(const char *record, const RID &rid) {
+  RC rc = RC::SUCCESS;
+
+  if (table_meta_.vec_index_field_name_.empty()) return rc;
+
   const FieldMeta field_meta = table_meta_.vec_index_field_meta_;
-  int offset = field_meta.offset();
-  int len = field_meta.len();
+  int field_offset = field_meta.offset();
+  int field_len = field_meta.len();
   KMEANS &kmeans = table_meta_.kmeans_;
 
-  const char *data = record + offset;
-  Value value(AttrType::VECTORS, (char *)data, len);
+  Value value;
+  rc = record_to_vector(record, field_offset, field_len, value);
+  if (rc != RC::SUCCESS) return rc;
 
-  RC rc = kmeans.insertVector(make_pair(rid, value));
+  rc = kmeans.insertVector(make_pair(rid, value));
+  return rc;
+}
+
+RC Table::record_to_vector(const char *record, int field_offset, int field_len, Value &value) {
+  RC rc = RC::SUCCESS;
+
+  char *flag_check = (char *)malloc(5);
+  memset(flag_check, 0, 5);
+  memcpy(flag_check, record + field_offset, 4);
+  flag_check[4] = '\0';
+
+  // * 普通向量
+  if (strcmp(flag_check, "high") != 0) {
+    const char *data = record + field_offset;
+    value = Value(AttrType::VECTORS, (char *)data, field_len);
+    return rc;
+  }
+
+  // * 高维向量
+  char *vector_data = nullptr;                       // 用于存储vector的数据
+  char *vector_meta = (char *)malloc(field_len);     // 用于存储vector的元数据
+  char *vector_index = (char *)malloc(sizeof(int));  // 用于取出vector元数据的每个页号
+  int page_nums[BP_MAX_VECTOR_PAGES];                // 用于存储vector所在的页号
+  memset(vector_meta, 0, field_len);
+  memcpy(vector_meta, record + field_offset, field_len);
+  memset(vector_index, 0, sizeof(int));
+  memcpy(vector_index, vector_meta + 4, sizeof(int));  // 取出头四位vector的长度
+  int length = *((int *)vector_index);
+  vector_data = (char *)malloc(length);
+  memset(vector_data, 0, length);
+  int used_pages = length / BP_PAGE_DATA_SIZE + 1;
+  for (int i = 0; i < used_pages; i++) {
+    memcpy(vector_index, vector_meta + 4 + sizeof(int) + i * sizeof(int), sizeof(int));
+    page_nums[i] = *((int *)vector_index);
+  }
+  int offset = 0;
+  for (int i = 0; i < used_pages; i++) {
+    Frame *frame;
+    rc = data_buffer_pool()->get_this_page(page_nums[i], &frame);
+    if (rc != RC::SUCCESS) return rc;
+    int len = std::min(length - offset, BP_PAGE_DATA_SIZE);
+    memcpy(vector_data + offset, frame->data(), len);
+    offset += len;
+  }
+  value = Value(AttrType::VECTORS, vector_data, length);
   return rc;
 }

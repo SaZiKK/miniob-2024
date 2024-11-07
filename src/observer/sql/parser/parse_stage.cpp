@@ -50,7 +50,7 @@ RC ParseStage::handle_request(SQLStageEvent *sql_event) {
   // 多条 SQL 语句检查
   if (parsed_sql_result.sql_nodes().size() > 1) {
     sql_debug("multi sql commands not finished yet");
-    LOG_WARN("got multi sql commands but only 1 will be handled");
+    for (size_t i = 0; i < parsed_sql_result.sql_nodes().size(); i++) LOG_WARN("got multi sql commands but only 1 will be handled: %s", sql);
   }
 
   std::unique_ptr<ParsedSqlNode> sql_node = std::move(parsed_sql_result.sql_nodes().front());
