@@ -1,0 +1,6 @@
+#include "common/log/log.h"
+#include "common/lang/string.h"
+#include "common/types.h"
+#include "sql/optimizer/optimize_stage.h"
+#include "sql/stmt/create_view_stmt.h"
+#include "sql/stmt/select_stmt.h"

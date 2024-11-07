@@ -225,7 +225,7 @@ RC Db::drop_table(int32_t table_id) {
   opened_tables_.erase(table_name);
   delete table;
 
-  LOG_INFO("Table drop successfully, which table_name is %d, table_id = %d", table_name, table_id);
+  LOG_INFO("Table drop successfully, which table_name is %d, table_id = %d", table_name.c_str(), table_id);
 
   return RC::SUCCESS;
 }

@@ -40,7 +40,7 @@ class Db;
 class BaseTable {
  public:
   BaseTable() = default;
-  ~BaseTable();
+  virtual ~BaseTable(){};
 
   /**
    * 创建一个表/视图
@@ -51,7 +51,9 @@ class BaseTable {
    * @param attributes 字段
    */
   virtual RC create(Db *db, int32_t table_id, const char *path, const char *name, const char *base_dir, span<const AttrInfoSqlNode> attributes,
-            StorageFormat storage_format) { return RC::UNIMPLEMENTED; }
+                    StorageFormat storage_format) {
+    return RC::UNIMPLEMENTED;
+  }
 
   /**
    * 打开一个表/视图
@@ -75,24 +77,24 @@ class BaseTable {
    * 在表文件和索引中插入关联数据。这里只管在表中插入数据，不关心事务相关操作。
    * @param record[in/out] 传入的数据包含具体的数据，插入成功会通过此字段返回RID
    */
-  virtual RC insert_record(Record &record);
-  virtual RC delete_record(const Record &record);
-  virtual RC delete_record(const RID &rid);
-  virtual RC update_record(Record &record, const char *attr_name, Value *value);
-  virtual RC update_records(Record &record, std::vector<std::pair<Value, FieldMeta>> update_map_);
-  virtual RC get_record(const RID &rid, Record &record);
+  virtual RC insert_record(Record &record) = 0;
+  virtual RC delete_record(const Record &record) = 0;
+  virtual RC delete_record(const RID &rid) = 0;
+  virtual RC update_record(Record &record, const char *attr_name, Value *value) = 0;
+  virtual RC update_records(Record &record, std::vector<std::pair<Value, FieldMeta>> update_map_) = 0;
+  virtual RC get_record(const RID &rid, Record &record) = 0;
 
   // 删除表格函数
-  virtual RC drop();
+  virtual RC drop() = 0;
 
-  virtual RC recover_insert_record(Record &record);
+  virtual RC recover_insert_record(Record &record) = 0;
 
   // TODO refactor
-  virtual RC create_index(Trx *trx, const std::vector<FieldMeta> &fieldmetas, const char *index_name, bool is_unique);
+  virtual RC create_index(Trx *trx, const std::vector<FieldMeta> &fieldmetas, const char *index_name, bool is_unique) = 0;
 
-  virtual RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, ReadWriteMode mode);
+  virtual RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, ReadWriteMode mode) = 0;
 
-  virtual RC get_chunk_scanner(ChunkFileScanner &scanner, Trx *trx, ReadWriteMode mode);
+  virtual RC get_chunk_scanner(ChunkFileScanner &scanner, Trx *trx, ReadWriteMode mode) = 0;
 
   virtual RecordFileHandler *record_handler() const = 0;
 
@@ -103,30 +105,30 @@ class BaseTable {
    * @param visitor
    * @return RC
    */
-  virtual RC visit_record(const RID &rid, function<bool(Record &)> visitor);
+  virtual RC visit_record(const RID &rid, function<bool(Record &)> visitor) = 0;
 
  public:
   virtual int32_t table_id() const = 0;
-  virtual const char *name() const;
+  virtual const char *name() const = 0;
 
   virtual Db *db() const = 0;
 
-  virtual const TableMeta &table_meta() const;
+  virtual const TableMeta &table_meta() const = 0;
 
-  virtual RC sync();
+  virtual RC sync() = 0;
 
   virtual DiskBufferPool *data_buffer_pool() const = 0;
 
  private:
-  virtual RC insert_entry_of_indexes(const char *record, const RID &rid);
-  virtual RC delete_entry_of_indexes(const char *record, const RID &rid, bool error_on_not_exists);
-  virtual RC set_value_to_record(char *record_data, Value &value, const FieldMeta *field, int index);
+  virtual RC insert_entry_of_indexes(const char *record, const RID &rid) = 0;
+  virtual RC delete_entry_of_indexes(const char *record, const RID &rid, bool error_on_not_exists) = 0;
+  virtual RC set_value_to_record(char *record_data, Value &value, const FieldMeta *field, int index) = 0;
 
  private:
-  virtual RC init_record_handler(const char *base_dir);
+  virtual RC init_record_handler(const char *base_dir) = 0;
 
  public:
-  virtual Index *find_index(const char *index_name) const;
-  virtual Index *find_index_by_field(const char *field_name) const;
-  virtual Index *find_index_by_fields(const std::vector<const char *> field_name) const;
+  virtual Index *find_index(const char *index_name) const = 0;
+  virtual Index *find_index_by_field(const char *field_name) const = 0;
+  virtual Index *find_index_by_fields(const std::vector<const char *> field_name) const = 0;
 };

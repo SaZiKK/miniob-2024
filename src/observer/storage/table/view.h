@@ -12,6 +12,12 @@ See the Mulan PSL v2 for more details. */
 //
 
 #pragma once
+
+#include "storage/field/field_meta.h"
+#include "storage/table/table_meta.h"
+#include "common/types.h"
+#include "common/lang/span.h"
+#include "common/lang/functional.h"
 #include "storage/table/base_table.h"
 
 struct RID;
@@ -32,12 +38,12 @@ class Db;
  * @brief 表
  *
  */
-class Table : public BaseTable {
+class View : public BaseTable {
   friend class Index;
 
  public:
-  Table(){};
-  ~Table() override;
+  View() = default;
+  ~View();
 
   /**
    * 创建一个表
@@ -84,19 +90,14 @@ class Table : public BaseTable {
 
   RC recover_insert_record(Record &record) override;
 
+  // TODO refactor
   RC create_index(Trx *trx, const std::vector<FieldMeta> &fieldmetas, const char *index_name, bool is_unique) override;
-
-  // * create a vector index
-  RC create_vec_index(Trx *trx, const FieldMeta &fieldmeta, const char *index_name, string distance_func, int lists, int probes);
-
-  // * update vector index when insert record
-  RC insert_entry_of_vec_indexes(const char *record, const RID &rid);
 
   RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, ReadWriteMode mode) override;
 
   RC get_chunk_scanner(ChunkFileScanner &scanner, Trx *trx, ReadWriteMode mode) override;
 
-  RecordFileHandler *record_handler() const override { return record_handler_; }
+  RecordFileHandler *record_handler() const override;
 
   /**
    * @brief 可以在页面锁保护的情况下访问记录
@@ -108,7 +109,7 @@ class Table : public BaseTable {
   RC visit_record(const RID &rid, function<bool(Record &)> visitor) override;
 
  public:
-  int32_t table_id() const override { return table_meta_.table_id(); }
+  int32_t table_id() const override;
   const char *name() const override;
 
   Db *db() const override { return db_; }
@@ -117,7 +118,7 @@ class Table : public BaseTable {
 
   RC sync() override;
 
-  DiskBufferPool *data_buffer_pool() const override { return data_buffer_pool_; }
+  DiskBufferPool *data_buffer_pool() const override;
 
  private:
   RC insert_entry_of_indexes(const char *record, const RID &rid) override;
@@ -132,15 +133,7 @@ class Table : public BaseTable {
   Index *find_index_by_field(const char *field_name) const override;
   Index *find_index_by_fields(const std::vector<const char *> field_name) const override;
 
-  KMEANS kmeans() { return table_meta_.kmeans_; }
-  string vec_index_field_name() const { return table_meta_.vec_index_field_name_; }
-  const FieldMeta vec_index_field_meta() const { return table_meta_.vec_index_field_meta_; }
-
  private:
   Db *db_ = nullptr;
-  string base_dir_;
-  TableMeta table_meta_;
-  DiskBufferPool *data_buffer_pool_ = nullptr;   /// 数据文件关联的buffer pool
-  RecordFileHandler *record_handler_ = nullptr;  /// 记录操作
-  vector<Index *> indexes_;
+  string view_name;
 };
