@@ -164,6 +164,13 @@ struct AttrInfoSqlNode {
   bool can_be_null;  ///< if can be null
 };
 
+struct ViewAttrInfoSqlNode {
+  AttrType type;                     ///< Type of attribute
+  std::string name;                  ///< Attribute name
+  size_t length;                     ///< Length of attribute
+  std::unique_ptr<Expression> expr;  ///< Expression
+};
+
 /**
  * @brief 描述一个create table语句
  * @ingroup SQLParser
@@ -345,6 +352,7 @@ class ParsedSqlNode {
   ExplainSqlNode explain;
   SetVariableSqlNode set_variable;
   CreateVecIndexSqlNode create_vec_index;
+  ViewAttrInfoSqlNode view_attr_info;
 
  public:
   ParsedSqlNode();
