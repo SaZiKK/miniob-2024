@@ -149,11 +149,18 @@ AS                                      RETURN_TOKEN(AS);
 ORDER[ \t]+BY                           RETURN_TOKEN(ORDER_BY);
 ASC                                     RETURN_TOKEN(ASC);
 HAVING                                  RETURN_TOKEN(HAVING);
+WITH                                    RETURN_TOKEN(WITH);
+DISTANCE                                RETURN_TOKEN(DISTANCE);
+TYPE                                    RETURN_TOKEN(TYPE);
+LISTS                                   RETURN_TOKEN(LISTS);
+PROBES                                  RETURN_TOKEN(PROBES);
+LIMIT                                   RETURN_TOKEN(LIMIT);
+IVFFLAT                                 RETURN_TOKEN(IVFFLAT);
 VIEW                                    RETURN_TOKEN(VIEW);
 
 L2_DISTANCE                             RETURN_TOKEN(VEC_L2_DISTANCE);
-COSINE_DISTANCE                         RETURN_TOKEN(VEC_COSINE_DISTANCE_FUNC);
-INNER_PRODUCT                           RETURN_TOKEN(VEC_INNER_PRODUCT_FUNC);
+COSINE_DISTANCE                         RETURN_TOKEN(VEC_COSINE_DISTANCE);
+INNER_PRODUCT                           RETURN_TOKEN(VEC_INNER_PRODUCT);
 
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
 {QUOTE}[0-9]{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01]){QUOTE} yylval->string=strdup(yytext); RETURN_TOKEN(DATE_STR); 

@@ -40,6 +40,7 @@ enum class PhysicalOperatorType {
   TABLE_SCAN,
   TABLE_SCAN_VEC,
   INDEX_SCAN,
+  VEC_INDEX_SCAN,
   NESTED_LOOP_JOIN,
   EXPLAIN,
   PREDICATE,
@@ -57,6 +58,7 @@ enum class PhysicalOperatorType {
   AGGREGATE_VEC,
   EXPR_VEC,
   SORT,
+  SORTVEC,
 };
 
 /**

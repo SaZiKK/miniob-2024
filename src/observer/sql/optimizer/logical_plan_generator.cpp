@@ -31,6 +31,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/table_get_logical_operator.h"
 #include "sql/operator/group_by_logical_operator.h"
 #include "sql/operator/sort_logical_operator.h"
+#include "sql/operator/sort_vec_logical_operator.h"
 
 #include "sql/optimizer/physical_plan_generator.h"
 #include "sql/stmt/calc_stmt.h"
@@ -108,9 +109,11 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
 
   // 获取涉及表格并遍历
   const std::vector<Table *> &tables = select_stmt->tables();
+
   for (Table *table : tables) {
     // 创建 TableGet 逻辑算子
     unique_ptr<LogicalOperator> table_get_oper(new TableGetLogicalOperator(table, ReadWriteMode::READ_ONLY));
+
     // 第一张表格
     if (table_oper == nullptr) {
       table_oper = std::move(table_get_oper);
@@ -177,6 +180,51 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   // 创建 OrderBy 逻辑算子
   unique_ptr<LogicalOperator> order_by_oper;
   rc = create_order_by_plan(select_stmt, order_by_oper);
+
+  // 如果触发了向量索引
+  if (!select_stmt->order_by().empty() && order_by_oper == nullptr) {
+    OrderByExpr *order_expr = static_cast<OrderByExpr *>(select_stmt->order_by()[0].get());
+    Field *left_f = nullptr;
+    Field *right_f = nullptr;
+    Value *left_v = nullptr;
+    Value *right_v = nullptr;
+
+    Expression *expr = order_expr->child().get();
+    VecFuncExpr *vec_func_expr = static_cast<VecFuncExpr *>(expr);
+
+    Expression *left_expr = vec_func_expr->child_left().get();
+    Expression *right_expr = vec_func_expr->child_right().get();
+
+    if (left_expr->type() == ExprType::FIELD) {
+      FieldExpr *field_expr = static_cast<FieldExpr *>(left_expr);
+      left_f = &field_expr->field();
+    } else if (left_expr->type() == ExprType::VALUE) {
+      ValueExpr *value_expr = static_cast<ValueExpr *>(left_expr);
+      left_v = (Value *)&value_expr->get_value();
+    }
+
+    if (right_expr->type() == ExprType::FIELD) {
+      FieldExpr *field_expr = static_cast<FieldExpr *>(right_expr);
+      right_f = &field_expr->field();
+    } else if (right_expr->type() == ExprType::VALUE) {
+      ValueExpr *value_expr = static_cast<ValueExpr *>(right_expr);
+      right_v = (Value *)&value_expr->get_value();
+    }
+
+    if (left_f == nullptr && right_f == nullptr) return RC::INVALID_ARGUMENT;
+
+    ///////////////////////////////////////////////////
+
+    LogicalOperator *oper = last_oper->get();
+    while (!oper->children().empty()) oper = oper->children()[0].get();
+    TableGetLogicalOperator *table_get_oper = static_cast<TableGetLogicalOperator *>(oper);
+
+    table_get_oper->set_vec_flag(true);
+    table_get_oper->set_limit(select_stmt->vec_order_limit());
+    Value value = left_v == nullptr ? *right_v : *left_v;
+    table_get_oper->set_value(value);
+  }
+
   if (order_by_oper) {
     if (*last_oper) {
       order_by_oper->add_child(std::move(*last_oper));
@@ -476,6 +524,53 @@ RC LogicalPlanGenerator::create_group_by_plan(SelectStmt *select_stmt, unique_pt
 }
 
 RC LogicalPlanGenerator::create_order_by_plan(SelectStmt *select_stmt, std::unique_ptr<LogicalOperator> &logical_operator) {
+  if (select_stmt->order_by().empty()) return RC::SUCCESS;
+
+  // ? 向量排序语句
+  if (select_stmt->order_by()[0]->type() == ExprType::ORDERBY) {
+    OrderByExpr *order_expr = static_cast<OrderByExpr *>(select_stmt->order_by()[0].get());
+    Field *left_f = nullptr;
+    Field *right_f = nullptr;
+    Value *left_v = nullptr;
+    Value *right_v = nullptr;
+
+    Expression *expr = order_expr->child().get();
+    VecFuncExpr *vec_func_expr = static_cast<VecFuncExpr *>(expr);
+
+    Expression *left_expr = vec_func_expr->child_left().get();
+    Expression *right_expr = vec_func_expr->child_right().get();
+
+    if (left_expr->type() == ExprType::FIELD) {
+      FieldExpr *field_expr = static_cast<FieldExpr *>(left_expr);
+      left_f = &field_expr->field();
+    } else if (left_expr->type() == ExprType::VALUE) {
+      ValueExpr *value_expr = static_cast<ValueExpr *>(left_expr);
+      left_v = (Value *)&value_expr->get_value();
+    } else
+      return RC::INVALID_ARGUMENT;
+
+    if (right_expr->type() == ExprType::FIELD) {
+      FieldExpr *field_expr = static_cast<FieldExpr *>(right_expr);
+      right_f = &field_expr->field();
+    } else if (right_expr->type() == ExprType::VALUE) {
+      ValueExpr *value_expr = static_cast<ValueExpr *>(right_expr);
+      right_v = (Value *)&value_expr->get_value();
+    } else
+      return RC::INVALID_ARGUMENT;
+
+    // ? 如果触发向量索引，则不创建该算子
+    const std::vector<Table *> &tables = select_stmt->tables();
+    string name = tables[0]->vec_index_field_name();
+
+    if (left_f != nullptr && strcmp(name.c_str(), left_f->meta()->name()) == 0) return RC::SUCCESS;
+    if (right_f != nullptr && strcmp(name.c_str(), right_f->meta()->name()) == 0) return RC::SUCCESS;
+
+    auto order_by_oper =
+        make_unique<SortVecLogicalOperator>(left_f, right_f, left_v, right_v, vec_func_expr->func_type(), select_stmt->vec_order_limit());
+    logical_operator = std::move(order_by_oper);
+    return RC::SUCCESS;
+  }
+  // ? 普通的排序语句
   std::vector<Field> order_by_fields;
   for (auto &it : select_stmt->order_by()) {
     FieldExpr *field_expr = static_cast<FieldExpr *>(it.get());

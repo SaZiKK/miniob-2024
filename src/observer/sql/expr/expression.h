@@ -817,6 +817,9 @@ class VecFuncExpr : public Expression {
   static RC COSINE_DISTANCE_FUNC(const Value left, const Value right, Value &result);
   static RC INNER_PRODUCT_FUNC(const Value left, const Value right, Value &result);
 
+  RC set_left_expr(unique_ptr<Expression> left);
+  RC set_right_expr(unique_ptr<Expression> right);
+
  private:
   VecFuncType type_;
   std::unique_ptr<Expression> child_left_;

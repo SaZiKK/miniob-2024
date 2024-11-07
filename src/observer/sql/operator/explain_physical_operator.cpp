@@ -97,7 +97,14 @@ void ExplainPhysicalOperator::to_string(std::ostream &os, PhysicalOperator *oper
     }
   }
 
-  os << oper->name();
+  if (oper->name() == "ORDER_BY_LIMIT") {
+    os << "LIMIT";
+    os << '\n';
+    os << "└─";
+    os << "ORDER_BY";
+  } else {
+    os << oper->name();
+  }
   std::string param = oper->param();
   if (!param.empty()) {
     os << "(" << param << ")";

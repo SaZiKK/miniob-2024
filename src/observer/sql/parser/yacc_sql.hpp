@@ -121,28 +121,35 @@ extern int yydebug;
     IS_NULL = 322,                 /* IS_NULL  */
     IS_NOT_NULL = 323,             /* IS_NOT_NULL  */
     VEC_L2_DISTANCE = 324,         /* VEC_L2_DISTANCE  */
-    VEC_COSINE_DISTANCE_FUNC = 325, /* VEC_COSINE_DISTANCE_FUNC  */
-    VEC_INNER_PRODUCT_FUNC = 326,  /* VEC_INNER_PRODUCT_FUNC  */
-    LBRACKET = 327,                /* LBRACKET  */
-    RBRACKET = 328,                /* RBRACKET  */
-    UNIQUE = 329,                  /* UNIQUE  */
-    ORDER_BY = 330,                /* ORDER_BY  */
-    VIEW = 331,                    /* VIEW  */
-    AS = 332,                      /* AS  */
-    EQ = 333,                      /* EQ  */
-    LT = 334,                      /* LT  */
-    GT = 335,                      /* GT  */
-    LE = 336,                      /* LE  */
-    GE = 337,                      /* GE  */
-    NE = 338,                      /* NE  */
-    NUMBER = 339,                  /* NUMBER  */
-    FLOAT = 340,                   /* FLOAT  */
-    ID = 341,                      /* ID  */
-    DATE_STR = 342,                /* DATE_STR  */
-    TEXT_STR = 343,                /* TEXT_STR  */
-    SSS = 344,                     /* SSS  */
-    HIGHER_THAN_EXPRESSION = 345,  /* HIGHER_THAN_EXPRESSION  */
-    UMINUS = 346                   /* UMINUS  */
+    VEC_COSINE_DISTANCE = 325,     /* VEC_COSINE_DISTANCE  */
+    VEC_INNER_PRODUCT = 326,       /* VEC_INNER_PRODUCT  */
+    IVFFLAT = 327,                 /* IVFFLAT  */
+    LBRACKET = 328,                /* LBRACKET  */
+    RBRACKET = 329,                /* RBRACKET  */
+    UNIQUE = 330,                  /* UNIQUE  */
+    ORDER_BY = 331,                /* ORDER_BY  */
+    VIEW = 332,                    /* VIEW  */
+    WITH = 333,                    /* WITH  */
+    DISTANCE = 334,                /* DISTANCE  */
+    TYPE = 335,                    /* TYPE  */
+    LISTS = 336,                   /* LISTS  */
+    PROBES = 337,                  /* PROBES  */
+    LIMIT = 338,                   /* LIMIT  */
+    AS = 339,                      /* AS  */
+    EQ = 340,                      /* EQ  */
+    LT = 341,                      /* LT  */
+    GT = 342,                      /* GT  */
+    LE = 343,                      /* LE  */
+    GE = 344,                      /* GE  */
+    NE = 345,                      /* NE  */
+    NUMBER = 346,                  /* NUMBER  */
+    FLOAT = 347,                   /* FLOAT  */
+    ID = 348,                      /* ID  */
+    DATE_STR = 349,                /* DATE_STR  */
+    TEXT_STR = 350,                /* TEXT_STR  */
+    SSS = 351,                     /* SSS  */
+    HIGHER_THAN_EXPRESSION = 352,  /* HIGHER_THAN_EXPRESSION  */
+    UMINUS = 353                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -151,7 +158,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 150 "yacc_sql.y"
+#line 157 "yacc_sql.y"
 
   ParsedSqlNode *                            sql_node;
   ConditionSqlNode *                         condition;
@@ -171,8 +178,9 @@ union YYSTYPE
   float                                      floats;
   bool                                       boolean;
   const char *                               aggre_type;
+  const char *                               vec_func_type;
 
-#line 176 "yacc_sql.hpp"
+#line 184 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

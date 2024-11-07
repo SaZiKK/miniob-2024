@@ -23,6 +23,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/types.h"
 #include "storage/field/field_meta.h"
 #include "storage/index/index_meta.h"
+#include "vectorIndex/Kmeans.h"
 
 /**
  * @brief 表元数据
@@ -65,11 +66,19 @@ class TableMeta : public common::Serializable {
   int record_size() const;
 
  public:
+  RC init_vec_index(FieldMeta field_meta, vector<pair<RID, Value>> values, int lists, int probes, DistanceFuncType type, string index_name);
+
+ public:
   int serialize(std::ostream &os) const override;
   int deserialize(std::istream &is) override;
   int get_serial_size() const override;
   void to_string(std::string &output) const override;
   void desc(std::ostream &os) const;
+
+  // * vector index part
+  string vec_index_field_name_;
+  FieldMeta vec_index_field_meta_;
+  KMEANS kmeans_;
 
  protected:
   int32_t table_id_ = -1;

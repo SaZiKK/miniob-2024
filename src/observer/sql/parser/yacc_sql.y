@@ -131,13 +131,20 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         IS_NULL
         IS_NOT_NULL
         VEC_L2_DISTANCE
-        VEC_COSINE_DISTANCE_FUNC
-        VEC_INNER_PRODUCT_FUNC
+        VEC_COSINE_DISTANCE
+        VEC_INNER_PRODUCT
+        IVFFLAT
         LBRACKET
         RBRACKET
         UNIQUE
         ORDER_BY
         VIEW
+        WITH
+        DISTANCE
+        TYPE    
+        LISTS   
+        PROBES  
+        LIMIT
         AS
         EQ
         LT
@@ -166,6 +173,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   float                                      floats;
   bool                                       boolean;
   const char *                               aggre_type;
+  const char *                               vec_func_type;
 }
 
 %token <number> NUMBER
@@ -181,6 +189,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <condition>           condition
 %type <value>               value
 %type <number>              number
+%type <number>              limited
 %type <floats>              float
 %type <comp>                comp_op
 %type <attr_infos>          attr_def_list
@@ -219,6 +228,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            show_tables_stmt
 %type <sql_node>            desc_table_stmt
 %type <sql_node>            create_index_stmt
+%type <sql_node>            create_vec_index_stmt
 %type <sql_node>            drop_index_stmt
 %type <sql_node>            sync_stmt
 %type <sql_node>            begin_stmt
@@ -231,6 +241,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            exit_stmt
 %type <sql_node>            command_wrapper
 %type <aggre_type>          aggre_type
+%type <vec_func_type>       vec_func_type
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
 
@@ -261,6 +272,7 @@ command_wrapper:
   | show_tables_stmt
   | desc_table_stmt
   | create_index_stmt
+  | create_vec_index_stmt
   | drop_index_stmt
   | sync_stmt
   | begin_stmt
@@ -373,6 +385,21 @@ create_index_stmt:    /*create index 语句的语法解析树*/
       free($8);
     }
     ;
+
+create_vec_index_stmt:
+    CREATE VECTOR_T INDEX ID ON ID LBRACE ID RBRACE WITH LBRACE TYPE EQ IVFFLAT COMMA DISTANCE EQ vec_func_type COMMA LISTS EQ number COMMA PROBES EQ number RBRACE {
+      $$ = new ParsedSqlNode(SCF_CREATE_VEC_INDEX);
+      CreateVecIndexSqlNode &create_vec_index = $$->create_vec_index;
+      create_vec_index.index_name = $4;
+      create_vec_index.relation_name = $6;
+      create_vec_index.attribute_name = $8;
+
+      // para
+      create_vec_index.type_name = "IVFFLAT";
+      create_vec_index.distance_name = $18;
+      create_vec_index.lists_ = $22;
+      create_vec_index.probes_ = $26;
+    }
 
 id_list:
     /* empty */
@@ -760,7 +787,7 @@ update_target_list:
     ;
 
 select_stmt:        /*  select 语句的语法解析树*/
-    SELECT query_unit query_list FROM relation rel_list join_list where group_by having order_by_list
+    SELECT query_unit query_list FROM relation rel_list join_list where group_by having order_by_list limited
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($3 != nullptr) {
@@ -803,6 +830,8 @@ select_stmt:        /*  select 语句的语法解析树*/
         delete $11;
       }
       std::reverse($$->selection.order_by.begin(), $$->selection.order_by.end());
+
+      $$->selection.vec_order_limit_ = $12;
     }
     ;
 sub_select_stmt:
@@ -837,6 +866,15 @@ expression_list:
     }
     ;
 
+limited:
+    /* empty */
+    {
+      $$ = -1;
+    }
+    | LIMIT number {
+      $$ = $2;
+    }
+
 aggre_type:
     MAX { 
       const char * result = "MAX";
@@ -856,6 +894,21 @@ aggre_type:
     }
     | SUM { 
       const char * result = "SUM";
+      $$ = result; 
+    }
+    ;
+
+vec_func_type:
+    VEC_INNER_PRODUCT { 
+      const char * result = "INNER_PRODUCT";
+      $$ = result; 
+    }
+    | VEC_COSINE_DISTANCE { 
+      const char * result = "COSINE_DISTANCE";
+      $$ = result; 
+    }
+    | VEC_L2_DISTANCE { 
+      const char * result = "L2_DISTANCE";
       $$ = result; 
     }
     ;
@@ -961,11 +1014,11 @@ expression:
       $$ = new FuncExpr(FuncExpr::FuncType::DATE_FORMAT, nullptr, $5, $3);
       $$->set_name(token_name(sql_string, &@$));
     }
-    | VEC_INNER_PRODUCT_FUNC LBRACE expression COMMA expression RBRACE {
+    | VEC_INNER_PRODUCT LBRACE expression COMMA expression RBRACE {
       $$ = new VecFuncExpr(VecFuncExpr::VecFuncType::INNER_PRODUCT, $3, $5);
       $$->set_name(token_name(sql_string, &@$));
     }
-    | VEC_COSINE_DISTANCE_FUNC LBRACE expression COMMA expression RBRACE {
+    | VEC_COSINE_DISTANCE LBRACE expression COMMA expression RBRACE {
       $$ = new VecFuncExpr(VecFuncExpr::VecFuncType::COSINE_DISTANCE, $3, $5);
       $$->set_name(token_name(sql_string, &@$));
     }

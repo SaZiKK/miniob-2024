@@ -9,7 +9,7 @@
 #include <vector>
 
 /**
- * @brief 聚合函数物理算子
+ * @brief 排序物理算子
  * @ingroup PhysicalOperator
  */
 class SortPhysicalOperator : public PhysicalOperator {

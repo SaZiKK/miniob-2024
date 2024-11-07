@@ -48,6 +48,12 @@ std::string physical_operator_type_name(PhysicalOperatorType type) {
       return "TABLE_SCAN_VEC";
     case PhysicalOperatorType::EXPR_VEC:
       return "EXPR_VEC";
+    case PhysicalOperatorType::VEC_INDEX_SCAN:
+      return "VECTOR_INDEX_SCAN";
+    case PhysicalOperatorType::SORTVEC:
+      return "ORDER_BY_LIMIT";
+    case PhysicalOperatorType::SORT:
+      return "ORDER_BY";
     default:
       return "UNKNOWN";
   }

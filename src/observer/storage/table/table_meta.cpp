@@ -339,3 +339,10 @@ void TableMeta::desc(std::ostream &os) const {
   }
   os << ')' << std::endl;
 }
+
+RC TableMeta::init_vec_index(FieldMeta field_meta, vector<pair<RID, Value>> values, int lists, int probes, DistanceFuncType type, string index_name) {
+  this->vec_index_field_meta_ = field_meta;
+  this->vec_index_field_name_ = field_meta.name();
+  RC rc = kmeans_.createIndex(values, field_meta.len() / 4, lists, probes, type, index_name);
+  return rc;
+}

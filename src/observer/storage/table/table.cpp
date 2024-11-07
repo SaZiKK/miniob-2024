@@ -194,6 +194,9 @@ RC Table::insert_record(Record &record) {
     return rc;
   }
 
+  rc = insert_entry_of_vec_indexes(record.data(), record.rid());
+  if (rc != RC::SUCCESS) return rc;
+
   rc = insert_entry_of_indexes(record.data(), record.rid());
   if (rc != RC::SUCCESS) {  // 可能出现了键值重复
     RC rc2 = delete_entry_of_indexes(record.data(), record.rid(), false /*error_on_not_exists*/);
@@ -451,6 +454,42 @@ RC Table::get_chunk_scanner(ChunkFileScanner &scanner, Trx *trx, ReadWriteMode m
   if (rc != RC::SUCCESS) {
     LOG_ERROR("failed to open scanner. rc=%s", strrc(rc));
   }
+  return rc;
+}
+
+RC Table::create_vec_index(Trx *trx, const FieldMeta &fieldmeta, const char *index_name, string distance_func, int lists, int probes) {
+  if (fieldmeta.type() != AttrType::VECTORS) return RC::INVALID_ARGUMENT;
+  if (!table_meta_.kmeans_.index_name_.empty()) return RC::INVALID_ARGUMENT;
+
+  DistanceFuncType type = distance_func == "L2_DISTANCE"       ? DistanceFuncType::L2_DISTANCE
+                          : distance_func == "COSINE_DISTANCE" ? DistanceFuncType::COSINE_DISTANCE
+                                                               : DistanceFuncType::INNER_PRODUCT;
+
+  if (common::is_blank(index_name)) return RC::INVALID_ARGUMENT;
+
+  // 遍历当前的所有数据，插入这个索引
+  RecordFileScanner scanner;
+  RC rc = get_record_scanner(scanner, trx, ReadWriteMode::READ_ONLY);
+  if (rc != RC::SUCCESS) return rc;
+
+  vector<pair<RID, Value>> values;
+  Record record;
+  while (OB_SUCC(rc = scanner.next(record))) {
+    RID rid = record.rid();
+
+    // * 提取出索引列的 Value
+    Value value(AttrType::VECTORS, record.data() + fieldmeta.offset(), fieldmeta.len());
+
+    values.push_back(make_pair(rid, value));
+  }
+  if (RC::RECORD_EOF == rc)
+    rc = RC::SUCCESS;
+  else
+    return rc;
+  scanner.close_scan();
+
+  // * init KMEAN
+  rc = table_meta_.init_vec_index(fieldmeta, values, lists, probes, type, index_name);
   return rc;
 }
 
@@ -971,4 +1010,17 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value) {
   record_handler_->update_record(&record);
   // delete old_data;
   return RC::SUCCESS;
+}
+
+RC Table::insert_entry_of_vec_indexes(const char *record, const RID &rid) {
+  const FieldMeta field_meta = table_meta_.vec_index_field_meta_;
+  int offset = field_meta.offset();
+  int len = field_meta.len();
+  KMEANS &kmeans = table_meta_.kmeans_;
+
+  const char *data = record + offset;
+  Value value(AttrType::VECTORS, (char *)data, len);
+
+  RC rc = kmeans.insertVector(make_pair(rid, value));
+  return rc;
 }
